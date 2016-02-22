@@ -1,0 +1,9 @@
+# run rules
+
+run: all
+	./$(BIN) --alsa "'E-MU 0202 | USB' hRun r96000" --midi="a1 Oxygen 25"
+	@#./$(BIN) --pulse "'E-MU 0202 | USB' hRun r96000"
+
+debug: all
+	gdb ./$(BIN) -ex 'set args --alsa "'\''E-MU 0202 | USB'\'' hRun r96000"' -ex 'run'
+	@#gdb ./$(BIN) -ex 'set args --pulse "hi"' -ex 'run'

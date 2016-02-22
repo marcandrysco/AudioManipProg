@@ -1,0 +1,80 @@
+#!/bin/sh
+
+##
+# quote Function
+#   Given the input string, it places it within single quotes, making sure that
+#   any single quotes within the string are properly escaped.
+# Version
+#   1.2
+# Parameters
+#   string input
+#     The input text.
+# Printed
+#   Prints out the quoted string.
+#.
+quote()
+{
+	__quote_str="$*"
+
+	while [ 1 ]
+	do
+		__quote_piece="${__quote_str%%\'*}"
+		test "$__quote_piece" = "$__quote_str" && break
+		printf "'%s'\\'" "$__quote_piece"
+		__quote_str="${__quote_str#*\'}"
+	done
+
+	printf %s "'$__quote_str'"
+}
+
+# build arguments list
+args=""
+for opt in "$@" ; do
+  args="$args`quote "$opt"` "
+done
+
+# append config.args file
+test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
+
+# parse options
+rpath=0
+prefix='/usr/local'
+bindir='$(PREFIX)/bin'
+libdir='$(PREFIX)/lib'
+incdir='$(PREFIX)/include'
+sharedir='$(PREFIX)/share'
+cflags='-O2 -g -fpic -ffast-math -Wall -Werror -I$(INCDIR) '
+ldflags='-lm -ldsp -lmuselang -ffast-math -L$(LIBDIR) '
+while [ "$#" -gt 0 ] ; do
+  case "$1" in 
+    --rpath)
+      rpath=1 ; shift
+      ;;
+    --prefix)
+      test "$#" -eq 1 && { printf "missing prefix parameter" >&2 ; exit 1 ; }
+      prefix="$2" ; shift 2
+      ;;
+    --prefix=*)
+      prefix="${1#*=}" ; shift
+      ;;
+    --debug)
+      cflags="$cflags -DDEBUG" ; shift
+      ;;
+    *)
+      printf "unknown option '%s'\n" "$1" >&2 ; exit 1
+      ;;
+  esac
+done
+
+test "$rpath" && ldflags="$ldflags -Wl,-rpath=\$(LIBDIR)"
+
+# build makefile
+rm -f Makefile
+echo "ARGS    = $args" >> Makefile
+echo "PREFIX  = $prefix" >> Makefile
+echo "BINDIR  = $bindir" >> Makefile
+echo "LIBDIR  = $libdir" >> Makefile
+echo "INCDIR  = $incdir" >> Makefile
+echo "CFLAGS  = $cflags" >> Makefile
+echo "LDFLAGS = $ldflags" >> Makefile
+cat Makefile.in >> Makefile

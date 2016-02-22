@@ -1,0 +1,4 @@
+# run rules
+
+run: install
+	$(MAKE) run -C ../rt

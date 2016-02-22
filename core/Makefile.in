@@ -1,0 +1,109 @@
+CC = gcc
+LD = gcc
+AR = ar rcs
+
+MAJ = 0
+MIN = 1
+REV = 0
+
+LIB = libampcore.a
+SO  = libampcore.so
+HDR = amplib.h
+
+OBJ = src/box.o \
+      src/core.o \
+      src/math.o \
+      src/param.o \
+      \
+      src/efx/chain.o \
+      src/efx/clip.o \
+      src/efx/comp.o \
+      src/efx/effect.o \
+      src/efx/gain.o \
+      src/efx/synth.o \
+      \
+      src/handler/handler.o \
+      src/handler/midi.o \
+      \
+      src/instr/mixer.o \
+      src/instr/splice.o \
+      \
+      src/mod/adsr.o \
+      src/mod/mul.o \
+      src/mod/osc.o \
+      src/mod/sum.o \
+      src/mod/trig.o \
+
+INC = src/defs.h \
+      src/efx/defs.h \
+      src/handler/defs.h \
+      src/instr/defs.h \
+      src/mod/defs.h \
+      \
+      src/box.h \
+      src/core.h \
+      src/math.h \
+      src/param.h \
+      \
+      src/efx/chain.h \
+      src/efx/clip.h \
+      src/efx/comp.h \
+      src/efx/effect.h \
+      src/efx/gain.h \
+      src/efx/synth.h \
+      \
+      src/handler/handler.h \
+      src/handler/midi.h \
+      \
+      src/instr/mixer.h \
+      src/instr/splice.h \
+      \
+      src/mod/adsr.h \
+      src/mod/mul.h \
+      src/mod/osc.h \
+      src/mod/sum.h \
+      src/mod/trig.h \
+     
+# build rules
+
+all: $(LIB) $(SO) $(HDR)
+
+$(LIB): $(OBJ)
+	$(AR) $@ $^
+
+$(SO): $(OBJ)
+	$(LD) -o $@ -shared $^ $(LDFLAGS)
+
+%.o: %.c Makefile src/common.h src/debug.h $(INC)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+$(HDR): $(INC) Makefile
+	rm -f $@
+	printf '#ifndef LIBAMPCORE_H\n#define LIBAMPCORE_H\n' >> $@
+	for inc in $(INC) ; do sed -e'1,2d' -e'$$d' $$inc >> $@ ; done
+	printf '#endif\n' >> $@
+
+Makefile: configure Makefile.in $(wildcard config.args)
+	./configure $(ARGS)
+
+# clean rules
+
+clean:
+	rm -rf $(LIB) $(SO) $(HDR) $(OBJ)
+
+# install rules
+
+install: all
+	install --mode 0644 -D $(HDR) $(INCDIR)/$(HDR)
+	install --mode 0644 -D $(LIB) $(LIBDIR)/$(LIB)
+	install --mode 0755 -D $(SO) $(LIBDIR)/$(SO).$(MAJ).$(MIN).$(REV)
+	ln -fs $(SO).$(MAJ).$(MIN).$(REV) "$(LIBDIR)/$(SO)"
+	ln -fs $(SO).$(MAJ).$(MIN).$(REV) "$(LIBDIR)/$(SO).$(MAJ)"
+
+# phony
+
+.PHONY: all install clean run
+
+# extra includes
+
+-include Makefile.user Makefile.proj
