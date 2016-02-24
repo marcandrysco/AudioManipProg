@@ -11,13 +11,18 @@ SO  = libdsp.so
 HDR = libdsp.h
 
 OBJ = src/comp.o \
+      src/filt.o \
       src/osc.o \
+      src/ring.o \
 
 INC = src/defs.h \
       src/math.h \
+      src/mem.h \
       \
       src/comp.h \
+      src/filt.h \
       src/osc.h \
+      src/ring.h \
      
 # build rules
 

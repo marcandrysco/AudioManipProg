@@ -13,11 +13,26 @@ struct ml_expr_t *ml_expr_id(char *id);
 struct ml_expr_t *ml_expr_set(struct ml_set_t set);
 struct ml_expr_t *ml_expr_func(char *var, struct ml_expr_t *expr);
 struct ml_expr_t *ml_expr_app(struct ml_expr_t *func, struct ml_expr_t *value);
+struct ml_expr_t *ml_expr_let(struct ml_expr_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr);
+struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue);
 struct ml_expr_t *ml_expr_value(struct ml_value_t *value);
 
 struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, char **err);
 
 void ml_expr_print(struct ml_expr_t *expr, FILE *file);
+
+
+/**
+ * Delete an expression if non-null.
+ *   @expr: The expression
+ */
+
+static inline void ml_expr_erase(struct ml_expr_t *expr)
+{
+	if(expr != NULL)
+		ml_expr_delete(expr);
+}
+
 
 /*
  * set declarations

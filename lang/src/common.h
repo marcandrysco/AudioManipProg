@@ -19,13 +19,31 @@
 
 #include "debug.h"
 #include "defs.h"
+
 #include "env.h"
 #include "eval.h"
 #include "expr.h"
+#include "match.h"
 #include "parse.h"
 #include "token.h"
 #include "value.h"
 
+
+static inline char *ml_printf(const char *format, ...)
+{
+	va_list args;
+	char *err;
+
+	va_start(args, format);
+	if(vasprintf(&err, format, args) < 0)
+		fprintf(stderr, "Allocation failure. %s.\n", strerror(errno)), abort();
+	va_end(args);
+
+#if DEBUG
+	DBG_memcnt++;
+#endif
+	return err;
+}
 
 static inline void *ml_eprintf(char **err, const char *format, ...)
 {

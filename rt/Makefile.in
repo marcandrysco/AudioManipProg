@@ -7,6 +7,7 @@ OBJ = $(OBJX) \
       \
       src/main.o \
       \
+      src/argv.o \
       src/comm.o \
       src/exec.o \
 
@@ -14,8 +15,9 @@ INC = $(INCX) \
       \
       src/common.h \
       src/debug.h \
-      \
       src/defs.h \
+      \
+      src/argv.h \
       src/comm.h \
       src/exec.h \
      

@@ -42,6 +42,12 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 	case ml_expr_app_e:
 		return ml_expr_app(ml_expr_copy(expr->data.app.func), ml_expr_copy(expr->data.app.value));
 
+	case ml_expr_let_e:
+		return ml_expr_let(ml_expr_copy(expr->data.let.pat), ml_expr_copy(expr->data.let.value), ml_expr_copy(expr->data.let.expr));
+
+	case ml_expr_cond_e:
+		return ml_expr_cond(ml_expr_copy(expr->data.cond.eval), ml_expr_copy(expr->data.cond.ontrue), ml_expr_copy(expr->data.cond.onfalse));
+
 	case ml_expr_value_e:
 		return ml_expr_value(ml_value_copy(expr->data.value));
 	}
@@ -73,6 +79,18 @@ void ml_expr_delete(struct ml_expr_t *expr)
 	case ml_expr_app_e:
 		ml_expr_delete(expr->data.app.func);
 		ml_expr_delete(expr->data.app.value);
+		break;
+
+	case ml_expr_let_e:
+		ml_expr_delete(expr->data.let.pat);
+		ml_expr_delete(expr->data.let.value);
+		ml_expr_delete(expr->data.let.expr);
+		break;
+
+	case ml_expr_cond_e:
+		ml_expr_delete(expr->data.cond.eval);
+		ml_expr_delete(expr->data.cond.ontrue);
+		ml_expr_delete(expr->data.cond.onfalse);
 		break;
 
 	case ml_expr_value_e:
@@ -128,6 +146,32 @@ struct ml_expr_t *ml_expr_func(char *var, struct ml_expr_t *expr)
 struct ml_expr_t *ml_expr_app(struct ml_expr_t *func, struct ml_expr_t *value)
 {
 	return ml_expr_new(ml_expr_app_e, (union ml_expr_u){ .app = { func, value } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+}
+
+/**
+ * Create a let expression.
+ *   @pat: Consumed. The pattern expression.
+ *   @value: Consumed. The value expression.
+ *   @expr: Consumed. The evaluated expression.
+ *   &returns: The expression.
+ */
+
+struct ml_expr_t *ml_expr_let(struct ml_expr_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr)
+{
+	return ml_expr_new(ml_expr_let_e, (union ml_expr_u){ .let = { pat, value, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+}
+
+/**
+ * Create a conditional expression.
+ *   @eval: Consumed. The evaluated expression.
+ *   @ontrue: Consumed. The true expression.
+ *   @onfalse: Consumed. The false expression.
+ *   &returns: The expression.
+ */
+
+struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue)
+{
+	return ml_expr_new(ml_expr_cond_e, (union ml_expr_u){ .cond = { eval, onfalse, ontrue } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
 
 /**
@@ -210,6 +254,9 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 				if(value != NULL) {
 					ml_env_add(sub, strdup(func->data.closure.var), value);
 
+					if(func->data.closure.rec != NULL)
+						ml_env_add(sub, strdup(func->data.closure.rec), ml_value_copy(func));
+
 					value = ml_expr_eval(func->data.closure.expr, sub, err);
 				}
 
@@ -226,6 +273,57 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			ml_value_delete(func);
 
 			return value;
+		}
+
+	case ml_expr_let_e:
+		{
+			struct ml_env_t *sub;
+			struct ml_value_t *value, *ret;
+
+			sub = ml_env_copy(env);
+
+			value = ml_expr_eval(expr->data.let.value, sub, err);
+			if(value == NULL)
+				return NULL;
+
+			if((expr->data.let.pat->type == ml_expr_id_e) && (value->type == ml_value_closure_e)) {
+				struct ml_closure_t closure = ml_closure_copy(value->data.closure);
+
+				if(closure.rec != NULL)
+					free(closure.rec);
+
+				closure.rec = strdup(expr->data.let.pat->data.id);
+				ml_env_add(sub, strdup(expr->data.let.pat->data.id), ml_value_closure(closure));
+
+				ret = ml_expr_eval(expr->data.let.expr, sub, err);
+			}
+			else if(ml_match_pat(sub, expr->data.let.pat, value))
+				ret = ml_expr_eval(expr->data.let.expr, sub, err);
+			else
+				ret = NULL, *err = ml_printf("Match failed.");
+
+			ml_value_delete(value);
+			ml_env_delete(sub);
+
+			return ret;
+		}
+		
+	case ml_expr_cond_e:
+		{
+			struct ml_value_t *value, *ret = NULL;
+
+			value = ml_expr_eval(expr->data.cond.eval, env, err);
+			if(value == NULL)
+				return NULL;
+
+			if(value->type == ml_value_bool_e)
+				ret = ml_expr_eval(value->data.flag ? expr->data.cond.ontrue : expr->data.cond.onfalse, env, err);
+			else
+				*err = ml_printf("Invalid type. Expected 'bool'.");
+
+			ml_value_delete(value);
+
+			return ret;
 		}
 
 	case ml_expr_value_e:
@@ -275,6 +373,26 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 		ml_expr_print(expr->data.app.func, file);
 		fprintf(file, ",");
 		ml_expr_print(expr->data.app.value, file);
+		fprintf(file, ")");
+		break;
+
+	case ml_expr_let_e:
+		fprintf(file, "let(");
+		ml_expr_print(expr->data.let.pat, file);
+		fprintf(file, ",");
+		ml_expr_print(expr->data.let.value, file);
+		fprintf(file, ",");
+		ml_expr_print(expr->data.let.expr, file);
+		fprintf(file, ")");
+		break;
+
+	case ml_expr_cond_e:
+		fprintf(file, "cond(");
+		ml_expr_print(expr->data.cond.eval, file);
+		fprintf(file, ",");
+		ml_expr_print(expr->data.cond.ontrue, file);
+		fprintf(file, ",");
+		ml_expr_print(expr->data.cond.onfalse, file);
 		fprintf(file, ")");
 		break;
 

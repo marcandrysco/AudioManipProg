@@ -23,20 +23,25 @@
 
 #include "debug.h"
 #include "defs.h"
+#include "clk/defs.h"
 #include "efx/defs.h"
 #include "handler/defs.h"
 #include "instr/defs.h"
 #include "mod/defs.h"
+#include "seq/defs.h"
 
 #include "box.h"
 #include "core.h"
 #include "math.h"
 #include "param.h"
 
+#include "clk/basic.h"
+
 #include "efx/chain.h"
 #include "efx/clip.h"
 #include "efx/comp.h"
 #include "efx/effect.h"
+#include "efx/filt.h"
 #include "efx/gain.h"
 #include "efx/synth.h"
 
@@ -44,13 +49,19 @@
 #include "handler/midi.h"
 
 #include "instr/mixer.h"
+#include "instr/pan.h"
 #include "instr/splice.h"
 
 #include "mod/adsr.h"
 #include "mod/mul.h"
 #include "mod/osc.h"
+#include "mod/patch.h"
 #include "mod/sum.h"
 #include "mod/trig.h"
+
+#include "seq/merge.h"
+#include "seq/repeat.h"
+#include "seq/sched.h"
 
 
 static inline char *amp_printf(const char *format, ...)

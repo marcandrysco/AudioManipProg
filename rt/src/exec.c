@@ -3,14 +3,21 @@
 
 /**
  * Engine structure.
+ *   @run, toggle: The run and toggle flag.
  *   @core: The core.
+ *   @clock: The clock.
+ *   @seq: The sequencer.
  *   @instr: The instrument.
  *   @effect: The effect.
  *   @comm: MIDI device communcation.
  */
 
 struct amp_engine_t {
+	bool run, toggle;
 	struct amp_core_t *core;
+
+	struct amp_clock_t clock;
+	struct amp_seq_t seq;
 	struct amp_instr_t instr;
 	struct amp_effect_t effect[2];
 
@@ -36,7 +43,10 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 	struct amp_engine_t *engine;
 
 	engine = malloc(sizeof(struct amp_engine_t));
+	engine->run = engine->toggle = true;//false;
 	engine->core = amp_core_new(96000);
+	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
+	engine->seq = amp_seq_null;
 	engine->instr = amp_instr_null;
 	engine->effect[0] = amp_effect_null;
 	engine->effect[1] = amp_effect_null;
@@ -53,6 +63,8 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 void amp_engine_delete(struct amp_engine_t *engine)
 {
 	amp_comm_delete(engine->comm);
+	amp_clock_delete(engine->clock);
+	amp_seq_erase(engine->seq);
 	amp_instr_erase(engine->instr);
 	amp_effect_erase(engine->effect[0]);
 	amp_effect_erase(engine->effect[1]);
@@ -77,6 +89,15 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	env = amp_core_eval(engine->core, path, &err);
 	if(env == NULL) {
 		fprintf(stderr, "%s\n", err), free(err); return;
+	}
+
+	value = ml_env_lookup(env, "seq");
+	if(value != NULL) {
+		box = amp_unbox_value(value, amp_box_seq_e);
+		if(box != NULL)
+			amp_seq_set(&engine->seq, amp_seq_copy(box->data.seq));
+		else
+			fprintf(stderr, "Type for 'effect' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "instr");
@@ -124,6 +145,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
 {
+	bool quit = true;//false;
 	struct amp_engine_t *engine;
 
 	engine = amp_engine_new(comm);
@@ -131,7 +153,29 @@ void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
 
 	amp_audio_exec(audio, callback, engine);
 
-	fgetc(stdin);
+	while(!quit) {
+		unsigned int argc;
+		char **argv, buf[256];
+
+		printf("> ");
+		if(fgets(buf, sizeof(buf), stdin) == NULL)
+			break;
+
+		argv_parse(buf, &argv, &argc);
+
+		if(argc > 0) {
+			if((strcmp(argv[0], "q") == 0) || (strcmp(argv[0], "quit") == 0) || (strcmp(argv[0], "exit") == 0))
+				quit = true;
+			else if(strcmp(argv[0], "s") == 0) {
+				printf("%s engine.\n", engine->toggle ? "Stopping" : "Starting");
+				engine->toggle ^= true;
+			}
+			else
+				printf("Unknown command '%s'.\n", argv[0]);
+		}
+
+		argv_free(argv);
+	}
 
 	amp_audio_halt(audio);
 	amp_engine_delete(engine);
@@ -149,10 +193,15 @@ static void callback(double **buf, unsigned int len, void *arg)
 {
 	struct amp_event_t event;
 	struct amp_engine_t *engine = arg;
+	struct amp_time_t time[len+1];
 
 	if(len == 0) {
-		printf("xrun\n");
+		//printf("xrun\n");
 		return;
+	}
+
+	if(engine->run != engine->toggle) {
+		engine->run = engine->toggle;
 	}
 
 	while(amp_comm_read(engine->comm, &event)) {
@@ -168,8 +217,10 @@ static void callback(double **buf, unsigned int len, void *arg)
 			amp_effect_info(engine->effect[1], amp_info_action(&action));
 	}
 
+	amp_clock_proc(engine->clock, time, len);
+
 	if(engine->instr.iface != NULL)
-		amp_instr_proc(engine->instr, buf, NULL, len);
+		amp_instr_proc(engine->instr, buf, time, len);
 	else {
 		unsigned int i;
 
@@ -178,8 +229,8 @@ static void callback(double **buf, unsigned int len, void *arg)
 	}
 
 	if(engine->effect[0].iface != NULL)
-		amp_effect_proc(engine->effect[0], buf[0], NULL, len);
+		amp_effect_proc(engine->effect[0], buf[0], time, len);
 
 	if(engine->effect[1].iface != NULL)
-		amp_effect_proc(engine->effect[1], buf[1], NULL, len);
+		amp_effect_proc(engine->effect[1], buf[1], time, len);
 }

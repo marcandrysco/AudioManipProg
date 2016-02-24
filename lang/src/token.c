@@ -56,10 +56,40 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 		break;
 
 	case '=': token = ml_token_equal_e; break;
+
+	case '>':
+		*byte = fgetc(file), tag->off++, tag->col++;
+		switch(*byte) {
+		case '=': token = ml_token_gte_e; break;
+		default: return ml_token_gt_e;
+		}
+
+		break;
+
+	case '<':
+		*byte = fgetc(file), tag->off++, tag->col++;
+		switch(*byte) {
+		case '=': token = ml_token_lte_e; break;
+		default: return ml_token_lt_e;
+		}
+
+		break;
+
 	case ')': token = ml_token_rparen_e; break;
 	case '[': token = ml_token_lbrace_e; break;
 	case ']': token = ml_token_rbrace_e; break;
 	case ',': token = ml_token_comma_e; break;
+	case ';': token = ml_token_semicolon_e; break;
+
+	case ':':
+		*byte = fgetc(file), tag->off++, tag->col++;
+		switch(*byte) {
+		case ':': token = ml_token_cons_e; break;
+		default: return ml_token_colon_e;
+		}
+
+		break;
+
 	case '+': token = ml_token_plus_e; break;
 	case '*': token = ml_token_star_e; break;
 	case '/': token = ml_token_slash_e; break;
@@ -82,6 +112,18 @@ enum ml_token_e ml_token_keyword(const char *str)
 {
 	if(strcmp(str, "let") == 0)
 		return ml_token_let_e;
+	else if(strcmp(str, "in") == 0)
+		return ml_token_in_e;
+	else if(strcmp(str, "match") == 0)
+		return ml_token_match_e;
+	else if(strcmp(str, "with") == 0)
+		return ml_token_with_e;
+	else if(strcmp(str, "if") == 0)
+		return ml_token_if_e;
+	else if(strcmp(str, "then") == 0)
+		return ml_token_then_e;
+	else if(strcmp(str, "else") == 0)
+		return ml_token_else_e;
 	else if(strcmp(str, "fun") == 0)
 		return ml_token_func_e;
 	else

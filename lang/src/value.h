@@ -10,6 +10,7 @@ struct ml_value_t *ml_value_copy(struct ml_value_t *value);
 void ml_value_delete(struct ml_value_t *value);
 
 struct ml_value_t *ml_value_nil(void);
+struct ml_value_t *ml_value_bool(bool flag);
 struct ml_value_t *ml_value_num(double num);
 struct ml_value_t *ml_value_str(char *str);
 struct ml_value_t *ml_value_tuple(struct ml_tuple_t tuple);
@@ -40,6 +41,13 @@ void ml_list_delete(struct ml_list_t list);
 
 void ml_list_prepend(struct ml_list_t *list, struct ml_value_t *value);
 void ml_list_append(struct ml_list_t *list, struct ml_value_t *value);
+struct ml_value_t *ml_list_remove(struct ml_list_t *list, struct ml_link_t *link);
+
+/*
+ * closure declarations
+ */
+
+struct ml_closure_t ml_closure_copy(struct ml_closure_t closure);
 
 static inline struct ml_closure_t ml_closure(struct ml_env_t *env, char *var, char *rec, struct ml_expr_t *expr)
 {

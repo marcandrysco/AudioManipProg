@@ -189,7 +189,8 @@ bool amp_sum_proc(struct amp_sum_t *sum, double *buf, struct amp_time_t *time, u
 	struct inst_t *inst;
 	double tmp[len];
 
-		dsp_zero_d(buf, len);
+	dsp_zero_d(buf, len);
+
 	for(inst = sum->head; inst != NULL; inst = inst->next) {
 		dsp_zero_d(tmp, len);
 		cont |= amp_param_proc(inst->param, tmp, time, len);

@@ -31,6 +31,9 @@ struct ml_value_t *ml_value_copy(struct ml_value_t *value)
 	case ml_value_nil_e:
 		return ml_value_nil();
 
+	case ml_value_bool_e:
+		return ml_value_bool(value->data.flag);
+
 	case ml_value_num_e:
 		return ml_value_num(value->data.num);
 
@@ -44,18 +47,7 @@ struct ml_value_t *ml_value_copy(struct ml_value_t *value)
 		return ml_value_list(ml_list_copy(value->data.list));
 
 	case ml_value_closure_e:
-		{
-			struct ml_env_t *env;
-			char *var, *rec;
-			struct ml_expr_t *expr;
-
-			env = ml_env_copy(value->data.closure.env);
-			var = strdup(value->data.closure.var);
-			rec = value->data.closure.rec ? strdup(value->data.closure.rec) : NULL;
-			expr = ml_expr_copy(value->data.closure.expr);
-
-			return ml_value_closure((struct ml_closure_t){ env, var, rec, expr });
-		}
+		return ml_value_closure(ml_closure_copy(value->data.closure));
 
 	case ml_value_box_e:
 		return ml_value_box(ml_box_copy(value->data.box));
@@ -76,6 +68,7 @@ void ml_value_delete(struct ml_value_t *value)
 {
 	switch(value->type) {
 	case ml_value_nil_e:
+	case ml_value_bool_e:
 	case ml_value_num_e:
 	case ml_value_impl_e:
 		break;
@@ -119,6 +112,17 @@ void ml_value_delete(struct ml_value_t *value)
 struct ml_value_t *ml_value_nil(void)
 {
 	return ml_value_new(ml_value_nil_e, (union ml_value_u){  });
+}
+
+/**
+ * Create a boolean value.
+ *   @num: The number.
+ *   &returns: The value.
+ */
+
+struct ml_value_t *ml_value_bool(bool flag)
+{
+	return ml_value_new(ml_value_bool_e, (union ml_value_u){ .flag = flag });
 }
 
 /**
@@ -210,6 +214,10 @@ void ml_value_print(struct ml_value_t *value, FILE *file)
 	switch(value->type) {
 	case ml_value_nil_e:
 		fprintf(file, "nil");
+		break;
+
+	case ml_value_bool_e:
+		fprintf(file, "bool(%s)", value->data.flag ? "true" : "false");
 		break;
 
 	case ml_value_num_e:
@@ -369,7 +377,7 @@ struct ml_list_t ml_list_copy(struct ml_list_t list)
 	copy = ml_list_new();
 
 	for(link = list.head; link != NULL; link = link->next)
-		ml_list_append(&copy, link->value);
+		ml_list_append(&copy, ml_value_copy(link->value));
 
 	return copy;
 }
@@ -426,4 +434,51 @@ void ml_list_append(struct ml_list_t *list, struct ml_value_t *value)
 	link->next = NULL;
 	*(list->tail ? &list->tail->next : &list->head) = link;
 	list->tail = link;
+}
+
+/**
+ * Remove a link from the list.
+ *   @list: The list.
+ *   @link: The link.
+ *   &returns: The removed value.
+ */
+
+struct ml_value_t *ml_list_remove(struct ml_list_t *list, struct ml_link_t *link)
+{
+	struct ml_value_t *value = link->value;
+
+	if(link->next == NULL)
+		list->tail = link->prev;
+	else
+		link->next->prev = link->prev;
+
+	if(link->prev == NULL)
+		list->head = link->next;
+	else
+		link->prev->next = link->next;
+
+	free(link);
+
+	return value;
+}
+
+
+/**
+ * Copy a closure.
+ *   @closure: The closure.
+ *   &returns: The copy.
+ */
+
+struct ml_closure_t ml_closure_copy(struct ml_closure_t closure)
+{
+	struct ml_env_t *env;
+	char *var, *rec;
+	struct ml_expr_t *expr;
+
+	env = ml_env_copy(closure.env);
+	var = strdup(closure.var);
+	rec = closure.rec ? strdup(closure.rec) : NULL;
+	expr = ml_expr_copy(closure.expr);
+
+	return (struct ml_closure_t){ env, var, rec, expr };
 }

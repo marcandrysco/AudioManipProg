@@ -103,6 +103,7 @@ struct ml_list_t {
 /**
  * Value type enumerator.
  *   @ml_value_num_e: Number.
+ *   @ml_value_bool_e: Boolean.
  *   @ml_value_str_e: String.
  *   @ml_value_tuple_e: Tuple.
  *   @ml_value_list_e: List.
@@ -113,6 +114,7 @@ struct ml_list_t {
 
 enum ml_value_e {
 	ml_value_nil_e,
+	ml_value_bool_e,
 	ml_value_num_e,
 	ml_value_str_e,
 	ml_value_tuple_e,
@@ -124,6 +126,7 @@ enum ml_value_e {
 
 /**
  * Value data union.
+ *   @flag: Boolean flag.
  *   @num: Number.
  *   @str: The string.
  *   @tuple: Tuple.
@@ -134,6 +137,7 @@ enum ml_value_e {
  */
 
 union ml_value_u {
+	bool flag;
 	double num;
 	char *str;
 	struct ml_tuple_t tuple;
@@ -187,11 +191,31 @@ struct ml_app_t {
 };
 
 /**
+ * Let structure.
+ *   @pat, value, expr: The pattern, value and expression.
+ */
+
+struct ml_let_t {
+	struct ml_expr_t *pat, *value, *expr;
+};
+
+/**
+ * Condition structure.
+ *   @eval, ontrue, onfalse: The evaluation, true, and false expressions.
+ */
+
+struct ml_cond_t {
+	struct ml_expr_t *eval, *ontrue, *onfalse;
+};
+
+/**
  * Expression type enumerator.
  *   @ml_expr_id_e: Identifier.
  *   @ml_expr_set_e: Set.
  *   @ml_expr_func_e: Function.
  *   @ml_expr_app_e: Application.
+ *   @ml_expr_let_e: Let.
+ *   @ml_expr_cone_e: Conditional.
  *   @ml_expr_value_e: Constant value.
  */
 
@@ -200,6 +224,8 @@ enum ml_expr_e {
 	ml_expr_set_e,
 	ml_expr_func_e,
 	ml_expr_app_e,
+	ml_expr_let_e,
+	ml_expr_cond_e,
 	ml_expr_value_e
 };
 
@@ -212,6 +238,8 @@ enum ml_expr_e {
  *   @impl: Native implementation.
  *   @closure: Closure.
  *   @app: Application.
+ *   @let: Let.
+ *   @cond: Conditional.
  *   @value: Constant value.
  */
 
@@ -220,6 +248,8 @@ union ml_expr_u {
 	struct ml_set_t set;
 	struct ml_func_t func;
 	struct ml_app_t app;
+	struct ml_let_t let;
+	struct ml_cond_t cond;
 	struct ml_value_t *value;
 };
 

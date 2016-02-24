@@ -16,6 +16,8 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 	ml_env_add(core->env, strdup("rate"), ml_value_num(rate));
 
+	ml_env_add(core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
+
 	ml_env_add(core->env, strdup("Chain"), ml_value_impl(amp_chain_make));
 	ml_env_add(core->env, strdup("Clip"), ml_value_impl(amp_clip_make));
 	ml_env_add(core->env, strdup("Comp"), ml_value_impl(amp_comp_make));
@@ -30,12 +32,14 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(core->env, strdup("ADSR"), ml_value_impl(amp_adsr_make));
 	ml_env_add(core->env, strdup("Mul"), ml_value_impl(amp_mul_make));
 	ml_env_add(core->env, strdup("Osc"), ml_value_impl(amp_osc_make));
+	ml_env_add(core->env, strdup("Patch"), ml_value_impl(amp_patch_make));
 	ml_env_add(core->env, strdup("Sum"), ml_value_impl(amp_sum_make));
 	ml_env_add(core->env, strdup("Trig"), ml_value_impl(amp_trig_make));
 
-	//char str[256];
-	//amp_match_str(str, sizeof(str), "(V,(V,V))");
-	//printf("[%s]\n", str);
+	ml_env_add(core->env, strdup("Sched"), ml_value_impl(amp_sched_make));
+
+	ml_env_add(core->env, strdup("Lpf"), ml_value_impl(amp_lpf_make));
+	ml_env_add(core->env, strdup("Hpf"), ml_value_impl(amp_hpf_make));
 
 	return core;
 }

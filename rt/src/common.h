@@ -27,6 +27,7 @@
 #include "debug.h"
 #include "defs.h"
 
+#include "argv.h"
 #include "comm.h"
 #include "exec.h"
 

@@ -84,6 +84,7 @@ struct ml_value_t *amp_clip_make(struct ml_value_t *value, struct ml_env_t *env,
 	struct amp_value_t maxlo, satlo, sathi, maxhi;
 
 	*err = amp_match_unpack(value, "(V,V,V,V)", &maxlo, &satlo, &sathi, &maxhi);
+
 	return (*err == NULL) ? amp_pack_effect((struct amp_effect_t){ amp_clip_new(maxlo, satlo, sathi, maxhi), &amp_clip_iface }) : NULL;
 }
 
@@ -111,7 +112,7 @@ void amp_clip_info(struct amp_clip_t *clip, struct amp_info_t info)
 
 static inline double dsp_clip_d(double val, double maxlo, double satlo, double sathi, double maxhi)
 {
-	if(val >= 0.0) {
+	if(val >= satlo) {
 		double h = 2.0 * maxhi - sathi;
 		double a = 1.0 / (4.0 * (sathi - maxhi));
 

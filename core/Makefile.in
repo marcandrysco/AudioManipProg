@@ -15,10 +15,13 @@ OBJ = src/box.o \
       src/math.o \
       src/param.o \
       \
+      src/clk/basic.o \
+      \
       src/efx/chain.o \
       src/efx/clip.o \
       src/efx/comp.o \
       src/efx/effect.o \
+      src/efx/filt.o \
       src/efx/gain.o \
       src/efx/synth.o \
       \
@@ -26,19 +29,29 @@ OBJ = src/box.o \
       src/handler/midi.o \
       \
       src/instr/mixer.o \
+      src/instr/pan.o \
       src/instr/splice.o \
       \
       src/mod/adsr.o \
       src/mod/mul.o \
       src/mod/osc.o \
+      src/mod/patch.o \
       src/mod/sum.o \
       src/mod/trig.o \
+      \
+      src/seq/merge.o \
+      src/seq/repeat.o \
+      src/seq/sched.o \
 
 INC = src/defs.h \
+      src/clk/defs.h \
       src/efx/defs.h \
       src/handler/defs.h \
       src/instr/defs.h \
       src/mod/defs.h \
+      src/seq/defs.h \
+      \
+      src/clk/basic.h \
       \
       src/box.h \
       src/core.h \
@@ -49,6 +62,7 @@ INC = src/defs.h \
       src/efx/clip.h \
       src/efx/comp.h \
       src/efx/effect.h \
+      src/efx/filt.h \
       src/efx/gain.h \
       src/efx/synth.h \
       \
@@ -56,13 +70,19 @@ INC = src/defs.h \
       src/handler/midi.h \
       \
       src/instr/mixer.h \
+      src/instr/pan.h \
       src/instr/splice.h \
       \
       src/mod/adsr.h \
       src/mod/mul.h \
       src/mod/osc.h \
+      src/mod/patch.h \
       src/mod/sum.h \
       src/mod/trig.h \
+      \
+      src/seq/merge.h \
+      src/seq/repeat.h \
+      src/seq/sched.h \
      
 # build rules
 

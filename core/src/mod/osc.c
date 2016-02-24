@@ -141,9 +141,15 @@ bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, u
 		break;
 
 	case amp_osc_tri_e:
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_osc_tri(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)));
+
 		break;
 
 	case amp_osc_square_e:
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_osc_square(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)));
+
 		break;
 	}
 

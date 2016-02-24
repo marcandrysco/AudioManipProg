@@ -14,6 +14,7 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
  */
 
 struct amp_instr_t amp_instr_null = { NULL, NULL };
+struct amp_seq_t amp_seq_null = { NULL, NULL };
 
 
 /**
@@ -41,10 +42,12 @@ struct amp_box_t *amp_box_new(enum amp_box_e type, union amp_box_u data)
 struct amp_box_t *amp_box_copy(struct amp_box_t *box)
 {
 	switch(box->type) {
+	case amp_box_clock_e: return amp_box_clock(amp_clock_copy(box->data.clock));
 	case amp_box_effect_e: return amp_box_effect(amp_effect_copy(box->data.effect));
 	case amp_box_handler_e: return amp_box_handler(amp_handler_copy(box->data.handler));
 	case amp_box_instr_e: return amp_box_instr(amp_instr_copy(box->data.instr));
 	case amp_box_module_e: return amp_box_module(amp_module_copy(box->data.module));
+	case amp_box_seq_e: return amp_box_seq(amp_seq_copy(box->data.seq));
 	}
 
 	fprintf(stderr, "Invalid box type.\n"), abort();
@@ -58,15 +61,28 @@ struct amp_box_t *amp_box_copy(struct amp_box_t *box)
 void amp_box_delete(struct amp_box_t *box)
 {
 	switch(box->type) {
+	case amp_box_clock_e: amp_clock_delete(box->data.clock); break;
 	case amp_box_effect_e: amp_effect_delete(box->data.effect); break;
 	case amp_box_handler_e: amp_handler_delete(box->data.handler); break;
 	case amp_box_instr_e: amp_instr_delete(box->data.instr); break;
 	case amp_box_module_e: amp_module_delete(box->data.module); break;
+	case amp_box_seq_e: amp_seq_delete(box->data.seq); break;
 	}
 
 	free(box);
 }
 
+
+/**
+ * Create a boxed clock.
+ *   @clock: The clock.
+ *   &returns: The box.
+ */
+
+struct amp_box_t *amp_box_clock(struct amp_clock_t clock)
+{
+	return amp_box_new(amp_box_clock_e, (union amp_box_u){ .clock = clock });
+}
 
 /**
  * Create a boxed effect.
@@ -112,6 +128,28 @@ struct amp_box_t *amp_box_module(struct amp_module_t module)
 	return amp_box_new(amp_box_module_e, (union amp_box_u){ .module = module });
 }
 
+/**
+ * Create a boxed sequencer.
+ *   @seq: The sequencer.
+ *   &returns: The box.
+ */
+
+struct amp_box_t *amp_box_seq(struct amp_seq_t seq)
+{
+	return amp_box_new(amp_box_seq_e, (union amp_box_u){ .seq = seq });
+}
+
+
+/**
+ * Pack a clock into a value.
+ *   @clock: The clock.
+ *   &returns: The value.
+ */
+
+struct ml_value_t *amp_pack_clock(struct amp_clock_t clock)
+{
+	return amp_box_value(amp_box_clock(clock));
+}
 
 /**
  * Pack an effect into a value.
@@ -148,13 +186,24 @@ struct ml_value_t *amp_pack_instr(struct amp_instr_t instr)
 
 /**
  * Pack a module into a value.
- *   @instr: The module.
+ *   @module: The module.
  *   &returns: The value.
  */
 
 struct ml_value_t *amp_pack_module(struct amp_module_t module)
 {
 	return amp_box_value(amp_box_module(module));
+}
+
+/**
+ * Pack a sequencer into a value.
+ *   @seq: The sequencer.
+ *   &returns: The value.
+ */
+
+struct ml_value_t *amp_pack_seq(struct amp_seq_t seq)
+{
+	return amp_box_value(amp_box_seq(seq));
 }
 
 

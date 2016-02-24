@@ -148,6 +148,78 @@ struct ml_value_t *ml_eval_mod(struct ml_value_t *value, struct ml_env_t *env, c
 }
 
 /**
+ * Compare two values as with greater than.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_gt(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double left, right;
+
+	if(!get_num2(value, &left, &right))
+		fail("Type error. Comparison requires type '(Num, Num)'.");
+
+	return ml_value_bool(left > right);
+}
+
+/**
+ * Compare two values as with greater than or equal.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_gte(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double left, right;
+
+	if(!get_num2(value, &left, &right))
+		fail("Type error. Comparison requires type '(Num, Num)'.");
+
+	return ml_value_bool(left >= right);
+}
+
+/**
+ * Compare two values as with less than.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_lt(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double left, right;
+
+	if(!get_num2(value, &left, &right))
+		fail("Type error. Comparison requires type '(Num, Num)'.");
+
+	return ml_value_bool(left <= right);
+}
+
+/**
+ * Compare two values as with less than or equal.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_lte(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double left, right;
+
+	if(!get_num2(value, &left, &right))
+		fail("Type error. Comparison requires type '(Num, Num)'.");
+
+	return ml_value_bool(left < right);
+}
+
+/**
  * Create a list.
  *   @value: Consumed. The value.
  *   @env: The environment.
@@ -167,6 +239,37 @@ struct ml_value_t *ml_eval_list(struct ml_value_t *value, struct ml_env_t *env, 
 
 	for(i = 0; i < value->data.tuple.len; i++)
 		ml_list_append(&list, ml_value_copy(value->data.tuple.value[i]));
+
+	ml_value_delete(value);
+
+	return ml_value_list(list);
+}
+
+/**
+ * Evaluate a cons.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_cons(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_list_t list;
+	struct ml_tuple_t tuple;
+
+	if(value->type != ml_value_tuple_e)
+		fail("Cons evaluation requires tuple.");
+
+	tuple = value->data.tuple;
+	if(tuple.len != 2)
+		fail("Cons requires a tuple of length two.");
+
+	if(tuple.value[1]->type != ml_value_list_e)
+		fail("Cannot cons onto non-list type.");
+
+	list = ml_list_copy(tuple.value[1]->data.list);
+	ml_list_prepend(&list, ml_value_copy(tuple.value[0]));
 
 	ml_value_delete(value);
 

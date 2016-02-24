@@ -4,6 +4,7 @@
 /**
  * Parameter type enumerator.
  *   @amp_param_flt_e: Floating-point value.
+ *   @amp_param_ctrl_e: Control.
  *   @amp_param_handler_e: MIDI event handler.
  *   @amp_param_module_e: Module.
  */
@@ -11,17 +12,20 @@
 enum amp_param_e {
 	amp_param_flt_e,
 	amp_param_handler_e,
+	amp_param_ctrl_e,
 	amp_param_module_e
 };
 
 /**
  * Parameter data union.
  *   @handler: The handler.
+ *   @ctrl: MIDI control.
  *   @module: The module.
  */
 
 union amp_param_u {
 	struct amp_handler_t handler;
+	struct amp_ctrl_t *ctrl;
 	struct amp_module_t module;
 };
 
@@ -43,11 +47,14 @@ struct amp_param_t {
  * parameter declarations
  */
 
+struct amp_ctrl_t;
+
 struct amp_param_t *amp_param_new(double flt, enum amp_param_e type, union amp_param_u data);
 struct amp_param_t *amp_param_copy(struct amp_param_t *param);
 void amp_param_delete(struct amp_param_t *param);
 
 struct amp_param_t *amp_param_flt(double flt);
+struct amp_param_t *amp_param_ctrl(struct amp_ctrl_t *ctrl);
 struct amp_param_t *amp_param_handler(struct amp_handler_t handler);
 struct amp_param_t *amp_param_module(struct amp_module_t module);
 

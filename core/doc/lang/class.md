@@ -1,58 +1,125 @@
 AmpCore Classes
 ===============
 
-The classes provided by AmpCore are listed below:
+The classes provided by AmpCore:
 
-* [Value](#value)
-* [Handler](#handler)
+* [Clock](#clock)
 * [Effect](#effect)
-* [Module](#module)
 * [Instrument](#instr)
+* [Module](#module)
+* [Parameter](#param)
+* [Sequencer](#seq)
+
+The enumerations used by AmpCore:
+
+* [osc-type](#osc-type)
 
 The set of classes can be extended through plugins. Additional classes should
 be careful to not clash with existing classes.
 
-## Value
+## Clock
 
-The `Value` class is used for providing either a constant `number` or a
-user-controllable `Handler`.
+The `Clock` class generates the clock signal that is seen by every processing
+element. The core library only provides a single, basic clock.
 
-    Values = number
-           | Handler
+    Clock = Basic (num,num,[])
 
-When given a `number`, the consumer component will use the value as a constant
-that will not vary over the course of a program. When given a `Handler`, the
-value may change through a user interface or MIDI device. Unlike a `Signal`,
-`Values` do not provide a continuous change and are therefore unsuitable for
-components such as synthesizers.
+AmpCore provides the following set of `Clock` instances:
 
-## Handler
-
-The `Handler` class provides a mechanism for processing MIDI events. The main
-instance consists of the `Ctrl` handler for MIDI events, although a number of
-other handlers can preprocess the event.
-
-    Handler = Ctrl
+  * [Basic](clk/basic.md) generates a basic clock.
 
 ## Effect
 
-The `Effect` class performs simple processing of a mono signal. All parameters
-to an effect are fixed values that may be changed using MIDI events. This
-contrasts the `Module` class where parameters may be continuously changing
-values.
+The `Effect` class performs simple processing of a mono signal. Most effects
+take `Param`s as input that can be manipulated at run time. Because every
+effects takes an input and produces an output, they can be chained together
+with the `Chain` instance.
 
     Effect = Chain [Effect]
-           | Clip (Value, Value, Value, Value)
-           | Comp (Value, Value, Value, Value)
-           | Gain (Value)
+           | Clip (Param, Param, Param, Param)
+           | Comp (Param, Param, Param, Param)
+           | Gain (Param)
+           | Gen (Module)
+           | Synth (int, Module)
 
-## Module
+AmpCore provides the following set of `Effect` instances:
 
+  * [Chain](efx/chain.md) processes a sequence of `Effects`.
+  * [Clip](efx/clip.md) soft clips the input.
+  * [Comp](efx/comp.md) performs dynamic range compression.
+  * [Gain](efx/gain.md) performs linear scaling of the input.
+  * [Gen](efx/gen.md) discards input and generates output from a `Module`.
+  * [Synth](efx/synth.md) generates synthesized output.
 
 ## Instrument
 
-The `Instr` or Instrument class
+The `Instr` or Instrument class processes data on a stereo signal. The
+instrument is the base class for processing audio in real time.
 
     Instr = Mixer [Instr]
           | Pan ((Value, Value), (Value, Value))
           | Splice (Effect, (Num, Num), (Num, Num))
+
+AmpCore provides the following set of `Instr` instances:
+
+  * [Mixer](instr/mixer.md) sums together a set of instruments.
+  * [Pan](instr/pan.md) performs a delay and gain panning of an instrument.
+  * [Splice](instr/splice.md) splices together a stereo instrument into an
+      mono effect
+
+## Module
+
+The `Module` class generates a mono signal from a set of parameters. Note that
+the `Module` class differs from the `Effect` class in that all effects process
+given an input. In order to use an effect as a module, the `Patch` instance
+generates a signal given an input `Module` and a processing `Effect`.
+
+    Module = ADSR ((Param, Param), (Param, Param, Param, Param))
+           | Mul (Param, Param)
+           | Osc (osc-type, Param, Param)
+           | Patch (Module, Effect)
+           | Trig ()
+           | Sum [Param]
+
+AmpCore provides the following set of `Module` instances:
+
+  * [ADSR](mod/adsr.md) generates an attack-decay-sustain-release envelope.
+  * [Mul](mod/mul.md) multiplies a pair of signals.
+  * [Osc](mod/osc.md) generates an oscillating output.
+  * [Patch](mod/patch.md) uses an `Effect` and `Module` as a generator.
+  * [Trig](mod/trig.md) creates a signal based off a note event.
+  * [Sum](mod/sum.d) performs an arithmetic sum of signals.
+
+## Parameter
+
+The `Param` or Parameter class is used as an input for most effects and
+modules. A parameter can be either a constant `number`, a time-varying `Midi`
+input from a MIDI controller, or a the output from another module.
+
+    Param = number
+          | Midi
+          | Module
+
+For further details on the `Module` class, see the the [Module](#module)
+subsection.
+
+## Sequencer
+
+The `Seq` or Sequencer class
+
+## Enumerations
+
+Some instances require enumerated values, typically for selecting a type. Each
+enumeration is parsed from a string, each of which are listed in the following
+subsections.
+
+### osc-type
+
+The oscillator type determines the waveform generated by an oscillator
+instance `Osc`. Although the options lack oscillators such as "saw" and
+"pulse", these waveforms are generating using "tri" and "square" with a warped
+input as descrbied in the [Osc](mod/osc.md) page.
+
+    osc-type = "sine"
+             | "tri"
+             | "square"
