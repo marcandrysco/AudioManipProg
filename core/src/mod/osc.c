@@ -6,6 +6,7 @@
  *   @t: The time.
  *   @type: The type.
  *   @freq, warp: The frequency and warping.
+ *   @prev: The previous warp.
  *   @rate: Sample rate.
  */
 
@@ -13,6 +14,7 @@ struct amp_osc_t {
 	double t;
 	enum amp_osc_e type;
 	struct amp_param_t *freq, *warp;
+	double prev;
 
 	unsigned int rate;
 };
@@ -48,6 +50,7 @@ struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, str
 	osc->freq = freq;
 	osc->warp = warp;
 	osc->rate = rate;
+	osc->prev = 0.0;
 
 	return osc;
 }
@@ -128,36 +131,50 @@ bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, u
 	double t, freq[len];
 	unsigned int i, rate;
 
-	t = osc->t;
-	rate = osc->rate;
+	if(amp_param_isfast(osc->warp)) {
+		double warp;
 
-	amp_param_proc(osc->freq, freq, time, len);
+		rate = osc->rate;
+		warp = osc->warp->flt;
+		t = dsp_osc_unwarp(dsp_osc_warp(osc->t, osc->prev), warp);
 
-	switch(osc->type) {
-	case amp_osc_sine_e:
-		for(i = 0; i < len; i++)
-			buf[i] = dsp_osc_sine_f(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)));
+		amp_param_proc(osc->freq, freq, time, len);
 
-		break;
+		switch(osc->type) {
+		case amp_osc_sine_e:
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_osc_sine_f(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
 
-	case amp_osc_tri_e:
-		for(i = 0; i < len; i++)
-			buf[i] = dsp_osc_tri(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)));
+			break;
 
-		break;
+		case amp_osc_tri_e:
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_osc_tri(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
 
-	case amp_osc_square_e:
-		for(i = 0; i < len; i++)
-			buf[i] = dsp_osc_square(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)));
+			break;
 
-		break;
+		case amp_osc_square_e:
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_osc_square(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
+
+			break;
+		}
+
+		osc->t = t;
+		osc->prev = warp;
 	}
-
-	osc->t = t;
+	else {
+	}
 
 	return false;
 }
 
+
+/**
+ * Convert a string oscillator type into a value.
+ *   @str: The string.
+ *   &returns: The enumerated value.
+ */
 
 int amp_osc_type(const char *str)
 {

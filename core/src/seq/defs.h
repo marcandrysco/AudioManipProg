@@ -1,14 +1,38 @@
 #ifndef SEQ_DEFS_H
 #define SEQ_DEFS_H
 
+
+/*
+ * queue declarations
+ */
+
+#define AMP_QUEUE_LEN 64
+
 /**
  * Queue structure.
+ *   @idx: The index.
  */
 
 struct amp_queue_t {
-	struct amp_action_t arr[64];
-	unsigned int i;
+	unsigned int idx;
+	struct amp_action_t arr[AMP_QUEUE_LEN];
 };
+
+static inline void amp_queue_init(struct amp_queue_t *queue)
+{
+	queue->idx = 0;
+}
+
+static inline bool amp_queue_add(struct amp_queue_t *queue, struct amp_action_t action)
+{
+	if(queue->idx == AMP_QUEUE_LEN)
+		return false;
+
+	queue->arr[queue->idx++] = action;
+
+	return true;
+}
+
 
 
 /**

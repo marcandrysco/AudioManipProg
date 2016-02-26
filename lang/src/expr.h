@@ -11,9 +11,9 @@ void ml_expr_delete(struct ml_expr_t *expr);
 
 struct ml_expr_t *ml_expr_id(char *id);
 struct ml_expr_t *ml_expr_set(struct ml_set_t set);
-struct ml_expr_t *ml_expr_func(char *var, struct ml_expr_t *expr);
+struct ml_expr_t *ml_expr_func(struct ml_pat_t *pat, struct ml_expr_t *expr);
 struct ml_expr_t *ml_expr_app(struct ml_expr_t *func, struct ml_expr_t *value);
-struct ml_expr_t *ml_expr_let(struct ml_expr_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr);
+struct ml_expr_t *ml_expr_let(struct ml_pat_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr);
 struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue);
 struct ml_expr_t *ml_expr_value(struct ml_value_t *value);
 

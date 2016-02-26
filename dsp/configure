@@ -42,7 +42,7 @@ prefix='/usr/local'
 bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
-cflags='-O2 -g -fpic -ffast-math -Wall -Werror -I$(INCDIR) '
+cflags='-O2 -g -fpic -ffast-math -Wall -I$(INCDIR) '
 ldflags='-lm -ffast-math -L$(LIBDIR) '
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
@@ -57,7 +57,7 @@ while [ "$#" -gt 0 ] ; do
       prefix="${1#*=}" ; shift
       ;;
     --debug)
-      cflags="$cflags -DDEBUG" ; shift
+      cflags="$cflags-Werror -DDEBUG " ; shift
       ;;
     *)
       printf "unknown option '%s'\n" "$1" >&2 ; exit 1

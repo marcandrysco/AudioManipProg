@@ -25,11 +25,12 @@
 #include "expr.h"
 #include "match.h"
 #include "parse.h"
+#include "print.h"
 #include "token.h"
 #include "value.h"
 
 
-static inline char *ml_printf(const char *format, ...)
+static inline char *ml_aprintf(const char *format, ...)
 {
 	va_list args;
 	char *err;

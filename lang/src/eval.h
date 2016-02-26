@@ -17,5 +17,12 @@ struct ml_value_t *ml_eval_lt(struct ml_value_t *value, struct ml_env_t *env, ch
 struct ml_value_t *ml_eval_lte(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_list(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_cons(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_concat(struct ml_value_t *value, struct ml_env_t *env, char **err);
+
+struct ml_value_t *ml_eval_exp(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_log(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_floor(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_ceil(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_round(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 #endif

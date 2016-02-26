@@ -37,13 +37,13 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 		return ml_expr_set(ml_set_copy(expr->data.set));
 
 	case ml_expr_func_e:
-		return ml_expr_func(strdup(expr->data.func.var), ml_expr_copy(expr->data.func.expr));
+		return ml_expr_func(ml_pat_copy(expr->data.func.pat), ml_expr_copy(expr->data.func.expr));
 
 	case ml_expr_app_e:
 		return ml_expr_app(ml_expr_copy(expr->data.app.func), ml_expr_copy(expr->data.app.value));
 
 	case ml_expr_let_e:
-		return ml_expr_let(ml_expr_copy(expr->data.let.pat), ml_expr_copy(expr->data.let.value), ml_expr_copy(expr->data.let.expr));
+		return ml_expr_let(ml_pat_copy(expr->data.let.pat), ml_expr_copy(expr->data.let.value), ml_expr_copy(expr->data.let.expr));
 
 	case ml_expr_cond_e:
 		return ml_expr_cond(ml_expr_copy(expr->data.cond.eval), ml_expr_copy(expr->data.cond.ontrue), ml_expr_copy(expr->data.cond.onfalse));
@@ -72,7 +72,7 @@ void ml_expr_delete(struct ml_expr_t *expr)
 		break;
 
 	case ml_expr_func_e:
-		free(expr->data.func.var);
+		ml_pat_delete(expr->data.func.pat);
 		ml_expr_delete(expr->data.func.expr);
 		break;
 
@@ -82,7 +82,7 @@ void ml_expr_delete(struct ml_expr_t *expr)
 		break;
 
 	case ml_expr_let_e:
-		ml_expr_delete(expr->data.let.pat);
+		ml_pat_delete(expr->data.let.pat);
 		ml_expr_delete(expr->data.let.value);
 		ml_expr_delete(expr->data.let.expr);
 		break;
@@ -126,14 +126,14 @@ struct ml_expr_t *ml_expr_set(struct ml_set_t set)
 
 /**
  * Create a function expression.
- *   @var: Consumed. The variable.
+ *   @pat: Consumed. The pattern.
  *   @expr: Consumed. The expression.
  *   &returns: The expression.
  */
 
-struct ml_expr_t *ml_expr_func(char *var, struct ml_expr_t *expr)
+struct ml_expr_t *ml_expr_func(struct ml_pat_t *pat, struct ml_expr_t *expr)
 {
-	return ml_expr_new(ml_expr_func_e, (union ml_expr_u){ .func = { var, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_func_e, (union ml_expr_u){ .func = { pat, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
 
 /**
@@ -156,7 +156,7 @@ struct ml_expr_t *ml_expr_app(struct ml_expr_t *func, struct ml_expr_t *value)
  *   &returns: The expression.
  */
 
-struct ml_expr_t *ml_expr_let(struct ml_expr_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr)
+struct ml_expr_t *ml_expr_let(struct ml_pat_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr)
 {
 	return ml_expr_new(ml_expr_let_e, (union ml_expr_u){ .let = { pat, value, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
@@ -185,6 +185,18 @@ struct ml_expr_t *ml_expr_value(struct ml_value_t *value)
 	return ml_expr_new(ml_expr_value_e, (union ml_expr_u){ .value = value }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
 
+/*
+void ml_vprintf(const char *restrict format, va_list args)
+{
+}
+
+void ml_printf(const char *restrict format, ...)
+{
+	va_start(args, format);
+	ml_vprintf(format, args);
+	va_end(args);
+}
+*/
 
 /**
  * Evaluate an expression.
@@ -236,11 +248,10 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 		}
 
 	case ml_expr_func_e:
-		return ml_value_closure(ml_closure(ml_env_copy(env), strdup(expr->data.func.var), NULL, ml_expr_copy(expr->data.func.expr)));
+		return ml_value_closure(ml_closure(ml_env_copy(env), ml_pat_copy(expr->data.func.pat), NULL, ml_expr_copy(expr->data.func.expr)));
 
 	case ml_expr_app_e:
 		{
-			struct ml_env_t *sub;
 			struct ml_value_t *func, *value;
 
 			func = ml_expr_eval(expr->data.app.func, env, err);
@@ -248,16 +259,26 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 				return NULL;
 
 			if(func->type == ml_value_closure_e) {
+				struct ml_pat_t *pat;
+				struct ml_env_t *sub;
+
+				pat = func->data.closure.pat;
 				sub = ml_env_copy(func->data.closure.env);
 
 				value = ml_expr_eval(expr->data.app.value, env, err);
 				if(value != NULL) {
-					ml_env_add(sub, strdup(func->data.closure.var), value);
+					if(!ml_pat_match(sub, pat, value))
+						fail("Cannot match pattern.");
+
+					ml_value_delete(value);
 
 					if(func->data.closure.rec != NULL)
 						ml_env_add(sub, strdup(func->data.closure.rec), ml_value_copy(func));
 
-					value = ml_expr_eval(func->data.closure.expr, sub, err);
+					if(pat->next)
+						value = ml_value_closure(ml_closure(ml_env_copy(sub), ml_pat_copy(pat->next), NULL, ml_expr_copy(func->data.closure.expr)));
+					else
+						value = ml_expr_eval(func->data.closure.expr, sub, err);
 				}
 
 				ml_env_delete(sub);
@@ -276,34 +297,45 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 		}
 
 	case ml_expr_let_e:
-		{
+		if(expr->data.let.pat->next != NULL) {
+			struct ml_env_t *sub;
+			struct ml_value_t *ret;
+			struct ml_closure_t closure;
+			const char *id = expr->data.let.pat->data.id;
+
+			if(expr->data.let.pat->type != ml_pat_id_e) {
+				*err = ml_aprintf("Invalid function declarations.");
+				return NULL;
+			}
+			
+			closure = ml_closure(ml_env_copy(env), ml_pat_copy(expr->data.let.pat->next), strdup(id), ml_expr_copy(expr->data.let.value));
+
+			sub = ml_env_copy(env);
+			ml_env_add(sub, strdup(id), ml_value_closure(closure));
+
+			ret = ml_expr_eval(expr->data.let.expr, sub, err);
+
+			ml_env_delete(sub);
+
+			return ret;
+		}
+		else {
 			struct ml_env_t *sub;
 			struct ml_value_t *value, *ret;
 
-			sub = ml_env_copy(env);
-
-			value = ml_expr_eval(expr->data.let.value, sub, err);
+			value = ml_expr_eval(expr->data.let.value, env, err);
 			if(value == NULL)
 				return NULL;
 
-			if((expr->data.let.pat->type == ml_expr_id_e) && (value->type == ml_value_closure_e)) {
-				struct ml_closure_t closure = ml_closure_copy(value->data.closure);
+			sub = ml_env_copy(env);
 
-				if(closure.rec != NULL)
-					free(closure.rec);
-
-				closure.rec = strdup(expr->data.let.pat->data.id);
-				ml_env_add(sub, strdup(expr->data.let.pat->data.id), ml_value_closure(closure));
-
-				ret = ml_expr_eval(expr->data.let.expr, sub, err);
-			}
-			else if(ml_match_pat(sub, expr->data.let.pat, value))
+			if(ml_pat_match(sub, expr->data.let.pat, value))
 				ret = ml_expr_eval(expr->data.let.expr, sub, err);
 			else
-				ret = NULL, *err = ml_printf("Match failed.");
+				ret = NULL, *err = ml_aprintf("Match failed.");
 
-			ml_value_delete(value);
 			ml_env_delete(sub);
+			ml_value_delete(value);
 
 			return ret;
 		}
@@ -319,7 +351,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			if(value->type == ml_value_bool_e)
 				ret = ml_expr_eval(value->data.flag ? expr->data.cond.ontrue : expr->data.cond.onfalse, env, err);
 			else
-				*err = ml_printf("Invalid type. Expected 'bool'.");
+				*err = ml_aprintf("Invalid type. Expected 'bool'.");
 
 			ml_value_delete(value);
 
@@ -363,9 +395,7 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 		break;
 
 	case ml_expr_func_e:
-		fprintf(file, "func(%s,", expr->data.func.var);
-		ml_expr_print(expr->data.func.expr, file);
-		fprintf(file, ")");
+		ml_fprintf(file, "func(%Mp,%Me)", expr->data.func.pat, expr->data.func.expr);
 		break;
 
 	case ml_expr_app_e:
@@ -378,7 +408,7 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 
 	case ml_expr_let_e:
 		fprintf(file, "let(");
-		ml_expr_print(expr->data.let.pat, file);
+		ml_pat_print(expr->data.let.pat, file);
 		fprintf(file, ",");
 		ml_expr_print(expr->data.let.value, file);
 		fprintf(file, ",");
@@ -397,7 +427,7 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 		break;
 
 	case ml_expr_value_e:
-		fprintf(file, "value");
+		ml_fprintf(file, "value(%Mv)", expr->data.value);
 		break;
 	}
 }

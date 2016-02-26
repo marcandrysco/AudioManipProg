@@ -3,11 +3,11 @@
 
 /**
  * Schedule structure.
- *   @head, tail: The head and tail instances.
+ *   @cur, head, tail: The current, head, and tail instances.
  */
 
 struct amp_sched_t {
-	struct inst_t *head, *tail;
+	struct inst_t *cur, *head, *tail;
 };
 
 /**
@@ -35,7 +35,7 @@ static struct inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t t
  * global variables
  */
 
-struct amp_seq_i amp_sched_iface = {
+const struct amp_seq_i amp_sched_iface = {
 	(amp_info_f)amp_sched_info,
 	(amp_seq_f)amp_sched_proc,
 	(amp_copy_f)amp_sched_copy,
@@ -57,7 +57,7 @@ bool amp_scan_time(struct amp_time_t *time, struct ml_value_t *value)
 	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e))
 		return false;
 
-	*time = (struct amp_time_t){ tuple.value[0]->data.num, tuple.value[1]->data.num };
+	*time = (struct amp_time_t){ 0, tuple.value[0]->data.num, tuple.value[1]->data.num };
 
 	return true;
 }
@@ -135,7 +135,7 @@ struct amp_sched_t *amp_sched_new(void)
 	struct amp_sched_t *sched;
 
 	sched = malloc(sizeof(struct amp_sched_t));
-	sched->head = sched->tail = NULL;
+	sched->cur = sched->head = sched->tail = NULL;
 
 	return sched;
 }
@@ -198,7 +198,7 @@ void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp
 			inst->next = sched->head;
 			inst->prev = NULL;
 			*(sched->head ? &sched->head->prev : &sched->tail) = inst;
-			sched->head = inst;
+			sched->head = sched->cur = inst;
 		}
 		else {
 			*(cur->next ? &cur->next->prev : &sched->tail) = inst;
@@ -209,7 +209,7 @@ void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp
 	}
 	else {
 		inst->prev = inst->next = NULL;
-		sched->head = sched->tail = inst;
+		sched->head = sched->tail = sched->cur = inst;
 	}
 }
 
@@ -235,6 +235,27 @@ void amp_sched_info(struct amp_sched_t *sched, struct amp_info_t info)
 
 void amp_sched_proc(struct amp_sched_t *sched, struct amp_queue_t *queue, struct amp_time_t *time, unsigned int len)
 {
+	unsigned int i;
+	struct inst_t *cur;
+
+	if(sched->cur == NULL)
+		return;
+
+	for(i = 0; i < len; i++) {
+		cur = sched->cur;
+
+		do {
+			if(!amp_time_between(cur->time, time[i], time[i+1]))
+				break;
+
+			amp_queue_add(queue, (struct amp_action_t){ i, cur->event });
+
+			cur = cur->next ?: sched->head;
+		} while(cur != sched->cur);
+
+		sched->cur = cur;
+	}
+
 }
 
 

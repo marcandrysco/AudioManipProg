@@ -27,6 +27,8 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 			do {
 				do {
 					*byte = fgetc(file), tag->off++, tag->col++;
+					if(*byte == '\n')
+						tag->line++, tag->col = 0;
 				} while(*byte != '*' && *byte != EOF);
 
 				if(*byte == EOF)
@@ -46,6 +48,14 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 
 		break;
 
+	case '+':
+		*byte = fgetc(file), tag->off++, tag->col++;
+		switch(*byte) {
+		case '+': token = ml_token_concat_e; break;
+		default: return ml_token_plus_e;
+		}
+
+		break;
 	case '-':
 		*byte = fgetc(file), tag->off++, tag->col++;
 		switch(*byte) {
@@ -90,7 +100,6 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 
 		break;
 
-	case '+': token = ml_token_plus_e; break;
 	case '*': token = ml_token_star_e; break;
 	case '/': token = ml_token_slash_e; break;
 	case '%': token = ml_token_mod_e; break;
@@ -203,7 +212,7 @@ struct ml_token_t *ml_token_num(double flt)
 
 void ml_token_delete(struct ml_token_t *token)
 {
-	if(token->type == ml_token_id_e)
+	if((token->type == ml_token_id_e) || (token->type == ml_token_str_e))
 		free(token->data.str);
 
 	free(token);
@@ -242,7 +251,7 @@ struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err)
 
 				id[i++] = byte;
 				byte = fgetc(file), tag.off++, tag.col++;
-			} while(isalnum(byte) || (byte == '_'));
+			} while(isalnum(byte) || (byte == '_') || (byte == '\'') || (byte == '.'));
 
 			id[i] = '\0';
 			type  = ml_token_keyword(id);

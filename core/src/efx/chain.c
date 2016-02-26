@@ -12,11 +12,13 @@ struct amp_chain_t {
 
 /**
  * Instance structure.
+ *   @mix: The mix.
  *   @effect: The effect.
  *   @prev, next: The previous and next instances.
  */
 
 struct inst_t {
+	double mix;
 	struct amp_effect_t effect;
 	struct inst_t *prev, *next;
 };
@@ -26,7 +28,7 @@ struct inst_t {
  * local declarations
  */
 
-static struct inst_t *inst_new(struct amp_effect_t effect);
+static struct inst_t *inst_new(double mix, struct amp_effect_t effect);
 static void inst_delete(struct inst_t *inst);
 
 /*
@@ -70,7 +72,7 @@ struct amp_chain_t *amp_chain_copy(struct amp_chain_t *chain)
 	copy = amp_chain_new();
 
 	for(inst = chain->head; inst != NULL; inst = inst->next)
-		amp_chain_append(copy, amp_effect_copy(inst->effect));
+		amp_chain_append(copy, inst->mix, amp_effect_copy(inst->effect));
 
 	return copy;
 }
@@ -96,14 +98,15 @@ void amp_chain_delete(struct amp_chain_t *chain)
 /**
  * Prepend an effect to a chain.
  *   @chain: The chain.
+ *   @mix: The mix.
  *   @effect: The effect.
  */
 
-void amp_chain_prepend(struct amp_chain_t *chain, struct amp_effect_t effect)
+void amp_chain_prepend(struct amp_chain_t *chain, double mix, struct amp_effect_t effect)
 {
 	struct inst_t *inst;
 
-	inst = inst_new(effect);
+	inst = inst_new(mix, effect);
 	inst->next = chain->head;
 	inst->prev = NULL;
 	*(chain->head ? &chain->head->prev : &chain->tail) = inst;
@@ -113,14 +116,15 @@ void amp_chain_prepend(struct amp_chain_t *chain, struct amp_effect_t effect)
 /**
  * Append an effect to a chain.
  *   @chain: The chain.
+ *   @mix: The mix.
  *   @effect: The effect.
  */
 
-void amp_chain_append(struct amp_chain_t *chain, struct amp_effect_t effect)
+void amp_chain_append(struct amp_chain_t *chain, double mix, struct amp_effect_t effect)
 {
 	struct inst_t *inst;
 
-	inst = inst_new(effect);
+	inst = inst_new(mix, effect);
 	inst->prev = chain->tail;
 	inst->next = NULL;
 	*(chain->tail ? &chain->tail->next : &chain->head) = inst;
@@ -155,7 +159,7 @@ struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env
 	chain = amp_chain_new();
 
 	for(link = value->data.list.head; link != NULL; link = link->next)
-		amp_chain_append(chain, amp_effect_copy(amp_unbox_value(link->value, amp_box_effect_e)->data.effect));
+		amp_chain_append(chain, 1.0, amp_effect_copy(amp_unbox_value(link->value, amp_box_effect_e)->data.effect));
 
 	ml_value_delete(value);
 
@@ -189,22 +193,36 @@ void amp_chain_proc(struct amp_chain_t *chain, double *buf, struct amp_time_t *t
 {
 	struct inst_t *inst;
 
-	for(inst = chain->head; inst != NULL; inst = inst->next)
-		amp_effect_proc(inst->effect, buf, time, len);
+	for(inst = chain->head; inst != NULL; inst = inst->next) {
+		if(inst->mix == 1.0)
+			amp_effect_proc(inst->effect, buf, time, len);
+		else {
+			unsigned int i;
+			double mix = inst->mix, tmp[len];
+
+			dsp_copy_d(tmp, buf, len);
+			amp_effect_proc(inst->effect, tmp, time, len);
+
+			for(i = 0; i < len; i++)
+				buf[i] = mix * tmp[i] + (1.0 - mix) * buf[i];
+		}
+	}
 }
 
 
 /**
  * Create an instance.
+ *   @mix: The mix.
  *   @effect: The effect.
  *   &returns: The instance.
  */
 
-static struct inst_t *inst_new(struct amp_effect_t effect)
+static struct inst_t *inst_new(double mix, struct amp_effect_t effect)
 {
 	struct inst_t *inst;
 
 	inst = malloc(sizeof(struct inst_t));
+	inst->mix = mix;
 	inst->effect = effect;
 
 	return inst;

@@ -43,6 +43,7 @@
 #include "efx/effect.h"
 #include "efx/filt.h"
 #include "efx/gain.h"
+#include "efx/gen.h"
 #include "efx/synth.h"
 
 #include "handler/handler.h"
@@ -56,6 +57,7 @@
 #include "mod/mul.h"
 #include "mod/osc.h"
 #include "mod/patch.h"
+#include "mod/sampler.h"
 #include "mod/sum.h"
 #include "mod/trig.h"
 

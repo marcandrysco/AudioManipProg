@@ -32,6 +32,18 @@ code, plugins, and audio however they wish.
 
 ## Building
 
+Each subdirectory contains an individual `configure` script for generating a
+`Makefile`. Once the `Makefile` is generate, `make` will build the binary and
+`make install` will install the binary. The subdirectories have the following
+dependencies:
+
+  * AmpCore depends on libDSP and MuseLang
+  * AmpRT depends on AmpCore
+
+By default, AmpRT will attempt to build with against default set of audio
+APIs. To use different APIs, use the appropriate configure flags (e.g.
+`--alsa`, `--pulse`).
+
 ## Architecture
 
 Audio production tools try to satisfy two competing goals: efficiency (for low
@@ -44,11 +56,14 @@ functional language.
 
 To satisfy high efficiency, the libDSP library provides an extremely fast set
 of low-level building blocks. The library is built using heavily optimized C
-to ensure both low latency and high throughput. The "hot" path that processes
-audio is carefully written to eliminate sources of slowdowns such as memory
-allocation or system calls. Much of the code is directly exported in headers
-as static inline functions to prevent function call overhead.
+code to ensure both low latency and high throughput. The "hot" path that
+processes audio is carefully written to eliminate sources of slowdowns such as
+memory allocation or system calls. Much of the code is directly exported in
+headers as static inline functions to prevent function call overhead.
 
 ### MuseLang
 
+### AmpCore
+
+### AmpRT
 

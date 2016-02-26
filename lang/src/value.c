@@ -86,13 +86,7 @@ void ml_value_delete(struct ml_value_t *value)
 		break;
 
 	case ml_value_closure_e:
-		if(value->data.closure.rec)
-			free(value->data.closure.rec);
-
-		free(value->data.closure.var);
-		ml_env_delete(value->data.closure.env);
-		ml_expr_delete(value->data.closure.expr);
-
+		ml_closure_delete(value->data.closure);
 		break;
 
 	case ml_value_box_e:
@@ -471,14 +465,30 @@ struct ml_value_t *ml_list_remove(struct ml_list_t *list, struct ml_link_t *link
 
 struct ml_closure_t ml_closure_copy(struct ml_closure_t closure)
 {
+	char *rec;
 	struct ml_env_t *env;
-	char *var, *rec;
+	struct ml_pat_t *pat;
 	struct ml_expr_t *expr;
 
 	env = ml_env_copy(closure.env);
-	var = strdup(closure.var);
+	pat = ml_pat_copy(closure.pat);
 	rec = closure.rec ? strdup(closure.rec) : NULL;
 	expr = ml_expr_copy(closure.expr);
 
-	return (struct ml_closure_t){ env, var, rec, expr };
+	return (struct ml_closure_t){ env, pat, rec, expr };
+}
+
+/**
+ * Delete a closure.
+ *   @closure: The closure.
+ */
+
+void ml_closure_delete(struct ml_closure_t closure)
+{
+	ml_env_delete(closure.env);
+	ml_pat_delete(closure.pat);
+	ml_expr_delete(closure.expr);
+
+	if(closure.rec)
+		free(closure.rec);
 }

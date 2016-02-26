@@ -2,3 +2,6 @@
 
 run: install
 	$(MAKE) run -C ../rt
+
+debug: install
+	$(MAKE) debug -C ../rt

@@ -129,8 +129,8 @@ struct amp_filt_t *amp_filt_lpf(struct amp_param_t *freq, double rate)
 	struct amp_filt_t *filt;
 
 	filt = amp_filt_new(amp_filt_lpf_e, rate);
-	filt->param[opt_freq_e] = freq;
 	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[opt_freq_e], freq);
 
 	return filt;
 }
@@ -147,8 +147,28 @@ struct amp_filt_t *amp_filt_hpf(struct amp_param_t *freq, double rate)
 	struct amp_filt_t *filt;
 
 	filt = amp_filt_new(amp_filt_hpf_e, rate);
-	filt->param[opt_freq_e] = freq;
 	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a Moog VCF.
+ *   @freq: The frequency.
+ *   @res: The resonance.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+
+struct amp_filt_t *amp_filt_moog(struct amp_param_t *freq, struct amp_param_t *res, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_hpf_e, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(res);
+	amp_param_set(&filt->param[opt_freq_e], freq);
+	amp_param_set(&filt->param[opt_res_e], res);
 
 	return filt;
 }
@@ -218,6 +238,25 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		}
 
 		break;
+
+	case amp_filt_moog_e:
+		if(!filt->fast) {
+			double freq[len], res[len];
+
+			cont |= amp_param_proc(filt->param[opt_freq_e], buf, time, len);
+			cont |= amp_param_proc(filt->param[opt_res_e], buf, time, len);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_moog_proc(buf[i], dsp_moog_init(freq[i], res[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_moog_t c = dsp_moog_init(filt->param[opt_freq_e]->flt, filt->param[opt_res_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_moog_proc(buf[i], c, filt->s);
+		}
+
+		break;
 	}
 
 	return cont;
@@ -260,4 +299,23 @@ struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, 
 		return NULL;
 
 	return amp_pack_effect(amp_filt_effect(amp_filt_hpf(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a Moog VCF from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *amp_moog_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq, *res;
+
+	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_moog(freq, res, amp_core_rate(env))));
 }

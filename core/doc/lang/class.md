@@ -87,6 +87,7 @@ AmpCore provides the following set of `Module` instances:
   * [Mul](mod/mul.md) multiplies a pair of signals.
   * [Osc](mod/osc.md) generates an oscillating output.
   * [Patch](mod/patch.md) uses an `Effect` and `Module` as a generator.
+  * [Sampler](mod/sampler.md) generates audio from sound samples.
   * [Trig](mod/trig.md) creates a signal based off a note event.
   * [Sum](mod/sum.d) performs an arithmetic sum of signals.
 

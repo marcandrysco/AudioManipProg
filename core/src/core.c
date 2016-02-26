@@ -15,6 +15,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	core->env = ml_env_new();
 
 	ml_env_add(core->env, strdup("rate"), ml_value_num(rate));
+	ml_env_add(core->env, strdup("conf.rate"), ml_value_num(rate));
 
 	ml_env_add(core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
 
@@ -22,6 +23,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(core->env, strdup("Clip"), ml_value_impl(amp_clip_make));
 	ml_env_add(core->env, strdup("Comp"), ml_value_impl(amp_comp_make));
 	ml_env_add(core->env, strdup("Gain"), ml_value_impl(amp_gain_make));
+	ml_env_add(core->env, strdup("Gen"), ml_value_impl(amp_gen_make));
 
 	ml_env_add(core->env, strdup("Ctrl"), ml_value_impl(amp_ctrl_make));
 
@@ -36,10 +38,12 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(core->env, strdup("Sum"), ml_value_impl(amp_sum_make));
 	ml_env_add(core->env, strdup("Trig"), ml_value_impl(amp_trig_make));
 
+	ml_env_add(core->env, strdup("Repeat"), ml_value_impl(amp_repeat_make));
 	ml_env_add(core->env, strdup("Sched"), ml_value_impl(amp_sched_make));
 
 	ml_env_add(core->env, strdup("Lpf"), ml_value_impl(amp_lpf_make));
 	ml_env_add(core->env, strdup("Hpf"), ml_value_impl(amp_hpf_make));
+	ml_env_add(core->env, strdup("Moog"), ml_value_impl(amp_moog_make));
 
 	return core;
 }

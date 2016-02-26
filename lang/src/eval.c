@@ -6,7 +6,7 @@
  */
 
 #undef fail
-#define fail(format, ...) do { ml_value_delete(value); if(*err == NULL) ml_eprintf(err, format, ##__VA_ARGS__); return NULL; } while(0)
+#define fail(format, ...) do { if(*err == NULL) ml_eprintf(err, format, ##__VA_ARGS__); return NULL; } while(0)
 #define retfalse() do { ml_value_delete(value); return false; } while(0)
 
 
@@ -198,7 +198,7 @@ struct ml_value_t *ml_eval_lt(struct ml_value_t *value, struct ml_env_t *env, ch
 	if(!get_num2(value, &left, &right))
 		fail("Type error. Comparison requires type '(Num, Num)'.");
 
-	return ml_value_bool(left <= right);
+	return ml_value_bool(left < right);
 }
 
 /**
@@ -216,7 +216,7 @@ struct ml_value_t *ml_eval_lte(struct ml_value_t *value, struct ml_env_t *env, c
 	if(!get_num2(value, &left, &right))
 		fail("Type error. Comparison requires type '(Num, Num)'.");
 
-	return ml_value_bool(left < right);
+	return ml_value_bool(left <= right);
 }
 
 /**
@@ -274,4 +274,148 @@ struct ml_value_t *ml_eval_cons(struct ml_value_t *value, struct ml_env_t *env, 
 	ml_value_delete(value);
 
 	return ml_value_list(list);
+}
+
+/**
+ * Evaluate a concatenation.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_concat(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_list_t list, left, right;
+	struct ml_tuple_t tuple;
+
+	if(value->type != ml_value_tuple_e)
+		fail("Cons evaluation requires tuple.");
+
+	tuple = value->data.tuple;
+	if(tuple.len != 2)
+		fail("Cons requires a tuple of length two.");
+
+	if((tuple.value[0]->type != ml_value_list_e) || (tuple.value[1]->type != ml_value_list_e))
+		fail("Cannot concat non-list types.");
+
+	list = ml_list_new();
+	left = ml_list_copy(tuple.value[0]->data.list);
+	right = ml_list_copy(tuple.value[1]->data.list);
+
+	left.tail->next = right.head;
+	right.head->prev = left.tail;
+
+	list.head = left.head;
+	list.tail = right.tail;
+
+	ml_value_delete(value);
+
+	return ml_value_list(list);
+}
+
+
+/**
+ * Compute an exponential.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_exp(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Exponential requires type 'Num'.");
+
+	ret = exp(value->data.num);
+	ml_value_delete(value);
+
+	return ml_value_num(ret);
+}
+
+/**
+ * Compute a logarithm.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_log(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Logarithm requires type 'Num'.");
+
+	ret = log(value->data.num);
+	ml_value_delete(value);
+
+	return ml_value_num(ret);
+}
+
+/**
+ * Compute a floor.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_floor(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Logarithm requires type 'Num'.");
+
+	ret = floor(value->data.num);
+	ml_value_delete(value);
+
+	return ml_value_num(ret);
+}
+
+/**
+ * Compute a ceiling.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_ceil(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Logarithm requires type 'Num'.");
+
+	ret = ceil(value->data.num);
+	ml_value_delete(value);
+
+	return ml_value_num(ret);
+}
+
+/**
+ * Compute a round.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_round(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Logarithm requires type 'Num'.");
+
+	ret = round(value->data.num);
+	ml_value_delete(value);
+
+	return ml_value_num(ret);
 }

@@ -23,6 +23,7 @@ OBJ = src/box.o \
       src/efx/effect.o \
       src/efx/filt.o \
       src/efx/gain.o \
+      src/efx/gen.o \
       src/efx/synth.o \
       \
       src/handler/handler.o \
@@ -36,6 +37,7 @@ OBJ = src/box.o \
       src/mod/mul.o \
       src/mod/osc.o \
       src/mod/patch.o \
+      src/mod/sampler.o \
       src/mod/sum.o \
       src/mod/trig.o \
       \
@@ -64,6 +66,7 @@ INC = src/defs.h \
       src/efx/effect.h \
       src/efx/filt.h \
       src/efx/gain.h \
+      src/efx/gen.h \
       src/efx/synth.h \
       \
       src/handler/handler.h \
@@ -77,6 +80,7 @@ INC = src/defs.h \
       src/mod/mul.h \
       src/mod/osc.h \
       src/mod/patch.h \
+      src/mod/sampler.h \
       src/mod/sum.h \
       src/mod/trig.h \
       \

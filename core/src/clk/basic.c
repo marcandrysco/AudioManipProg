@@ -5,6 +5,7 @@
  * Basic clock structure.
  *   @run: The running flag.
  *   @idx: The current index.
+ *   @cur: The current time.
  *   @rate: The sample rate.
  *   @bpm, nbeats: The beats-per-minutes and beats-per-measure.
  */
@@ -13,6 +14,7 @@ struct amp_basic_t {
 	bool run;
 
 	int idx;
+	struct amp_time_t cur;
 	unsigned int rate;
 
 	double bpm, nbeats;
@@ -49,6 +51,7 @@ struct amp_basic_t *amp_basic_new(double bpm, double nbeats, unsigned int rate)
 	basic->bpm = bpm;
 	basic->nbeats = nbeats;
 	basic->rate = rate;
+	basic->cur = (struct amp_time_t){ 0, 0, 0.0 };
 
 	return basic;
 }
@@ -130,6 +133,7 @@ void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
 	switch(info.type) {
 	case amp_info_seek_e:
 		amp_basic_seek(basic, info.data.seek->time.bar);
+		basic->cur = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
 	case amp_info_start_e:
@@ -159,14 +163,18 @@ void amp_basic_proc(struct amp_basic_t *basic, struct amp_time_t *time, unsigned
 {
 	unsigned int i;
 
+	time[0] = basic->cur;
+
 	if(basic->run) {
-		for(i = 0; i < len; i++)
+		basic->idx++;
+
+		for(i = 1; i < len; i++)
 			time[i] = amp_time_calc(basic->idx++, basic->bpm, basic->nbeats, basic->rate);
 	}
 	else {
-		for(i = 0; i < len; i++)
+		for(i = 1; i < len; i++)
 			time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 	}
 
-	time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
+	basic->cur = time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 }

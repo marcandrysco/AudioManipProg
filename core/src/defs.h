@@ -12,6 +12,26 @@ struct amp_time_t {
 	double beat;
 };
 
+static inline struct amp_time_t amp_time(int bar, double beat)
+{
+	return (struct amp_time_t){ 0, bar, beat };
+}
+
+/**
+ * Repeat a time.
+ *   @time: The time.
+ *   @off: The offset.
+ *   @len: The length.
+ *   &returns: The repeated time.
+ */
+
+static inline struct amp_time_t amp_time_repeat(struct amp_time_t time, int off, unsigned int len)
+{
+	time.bar = ((time.bar + off) % len + len) % len;
+
+	return time;
+}
+
 /**
  * Compare two times.
  *   @left: The left time.
@@ -31,6 +51,22 @@ static inline int amp_time_cmp(struct amp_time_t left, struct amp_time_t right)
 		return -1;
 	else
 		return 0;
+}
+
+/**
+ * Check if a time falls between two other times.
+ *   @time: The time.
+ *   @left: The left time.
+ *   @right: The right time.
+ *   &returns: True if between.
+ */
+
+static inline bool amp_time_between(struct amp_time_t time, struct amp_time_t left, struct amp_time_t right)
+{
+	if(amp_time_cmp(left, right) < 0)
+		return (amp_time_cmp(left, time) <= 0) && (amp_time_cmp(time, right) < 0);
+	else
+		return (amp_time_cmp(left, time) <= 0) || (amp_time_cmp(time, right) < 0);
 }
 
 /**
@@ -211,6 +247,39 @@ static inline struct amp_info_t amp_info_action(struct amp_action_t *action)
 static inline struct amp_info_t amp_info_note(struct amp_note_t *note)
 {
 	return (struct amp_info_t){ amp_info_note_e, (union amp_info_u){ .note = note } };
+}
+
+/**
+ * Create a seek information structure.
+ *   @seek: The seek.
+ *   &returns: The information structure.
+ */
+
+static inline struct amp_info_t amp_info_seek(struct amp_seek_t *seek)
+{
+	return (struct amp_info_t){ amp_info_seek_e, (union amp_info_u){ .seek = seek } };
+}
+
+/**
+ * Create a start information structure.
+ *   @seek: The seek.
+ *   &returns: The information structure.
+ */
+
+static inline struct amp_info_t amp_info_start(struct amp_seek_t *seek)
+{
+	return (struct amp_info_t){ amp_info_start_e, (union amp_info_u){ .seek = seek } };
+}
+
+/**
+ * Create a stop information structure.
+ *   @seek: The seek.
+ *   &returns: The information structure.
+ */
+
+static inline struct amp_info_t amp_info_stop(struct amp_seek_t *seek)
+{
+	return (struct amp_info_t){ amp_info_stop_e, (union amp_info_u){ .seek = seek } };
 }
 
 

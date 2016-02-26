@@ -48,10 +48,11 @@ struct ml_value_t *ml_list_remove(struct ml_list_t *list, struct ml_link_t *link
  */
 
 struct ml_closure_t ml_closure_copy(struct ml_closure_t closure);
+void ml_closure_delete(struct ml_closure_t closure);
 
-static inline struct ml_closure_t ml_closure(struct ml_env_t *env, char *var, char *rec, struct ml_expr_t *expr)
+static inline struct ml_closure_t ml_closure(struct ml_env_t *env, struct ml_pat_t *pat, char *rec, struct ml_expr_t *expr)
 {
-	return (struct ml_closure_t){ env, var, rec, expr };
+	return (struct ml_closure_t){ env, pat, rec, expr };
 }
 
 #endif

@@ -7,7 +7,7 @@
 
 struct amp_sched_t;
 
-extern struct amp_seq_i amp_sched_iface;
+extern const struct amp_seq_i amp_sched_iface;
 
 struct amp_sched_t *amp_sched_new(void);
 struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched);

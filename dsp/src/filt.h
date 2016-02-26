@@ -16,7 +16,7 @@ struct dsp_lpf_t {
  *   &returns: The constant.
  */
 
-static inline struct dsp_lpf_t dsp_lpf_init(double freq, unsigned int rate)
+static inline struct dsp_lpf_t dsp_lpf_init(double freq, double rate)
 {
 	double w = tanf(freq * M_PI / rate);
 
@@ -29,7 +29,7 @@ static inline struct dsp_lpf_t dsp_lpf_init(double freq, unsigned int rate)
  *   &returns: The frequency.
  */
 
-static inline double dsp_lpf_freq(struct dsp_lpf_t c, unsigned int rate)
+static inline double dsp_lpf_freq(struct dsp_lpf_t c, double rate)
 {
 	return atan(c.g) * rate / M_PI;
 }
@@ -68,7 +68,7 @@ struct dsp_hpf_t {
  *   &returns: The constant.
  */
 
-static inline struct dsp_hpf_t dsp_hpf_init(double freq, unsigned int rate)
+static inline struct dsp_hpf_t dsp_hpf_init(double freq, double rate)
 {
 	double w = tanf(freq * M_PI / rate);
 
@@ -91,6 +91,68 @@ static inline double dsp_hpf_proc(double x, struct dsp_hpf_t c, double *s)
 	s[0] += 2 * c.g * y;
 
 	return y;
+}
+
+
+/**
+ * Moog filter structure.
+ *   @g: The gain element.
+ *   @r: The resonance.
+ */
+
+struct dsp_moog_t {
+	double g;
+	double r;
+};
+
+/**
+ * Initialize a moog filter.
+ *   @freq: The cutoff frequency.
+ *   @res: The resonance.
+ *   @rate: The sample rate.
+ */
+
+static inline struct dsp_moog_t dsp_moog_init(double freq, double res, double rate)
+{
+	double w = tanf(freq * M_PI / rate);
+
+	return (struct dsp_moog_t){ w, res };
+}
+
+/**
+ * Process a moog filter.
+ *   @x: The input.
+ *   @moog: The moog filter constant.
+ *   @s: The state. Must have 4 elements.
+ *   &returns: The output.
+ */
+
+static inline double dsp_moog_proc(double x, struct dsp_moog_t moog, double *s)
+{
+	double t1, t2, g = moog.g, y;
+
+	t1 = g*g*g*s[0] + g*g*s[1] + g*s[2] + s[3];
+	t2 = g*g*g*g;
+
+	x = (x - moog.r * t1) / (1 + moog.r * t2);
+
+	y = (moog.g * x + s[0]) / (1 + moog.g);
+	s[0] = s[0] + 2 * moog.g * (x - y);
+	x = y;
+
+	y = (moog.g * x + s[1]) / (1 + moog.g);
+	s[1] = s[1] + 2 * moog.g * (x - y);
+	x = y;
+
+	y = (moog.g * x + s[2]) / (1 + moog.g);
+	s[2] = s[2] + 2 * moog.g * (x - y);
+	x = y;
+
+	y = (moog.g * x + s[3]) / (1 + moog.g);
+	s[3] = s[3] + 2 * moog.g * (x - y);
+	x = y;
+	
+	return x;
 }
 
 #endif

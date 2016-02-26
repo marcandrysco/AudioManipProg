@@ -154,7 +154,7 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 		if(i == synth->n)
 			return;
 
-		synth->inst[i].delay = action.delay;
+		synth->inst[i].delay = init ? action.delay : 0;
 		synth->inst[i].note.init = init;
 		synth->inst[i].note.key = action.event.key;
 		synth->inst[i].note.vel = (double)action.event.val / (double)UINT16_MAX;

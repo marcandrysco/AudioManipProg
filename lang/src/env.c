@@ -102,6 +102,7 @@ char *ml_env_proc(const char *path, struct ml_env_t *env)
 	struct ml_token_t *token;
 
 	token = ml_token_load(path, &err);
+
 	if(token == NULL)
 		return err;
 

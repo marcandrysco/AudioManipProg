@@ -42,7 +42,7 @@ prefix='/usr/local'
 bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
-cflags='-O2 -g -fpic -ffast-math -Wall -Werror -I$(INCDIR) '
+cflags='-O2 -g -fpic -ffast-math -Wall -I$(INCDIR) '
 ldflags='-lm -lpthread -lampcore -ldsp -lmuselang -ffast-math -L$(LIBDIR) '
 obj=''
 inc=''
@@ -60,7 +60,7 @@ while [ "$#" -gt 0 ] ; do
       prefix="${1#*=}" ; shift
       ;;
     --debug)
-      cflags="${cflags}-DDEBUG " ; shift
+      cflags="${cflags}-Werror -DDEBUG " ; shift
       ;;
     --alsa)
       obj="${obj}src/alsa/audio.o src/alsa/midi.o "

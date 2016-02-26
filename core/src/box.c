@@ -347,6 +347,7 @@ static void match_init(const char **format, va_list *args)
 	case 's': *va_arg(*args, char **) = NULL; break;
 	case 'E': *va_arg(*args, struct amp_effect_t *) = amp_effect_null; break;
 	case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_null; break;
+	case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_null; break;
 	case 'V': *va_arg(*args, struct amp_value_t *) = amp_value_flt(0.0); break;
 	case 'P': *va_arg(*args, struct amp_param_t **) = NULL; break;
 		
@@ -398,6 +399,7 @@ static void match_clear(const char **format, va_list *args)
 
 	case 'E': amp_effect_erase(*va_arg(*args, struct amp_effect_t *)); break;
 	case 'I': amp_instr_erase(*va_arg(*args, struct amp_instr_t *)); break;
+	case 'S': amp_seq_erase(*va_arg(*args, struct amp_seq_t *)); break;
 	case 'V': amp_value_delete(*va_arg(*args, struct amp_value_t *)); break;
 	case 'P': amp_param_erase(*va_arg(*args, struct amp_param_t **)); break;
 		
@@ -538,6 +540,7 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		case 'I': type = amp_box_instr_e; break;
 		case 'M': type = amp_box_module_e; break;
 		case 'V': type = amp_box_handler_e; break;
+		case 'S': type = amp_box_seq_e; break;
 		default: fprintf(stderr, "Invalid format.\n"), abort();
 		}
 
@@ -550,6 +553,7 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_copy(box->data.instr); break;
 		case 'M': *va_arg(*args, struct amp_module_t *) = amp_module_copy(box->data.module); break;
 		case 'V': *va_arg(*args, struct amp_value_t *) = amp_value_handler(amp_handler_copy(box->data.handler)); break;
+		case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_copy(box->data.seq); break;
 		}
 
 		(*format)++;

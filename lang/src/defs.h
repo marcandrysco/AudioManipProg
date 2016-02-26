@@ -69,13 +69,15 @@ struct ml_tuple_t {
 /**
  * Closure structure.
  *   @env: The environment.
- *   @var, rec: The variable and recursive names.
+ *   @pat: Patterned argument.
+ *   @rec: The recursive name.
  *   @expr: The expression.
  */
 
 struct ml_closure_t {
 	struct ml_env_t *env;
-	char *var, *rec;
+	struct ml_pat_t *pat;
+	char *rec;
 	struct ml_expr_t *expr;
 };
 
@@ -172,12 +174,12 @@ struct ml_set_t {
 
 /**
  * Function structure.
- *   @var: The variable
- *   @expr: The expression.
+ *   @pat: The pattern.
+ *   @expr: The pattern and expression.
  */
 
 struct ml_func_t {
-	char *var;
+	struct ml_pat_t *pat;
 	struct ml_expr_t *expr;
 };
 
@@ -192,11 +194,13 @@ struct ml_app_t {
 
 /**
  * Let structure.
- *   @pat, value, expr: The pattern, value and expression.
+ *   @pat: The pattern.
+ *   @value, expr: The value and expression.
  */
 
 struct ml_let_t {
-	struct ml_expr_t *pat, *value, *expr;
+	struct ml_pat_t *pat;
+	struct ml_expr_t *value, *expr;
 };
 
 /**
@@ -265,5 +269,6 @@ struct ml_expr_t {
 	enum ml_expr_e type;
 	union ml_expr_u data;
 };
+
 
 #endif

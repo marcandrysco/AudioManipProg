@@ -43,7 +43,7 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 	struct amp_engine_t *engine;
 
 	engine = malloc(sizeof(struct amp_engine_t));
-	engine->run = engine->toggle = true;//false;
+	engine->run = engine->toggle = false;
 	engine->core = amp_core_new(96000);
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
 	engine->seq = amp_seq_null;
@@ -51,6 +51,8 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 	engine->effect[0] = amp_effect_null;
 	engine->effect[1] = amp_effect_null;
 	engine->comm = comm ?: amp_comm_new();
+
+	engine->toggle = true;
 
 	return engine;
 }
@@ -145,7 +147,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
 {
-	bool quit = true;//false;
+	bool quit = false;
 	struct amp_engine_t *engine;
 
 	engine = amp_engine_new(comm);
@@ -191,6 +193,7 @@ void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
 
 static void callback(double **buf, unsigned int len, void *arg)
 {
+	bool run;
 	struct amp_event_t event;
 	struct amp_engine_t *engine = arg;
 	struct amp_time_t time[len+1];
@@ -200,8 +203,33 @@ static void callback(double **buf, unsigned int len, void *arg)
 		return;
 	}
 
-	if(engine->run != engine->toggle) {
-		engine->run = engine->toggle;
+	run = engine->toggle;
+	if(engine->run != run) {
+		struct amp_seek_t seek;
+
+		engine->run = run;
+		amp_clock_info(engine->clock, (run ? amp_info_start : amp_info_stop)(&seek));
+	}
+
+	amp_clock_proc(engine->clock, time, len);
+
+	if(engine->seq.iface != NULL) {
+		unsigned int i;
+		struct amp_queue_t queue;
+
+		amp_queue_init(&queue);
+		amp_seq_proc(engine->seq, &queue, time, len);
+
+		for(i = 0; i < queue.idx; i++) {
+			if(engine->instr.iface != NULL)
+				amp_instr_info(engine->instr, amp_info_action(&queue.arr[i]));
+
+			if(engine->effect[0].iface != NULL)
+				amp_effect_info(engine->effect[0], amp_info_action(&queue.arr[i]));
+
+			if(engine->effect[1].iface != NULL)
+				amp_effect_info(engine->effect[1], amp_info_action(&queue.arr[i]));
+		}
 	}
 
 	while(amp_comm_read(engine->comm, &event)) {
@@ -216,8 +244,6 @@ static void callback(double **buf, unsigned int len, void *arg)
 		if(engine->effect[1].iface != NULL)
 			amp_effect_info(engine->effect[1], amp_info_action(&action));
 	}
-
-	amp_clock_proc(engine->clock, time, len);
 
 	if(engine->instr.iface != NULL)
 		amp_instr_proc(engine->instr, buf, time, len);

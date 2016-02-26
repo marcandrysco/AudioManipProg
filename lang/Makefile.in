@@ -15,6 +15,7 @@ OBJ = src/env.o \
       src/expr.o \
       src/match.o \
       src/parse.o \
+      src/print.o \
       src/token.o \
       src/value.o \
 
@@ -25,6 +26,7 @@ INC = src/defs.h \
       src/expr.h \
       src/match.h \
       src/parse.h \
+      src/print.h \
       src/token.h \
       src/value.h \
      
