@@ -48,6 +48,9 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 	case ml_expr_cond_e:
 		return ml_expr_cond(ml_expr_copy(expr->data.cond.eval), ml_expr_copy(expr->data.cond.ontrue), ml_expr_copy(expr->data.cond.onfalse));
 
+	case ml_expr_match_e:
+		return ml_expr_match(ml_match_copy(expr->data.match));
+
 	case ml_expr_value_e:
 		return ml_expr_value(ml_value_copy(expr->data.value));
 	}
@@ -91,6 +94,10 @@ void ml_expr_delete(struct ml_expr_t *expr)
 		ml_expr_delete(expr->data.cond.eval);
 		ml_expr_delete(expr->data.cond.ontrue);
 		ml_expr_delete(expr->data.cond.onfalse);
+		break;
+		
+	case ml_expr_match_e:
+		ml_match_delete(expr->data.match);
 		break;
 
 	case ml_expr_value_e:
@@ -172,6 +179,17 @@ struct ml_expr_t *ml_expr_let(struct ml_pat_t *pat, struct ml_expr_t *value, str
 struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue)
 {
 	return ml_expr_new(ml_expr_cond_e, (union ml_expr_u){ .cond = { eval, onfalse, ontrue } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+}
+
+/**
+ * Create a match expression.
+ *   @match: Consumed. The match.
+ *   &returns: The expression.
+ */
+
+struct ml_expr_t *ml_expr_match(struct ml_match_t *match)
+{
+	return ml_expr_new(ml_expr_match_e, (union ml_expr_u){ .match = match }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
 
 /**
@@ -358,6 +376,38 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			return ret;
 		}
 
+	case ml_expr_match_e:
+		{
+			struct ml_with_t *with;
+			struct ml_value_t *value;
+
+			value = ml_expr_eval(expr->data.match->expr, env, err);
+			if(value == NULL)
+				return NULL;
+
+			for(with = expr->data.match->head; with != NULL; with = with->next) {
+				struct ml_env_t *sub;
+
+				sub = ml_env_copy(env);
+
+				if(ml_pat_match(sub, with->pat, value)) {
+					ml_value_delete(value);
+
+					value = ml_expr_eval(with->expr, sub, err);
+					ml_env_delete(sub);
+
+					return value;
+				}
+
+				ml_env_delete(sub);
+			}
+
+			ml_value_delete(value);
+			*err = ml_aprintf("Match failed.");
+
+			return NULL;
+		}
+
 	case ml_expr_value_e:
 		return ml_value_copy(expr->data.value);
 	}
@@ -424,6 +474,10 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 		fprintf(file, ",");
 		ml_expr_print(expr->data.cond.onfalse, file);
 		fprintf(file, ")");
+		break;
+
+	case ml_expr_match_e:
+		ml_fprintf(file, "match(%Me)", expr->data.match->expr);
 		break;
 
 	case ml_expr_value_e:
@@ -506,4 +560,82 @@ void ml_set_add(struct ml_set_t *set, struct ml_expr_t *expr)
 {
 	set->expr = realloc(set->expr, (set->len + 1) * sizeof(void *));
 	set->expr[set->len++] = expr;
+}
+
+
+/**
+ * Create a new match.
+ *   @expr: Consumed. The expression.
+ *   &returns: The match.
+ */
+
+struct ml_match_t *ml_match_new(struct ml_expr_t *expr)
+{
+	struct ml_match_t *match;
+
+	match = malloc(sizeof(struct ml_match_t));
+	match->expr = expr;
+
+	return match;
+}
+
+/**
+ * Copy a match.
+ *   @match: The match.
+ *   &returns: The copy.
+ */
+
+struct ml_match_t *ml_match_copy(struct ml_match_t *match)
+{
+	struct ml_with_t *with;
+	struct ml_match_t *copy;
+
+	copy = ml_match_new(ml_expr_copy(match->expr));
+
+	for(with = match->head; with != NULL; with = with->next)
+		ml_match_append(copy, ml_pat_copy(with->pat), ml_expr_copy(with->expr));
+
+	return copy;
+}
+
+/**
+ * Delete a match.
+ *   @match: The match.
+ */
+
+void ml_match_delete(struct ml_match_t *match)
+{
+	struct ml_with_t *cur, *next;
+
+	for(cur = match->head; cur != NULL; cur = next) {
+		next = cur->next;
+
+		ml_pat_delete(cur->pat);
+		ml_expr_delete(cur->expr);
+		free(cur);
+	}
+
+	ml_expr_delete(match->expr);
+	free(match);
+}
+
+
+/**
+ * Append to a match.
+ *   @match: The match.
+ *   @pat: Consumed. The pattern.
+ *   @expr: Consumed. The expression.
+ */
+
+void ml_match_append(struct ml_match_t *match, struct ml_pat_t *pat, struct ml_expr_t *expr)
+{
+	struct ml_with_t *with;
+
+	with = malloc(sizeof(struct ml_with_t));
+	with->pat = pat;
+	with->expr = expr;
+	with->prev = match->tail;
+	with->next = NULL;
+	*(match->tail ? &match->tail->next : &match->head) = with;
+	match->tail = with;
 }

@@ -143,23 +143,38 @@ void amp_chain_append(struct amp_chain_t *chain, double mix, struct amp_effect_t
 struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
-#define fail(...) do { ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
+#define fail(...) do { amp_chain_delete(chain); ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
 
-	struct amp_chain_t *chain;
 	struct ml_link_t *link;
-
-	if(value->type != ml_value_list_e)
-		fail("Type error. Effects chain requires a list of effects as input.");
-
-	for(link = value->data.list.head; link != NULL; link = link->next) {
-		if(amp_unbox_value(link->value, amp_box_effect_e) == NULL)
-			fail("Type error. Effects chain requires a list of effects as input.");
-	}
+	struct amp_chain_t *chain;
+	struct amp_box_t *box;
 
 	chain = amp_chain_new();
 
-	for(link = value->data.list.head; link != NULL; link = link->next)
-		amp_chain_append(chain, 1.0, amp_effect_copy(amp_unbox_value(link->value, amp_box_effect_e)->data.effect));
+	if(value->type != ml_value_list_e)
+		fail("Type error. Chain requires a list of effects as input.");
+
+	for(link = value->data.list.head; link != NULL; link = link->next) {
+		if(link->value->type == ml_value_tuple_e) {
+			struct ml_tuple_t tuple = link->value->data.tuple;
+
+			if(tuple.len != 2)
+				fail("Type error. Effects chain instance must take the form 'Effect' or '(num,Effect)'.");
+
+			box = amp_unbox_value(tuple.value[1], amp_box_effect_e);
+			if((tuple.value[0]->type != ml_value_num_e) || (box == NULL))
+				fail("Type error. Effects chain instance must take the form 'Effect' or '(num,Effect)'.");
+
+			amp_chain_append(chain, tuple.value[0]->data.num, amp_effect_copy(box->data.effect));
+		}
+		else {
+			box = amp_unbox_value(link->value, amp_box_effect_e);
+			if(box == NULL)
+				fail("Type error. Effects chain instance must take the form 'Effect' or '(num,Effect)'.");
+
+			amp_chain_append(chain, 1.0, amp_effect_copy(box->data.effect));
+		}
+	}
 
 	ml_value_delete(value);
 

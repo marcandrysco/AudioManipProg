@@ -10,6 +10,7 @@ OBJ = $(OBJX) \
       src/argv.o \
       src/comm.o \
       src/exec.o \
+      src/watch.o \
 
 INC = $(INCX) \
       \
@@ -20,6 +21,7 @@ INC = $(INCX) \
       src/argv.h \
       src/comm.h \
       src/exec.h \
+      src/watch.h \
      
 # build rules
 

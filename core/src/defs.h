@@ -282,16 +282,11 @@ static inline struct amp_info_t amp_info_stop(struct amp_seek_t *seek)
 	return (struct amp_info_t){ amp_info_stop_e, (union amp_info_u){ .seek = seek } };
 }
 
-
-/**
- * Retrieve a frequency for a note as a float.
- *   @note: The note.
- *   &returns: The frequency.
- */
-
-static inline double amp_key_freq_f(int16_t note)
+/*
+static inline int8_t ml_key_octave(int16_t key)
 {
-	return 27.5f * powf(2.0f, ((float)note - 9.0f) / 12.0f);
+	return key - ;
 }
+*/
 
 #endif

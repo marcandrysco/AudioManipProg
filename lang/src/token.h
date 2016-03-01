@@ -23,6 +23,7 @@
  *   @ml_token_mod_e: Modulus.
  *   @ml_token_cons_e: Cons.
  *   @ml_token_arrow_e: Arrow.
+ *   @ml_token_pipe_e: Pipe.
  *   @ml_token_concat_e: List concatenation.
  *   @ml_token_id_e: Identifier.
  *   @ml_token_str_e: String.
@@ -61,6 +62,7 @@ enum ml_token_e {
 	ml_token_cons_e,
 	ml_token_concat_e,
 	ml_token_arrow_e,
+	ml_token_pipe_e,
 	ml_token_id_e,
 	ml_token_str_e,
 	ml_token_num_e,

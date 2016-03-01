@@ -42,8 +42,9 @@ prefix='/usr/local'
 bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
-cflags='-O2 -g -fpic -ffast-math -Wall -I$(INCDIR) '
-ldflags='-lm -ffast-math -L$(LIBDIR) '
+sharedir='$(PREFIX)/share'
+cflags='-O2 -g -fpic `pkg-config --cflags sndfile` -ffast-math -Wall -I$(INCDIR) '
+ldflags='-lm `pkg-config --libs sndfile` -ffast-math -L$(LIBDIR) '
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
     --rpath)

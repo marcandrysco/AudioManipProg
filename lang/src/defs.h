@@ -219,7 +219,8 @@ struct ml_cond_t {
  *   @ml_expr_func_e: Function.
  *   @ml_expr_app_e: Application.
  *   @ml_expr_let_e: Let.
- *   @ml_expr_cone_e: Conditional.
+ *   @ml_expr_cond_e: Conditional.
+ *   @ml_expr_match_e: Match
  *   @ml_expr_value_e: Constant value.
  */
 
@@ -230,6 +231,7 @@ enum ml_expr_e {
 	ml_expr_app_e,
 	ml_expr_let_e,
 	ml_expr_cond_e,
+	ml_expr_match_e,
 	ml_expr_value_e
 };
 
@@ -244,6 +246,7 @@ enum ml_expr_e {
  *   @app: Application.
  *   @let: Let.
  *   @cond: Conditional.
+ *   @match: Match.
  *   @value: Constant value.
  */
 
@@ -254,6 +257,7 @@ union ml_expr_u {
 	struct ml_app_t app;
 	struct ml_let_t let;
 	struct ml_cond_t cond;
+	struct ml_match_t *match;
 	struct ml_value_t *value;
 };
 

@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <libdsp.h>
 #include <muselang.h>
@@ -30,6 +31,7 @@
 #include "argv.h"
 #include "comm.h"
 #include "exec.h"
+#include "watch.h"
 
 #ifdef ALSA
 #	include "alsa/audio.h"

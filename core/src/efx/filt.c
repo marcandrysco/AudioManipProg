@@ -13,6 +13,7 @@
  *   @opt_gainhi_e: High gain.
  *   @opt_n: The number of options.
  */
+
 enum opt_e {
 	opt_res_e,
 	opt_qual_e,

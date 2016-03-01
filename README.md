@@ -30,7 +30,12 @@ compiled by MuseLang,and plugins run using AmpCore, and audio created by AMP
 are _not_ restricted in any way; authors are free to license their source
 code, plugins, and audio however they wish.
 
-## Building
+## Getting Started
+
+This section covers building the AMP components and using AmpRT with the
+provided examples.
+
+### Building
 
 Each subdirectory contains an individual `configure` script for generating a
 `Makefile`. Once the `Makefile` is generate, `make` will build the binary and
@@ -40,9 +45,13 @@ dependencies:
   * AmpCore depends on libDSP and MuseLang
   * AmpRT depends on AmpCore
 
-By default, AmpRT will attempt to build with against default set of audio
-APIs. To use different APIs, use the appropriate configure flags (e.g.
+By default, AmpRT will attempt to build with against a default set of audio
+APIs. To select different APIs, use the appropriate configure flags (e.g.
 `--alsa`, `--pulse`).
+
+### Examples
+
+
 
 ## Architecture
 

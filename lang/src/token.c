@@ -103,6 +103,7 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 	case '*': token = ml_token_star_e; break;
 	case '/': token = ml_token_slash_e; break;
 	case '%': token = ml_token_mod_e; break;
+	case '|': token = ml_token_pipe_e; break;
 	default: return ml_token_end_e;
 	}
 

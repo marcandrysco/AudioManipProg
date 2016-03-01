@@ -9,10 +9,14 @@ REV = 0
 LIB = libampcore.a
 SO  = libampcore.so
 HDR = amplib.h
+ML  = core.ml
 
 OBJ = src/box.o \
+      src/cache.o \
       src/core.o \
+      src/key.o \
       src/math.o \
+      src/midi.o \
       src/param.o \
       \
       src/clk/basic.o \
@@ -24,6 +28,8 @@ OBJ = src/box.o \
       src/efx/filt.o \
       src/efx/gain.o \
       src/efx/gen.o \
+      src/efx/reverb.o \
+      src/efx/sect.o \
       src/efx/synth.o \
       \
       src/handler/handler.o \
@@ -37,7 +43,7 @@ OBJ = src/box.o \
       src/mod/mul.o \
       src/mod/osc.o \
       src/mod/patch.o \
-      src/mod/sampler.o \
+      src/mod/sample.o \
       src/mod/sum.o \
       src/mod/trig.o \
       \
@@ -56,8 +62,11 @@ INC = src/defs.h \
       src/clk/basic.h \
       \
       src/box.h \
+      src/cache.h \
       src/core.h \
+      src/key.h \
       src/math.h \
+      src/midi.h \
       src/param.h \
       \
       src/efx/chain.h \
@@ -67,6 +76,8 @@ INC = src/defs.h \
       src/efx/filt.h \
       src/efx/gain.h \
       src/efx/gen.h \
+      src/efx/reverb.h \
+      src/efx/sect.h \
       src/efx/synth.h \
       \
       src/handler/handler.h \
@@ -80,7 +91,7 @@ INC = src/defs.h \
       src/mod/mul.h \
       src/mod/osc.h \
       src/mod/patch.h \
-      src/mod/sampler.h \
+      src/mod/sample.h \
       src/mod/sum.h \
       src/mod/trig.h \
       \
@@ -123,6 +134,7 @@ install: all
 	install --mode 0755 -D $(SO) $(LIBDIR)/$(SO).$(MAJ).$(MIN).$(REV)
 	ln -fs $(SO).$(MAJ).$(MIN).$(REV) "$(LIBDIR)/$(SO)"
 	ln -fs $(SO).$(MAJ).$(MIN).$(REV) "$(LIBDIR)/$(SO).$(MAJ)"
+	install --mode 0644 -D ml/$(ML) $(SHAREDIR)/amp/$(ML)
 
 # phony
 

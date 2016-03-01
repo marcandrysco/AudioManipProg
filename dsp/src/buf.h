@@ -1,5 +1,5 @@
-#ifndef RING_H
-#define RING_H
+#ifndef BUF_H
+#define BUF_H
 
 /**
  * Buffer structure.
@@ -9,7 +9,7 @@
 
 struct dsp_buf_t {
 	unsigned int len;
-	double arr[];
+	float arr[];
 };
 
 /*
@@ -17,6 +17,7 @@ struct dsp_buf_t {
  */
 
 struct dsp_buf_t *dsp_buf_new(unsigned int len);
+struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int rate);
 void dsp_buf_delete(struct dsp_buf_t *buf);
 
 
@@ -60,5 +61,13 @@ static inline void dsp_ring_put(struct dsp_ring_t *ring, double val)
 	ring->arr[ring->i] = val;
 	ring->i = (ring->i + 1) % ring->len;
 }
+
+
+/*
+ * sample rate conversion declarations
+ */
+
+unsigned int dsp_rerate(unsigned int len, unsigned int outrate, unsigned int inrate);
+void dsp_rerate_f(float *out, unsigned int outlen, unsigned int outrate, float *in, unsigned int inlen, unsigned int inrate);
 
 #endif

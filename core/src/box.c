@@ -232,6 +232,7 @@ void match_str(char **str, size_t *len, const char **format)
 	switch(**format) {
 	case 's': snprintf(*str, *len, "string"); break;
 	case 'd': snprintf(*str, *len, "int"); break;
+	case 'f': snprintf(*str, *len, "num"); break;
 	case 'e':
 		  (*format)++;
 		  switch(**format) {

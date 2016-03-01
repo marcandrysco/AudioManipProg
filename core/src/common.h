@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <locale.h>
 #include <math.h>
 #include <stdarg.h>
@@ -21,6 +22,8 @@
 #include "muselang.h"
 #include "libdsp.h"
 
+#include "config.h"
+
 #include "debug.h"
 #include "defs.h"
 #include "clk/defs.h"
@@ -31,8 +34,11 @@
 #include "seq/defs.h"
 
 #include "box.h"
+#include "cache.h"
 #include "core.h"
+#include "key.h"
 #include "math.h"
+#include "midi.h"
 #include "param.h"
 
 #include "clk/basic.h"
@@ -44,6 +50,8 @@
 #include "efx/filt.h"
 #include "efx/gain.h"
 #include "efx/gen.h"
+#include "efx/reverb.h"
+#include "efx/sect.h"
 #include "efx/synth.h"
 
 #include "handler/handler.h"
@@ -57,7 +65,7 @@
 #include "mod/mul.h"
 #include "mod/osc.h"
 #include "mod/patch.h"
-#include "mod/sampler.h"
+#include "mod/sample.h"
 #include "mod/sum.h"
 #include "mod/trig.h"
 

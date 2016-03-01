@@ -43,8 +43,8 @@ bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
 sharedir='$(PREFIX)/share'
-cflags='-O2 -g -fpic -ffast-math -Wall -I$(INCDIR) '
-ldflags='-lm -ldsp -lmuselang -ffast-math -L$(LIBDIR) '
+cflags='-O2 -g -fpic `pkg-config --cflags sndfile` -ffast-math -Wall -I$(INCDIR) '
+ldflags='-lm -ldsp -lmuselang `pkg-config --libs sndfile` -ffast-math -L$(LIBDIR) '
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
     --rpath)
@@ -70,11 +70,16 @@ test "$rpath" && ldflags="$ldflags -Wl,-rpath=\$(LIBDIR)"
 
 # build makefile
 rm -f Makefile
-echo "ARGS    = $args" >> Makefile
-echo "PREFIX  = $prefix" >> Makefile
-echo "BINDIR  = $bindir" >> Makefile
-echo "LIBDIR  = $libdir" >> Makefile
-echo "INCDIR  = $incdir" >> Makefile
-echo "CFLAGS  = $cflags" >> Makefile
-echo "LDFLAGS = $ldflags" >> Makefile
+echo "ARGS     = $args" >> Makefile
+echo "PREFIX   = $prefix" >> Makefile
+echo "BINDIR   = $bindir" >> Makefile
+echo "LIBDIR   = $libdir" >> Makefile
+echo "INCDIR   = $incdir" >> Makefile
+echo "SHAREDIR = $sharedir" >> Makefile
+echo "CFLAGS   = $cflags" >> Makefile
+echo "LDFLAGS  = $ldflags" >> Makefile
 cat Makefile.in >> Makefile
+
+# build config.h
+rm -f src/config.h
+echo "#define SHAREDIR \"$prefix/share/amp\"" >> src/config.h

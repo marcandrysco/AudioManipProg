@@ -5,6 +5,7 @@
  * Engine structure.
  *   @run, toggle: The run and toggle flag.
  *   @core: The core.
+ *   @notify: The notifier.
  *   @clock: The clock.
  *   @seq: The sequencer.
  *   @instr: The instrument.
@@ -15,6 +16,7 @@
 struct amp_engine_t {
 	bool run, toggle;
 	struct amp_core_t *core;
+	struct amp_notify_t *notify;
 
 	struct amp_clock_t clock;
 	struct amp_seq_t seq;
@@ -30,15 +32,17 @@ struct amp_engine_t {
  */
 
 static void callback(double **buf, unsigned int len, void *arg);
+static void notify(const char *path, void *arg);
 
 
 /**
  * Create an engine.
+ *   @list: Constant. Optional. The file list.
  *   @comm: Consumed. Optional. The communication structure.
  *   &returns: The engine.
  */
 
-struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
+struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 {
 	struct amp_engine_t *engine;
 
@@ -51,6 +55,7 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 	engine->effect[0] = amp_effect_null;
 	engine->effect[1] = amp_effect_null;
 	engine->comm = comm ?: amp_comm_new();
+	engine->notify = amp_notify_new(list, notify, engine);
 
 	engine->toggle = true;
 
@@ -64,6 +69,7 @@ struct amp_engine_t *amp_engine_new(struct amp_comm_t *comm)
 
 void amp_engine_delete(struct amp_engine_t *engine)
 {
+	amp_notify_delete(engine->notify);
 	amp_comm_delete(engine->comm);
 	amp_clock_delete(engine->clock);
 	amp_seq_erase(engine->seq);
@@ -150,7 +156,7 @@ void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
 	bool quit = false;
 	struct amp_engine_t *engine;
 
-	engine = amp_engine_new(comm);
+	engine = amp_engine_new((char *[]){ "test.ml", NULL }, comm);
 	amp_engine_update(engine, "test.ml");
 
 	amp_audio_exec(audio, callback, engine);
@@ -259,4 +265,15 @@ static void callback(double **buf, unsigned int len, void *arg)
 
 	if(engine->effect[1].iface != NULL)
 		amp_effect_proc(engine->effect[1], buf[1], time, len);
+}
+
+/**
+ * Handle a change notification.
+ *   @path: The path.
+ *   @arg: The argument.
+ */
+
+static void notify(const char *path, void *arg)
+{
+	amp_engine_update(arg, path);
 }

@@ -222,6 +222,38 @@ struct ml_expr_t *ml_parse_stmt(struct ml_token_t **token, char **err)
 
 		return ml_expr_cond(left, value, expr);
 	}
+	else if((*token)->type == ml_token_match_e) {
+		struct ml_match_t *match;
+
+		*token = (*token)->next;
+		expr = ml_parse_expr(token, err);
+		if(expr == NULL)
+			return NULL;
+
+		if((*token)->type != ml_token_with_e)
+			fail("Expected 'with'.");
+
+		*token = (*token)->next;
+		match = ml_match_new(expr);
+		while((*token)->type == ml_token_pipe_e) {
+			*token = (*token)->next;
+			pat = ml_parse_pat(token, err, false);
+			if(pat == NULL)
+				fail("Missing pattern.");
+
+			if((*token)->type != ml_token_arrow_e)
+				fail("Expected '->'.");
+
+			*token = (*token)->next;
+			expr = ml_parse_stmt(token, err);
+			if(expr == NULL)
+				fail("Expected expresion.");
+
+			ml_match_append(match, pat, expr);
+		}
+
+		return ml_expr_match(match);
+	}
 	else
 		return ml_parse_expr(token, err);
 }

@@ -10,19 +10,22 @@ LIB = libdsp.a
 SO  = libdsp.so
 HDR = libdsp.h
 
-OBJ = src/comp.o \
+OBJ = src/buf.o \
+      \
+      src/comp.o \
       src/filt.o \
       src/osc.o \
-      src/ring.o \
+      src/reverb.o \
 
 INC = src/defs.h \
+      src/buf.h \
       src/math.h \
       src/mem.h \
       \
       src/comp.h \
       src/filt.h \
       src/osc.h \
-      src/ring.h \
+      src/reverb.h \
      
 # build rules
 
