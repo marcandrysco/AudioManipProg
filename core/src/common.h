@@ -37,12 +37,14 @@
 #include "cache.h"
 #include "core.h"
 #include "key.h"
+#include "io.h"
 #include "math.h"
 #include "midi.h"
 #include "param.h"
 
 #include "clk/basic.h"
 
+#include "efx/bitcrush.h"
 #include "efx/chain.h"
 #include "efx/clip.h"
 #include "efx/comp.h"
@@ -59,10 +61,12 @@
 
 #include "instr/mixer.h"
 #include "instr/pan.h"
+#include "instr/series.h"
 #include "instr/splice.h"
 
 #include "mod/adsr.h"
 #include "mod/mul.h"
+#include "mod/noise.h"
 #include "mod/osc.h"
 #include "mod/patch.h"
 #include "mod/sample.h"

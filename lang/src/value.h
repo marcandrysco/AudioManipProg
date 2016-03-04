@@ -19,6 +19,8 @@ struct ml_value_t *ml_value_closure(struct ml_closure_t closure);
 struct ml_value_t *ml_value_box(struct ml_box_t box);
 struct ml_value_t *ml_value_impl(ml_impl_f impl);
 
+int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right);
+
 void ml_value_print(struct ml_value_t *value, FILE *file);
 
 /*

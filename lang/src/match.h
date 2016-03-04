@@ -6,12 +6,14 @@
  *   @ml_pat_id_e: Identifier.
  *   @ml_pat_tuple_e: Tuple.
  *   @ml_pat_list_e: List.
+ *   @ml_pat_value_e: Constant value.
  */
 
 enum ml_pat_e {
 	ml_pat_id_e,
 	ml_pat_tuple_e,
 	ml_pat_list_e,
+	ml_pat_value_e
 };
 
 /**
@@ -25,6 +27,7 @@ union ml_pat_u {
 	char *id;
 	struct ml_pat_t *tuple;
 	struct ml_pat_t *list[2];
+	struct ml_value_t *value;
 };
 
 /**
@@ -53,15 +56,10 @@ void ml_pat_delete(struct ml_pat_t *pat);
 struct ml_pat_t *ml_pat_id(char *id);
 struct ml_pat_t *ml_pat_tuple(struct ml_pat_t *tuple);
 struct ml_pat_t *ml_pat_list(struct ml_pat_t *head, struct ml_pat_t *tail);
+struct ml_pat_t *ml_pat_value(struct ml_value_t *value);
 
 void ml_pat_print(struct ml_pat_t *pat, FILE *file);
 
-bool ml_pat_match(struct ml_env_t *env, struct ml_pat_t *pat, struct ml_value_t *value);
-
-/*
- * match declarations
- */
-
-bool ml_match_pat(struct ml_env_t *env, struct ml_expr_t *pat, struct ml_value_t *value);
+bool ml_pat_match(struct ml_env_t **env, struct ml_pat_t *pat, struct ml_value_t *value);
 
 #endif

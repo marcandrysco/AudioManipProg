@@ -296,22 +296,41 @@ struct ml_value_t *ml_eval_concat(struct ml_value_t *value, struct ml_env_t *env
 	if(tuple.len != 2)
 		fail("Cons requires a tuple of length two.");
 
-	if((tuple.value[0]->type != ml_value_list_e) || (tuple.value[1]->type != ml_value_list_e))
+	if((tuple.value[0]->type == ml_value_list_e) || (tuple.value[1]->type == ml_value_list_e)) {
+		list = ml_list_new();
+		left = ml_list_copy(tuple.value[0]->data.list);
+		right = ml_list_copy(tuple.value[1]->data.list);
+
+		if(left.head == NULL) {
+			list.head = right.head;
+			list.tail = right.tail;
+		}
+		else if(right.head == NULL) {
+			list.head = left.head;
+			list.tail = left.tail;
+		}
+		else {
+			left.tail->next = right.head;
+			right.head->prev = left.tail;
+
+			list.head = left.head;
+			list.tail = right.tail;
+		}
+
+		ml_value_delete(value);
+
+		return ml_value_list(list);
+	}
+	else if((tuple.value[0]->type == ml_value_str_e) || (tuple.value[1]->type == ml_value_str_e)) {
+		char *str;
+
+		str = ml_aprintf("%s%s", tuple.value[0]->data.str, tuple.value[1]->data.str);
+		ml_value_delete(value);
+
+		return ml_value_str(str);
+	}
+	else
 		fail("Cannot concat non-list types.");
-
-	list = ml_list_new();
-	left = ml_list_copy(tuple.value[0]->data.list);
-	right = ml_list_copy(tuple.value[1]->data.list);
-
-	left.tail->next = right.head;
-	right.head->prev = left.tail;
-
-	list.head = left.head;
-	list.tail = right.tail;
-
-	ml_value_delete(value);
-
-	return ml_value_list(list);
 }
 
 
@@ -370,7 +389,7 @@ struct ml_value_t *ml_eval_floor(struct ml_value_t *value, struct ml_env_t *env,
 	double ret;
 
 	if(value->type != ml_value_num_e)
-		fail("Type error. Logarithm requires type 'Num'.");
+		fail("Type error. Function 'floor' requires type 'Num'.");
 
 	ret = floor(value->data.num);
 	ml_value_delete(value);
@@ -391,7 +410,7 @@ struct ml_value_t *ml_eval_ceil(struct ml_value_t *value, struct ml_env_t *env, 
 	double ret;
 
 	if(value->type != ml_value_num_e)
-		fail("Type error. Logarithm requires type 'Num'.");
+		fail("Type error. Function 'ceil' requires type 'Num'.");
 
 	ret = ceil(value->data.num);
 	ml_value_delete(value);
@@ -412,10 +431,84 @@ struct ml_value_t *ml_eval_round(struct ml_value_t *value, struct ml_env_t *env,
 	double ret;
 
 	if(value->type != ml_value_num_e)
-		fail("Type error. Logarithm requires type 'Num'.");
+		fail("Type error. Function 'round' requires type 'Num'.");
 
 	ret = round(value->data.num);
 	ml_value_delete(value);
 
 	return ml_value_num(ret);
+}
+
+
+struct ml_eval_t ml_eval_arr[] = {
+	{ "fail", ml_eval_fail },
+	{ "print", ml_eval_print },
+	{ "i2str", ml_eval_i2str },
+	{ "strlen", ml_eval_strlen },
+	{ NULL, NULL }
+};
+
+
+/**
+ * Print evaluation.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_print(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	if(value->type != ml_value_str_e)
+		fail("Type error. Function 'print' requires type 'string'.");
+
+	printf("%s", value->data.str);
+	ml_value_delete(value);
+	
+	return ml_value_nil();;
+}
+
+/**
+ * Fail evaluation.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *ml_eval_fail(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	if(value->type != ml_value_str_e)
+		fail("Type error. Function 'fail' requires type 'string'.");
+
+	*err = ml_aprintf("fail: %s", value->data.str);
+	ml_value_delete(value);
+	
+	return NULL;
+}
+
+struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_value_t *ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Function 'i2str' requires type 'Num'.");
+
+	ret = ml_value_str(ml_aprintf("%d", (int)value->data.num));
+	ml_value_delete(value);
+
+	return ret;
+}
+
+struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_value_t *ret;
+
+	if(value->type != ml_value_str_e)
+		fail("Type error. Function 'strlen' requires type 'string'.");
+
+	ret = ml_value_num(strlen(value->data.str));
+	ml_value_delete(value);
+
+	return ret;
 }

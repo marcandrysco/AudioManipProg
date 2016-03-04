@@ -62,6 +62,34 @@ static inline void dsp_ring_put(struct dsp_ring_t *ring, double val)
 	ring->i = (ring->i + 1) % ring->len;
 }
 
+/**
+ * Process a ring buffer, adding a value and retreiving the last value.
+ *   @ring: The ring buffer.
+ *   @val: The value.
+ *   &returns: The last value.
+ */
+
+static inline double dsp_ring_proc(struct dsp_ring_t *ring, double val)
+{
+	double ret;
+
+	ret = dsp_ring_last(ring);
+	dsp_ring_put(ring, val);
+
+	return ret;
+}
+
+/**
+ * Delete a ring buffer if non-null.
+ *   @ring: The ring buffer.
+ */
+
+static inline void dsp_ring_erase(struct dsp_ring_t *ring)
+{
+	if(ring != NULL)
+		dsp_ring_delete(ring);
+}
+
 
 /*
  * sample rate conversion declarations

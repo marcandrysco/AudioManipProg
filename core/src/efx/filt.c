@@ -155,6 +155,49 @@ struct amp_filt_t *amp_filt_hpf(struct amp_param_t *freq, double rate)
 }
 
 /**
+ * Create a peaking filter.
+ *   @freq: The frequency.
+ *   @gain: The gain.
+ *   @qual: The quality.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+
+struct amp_filt_t *amp_filt_peak(struct amp_param_t *freq, struct amp_param_t *gain, struct amp_param_t *qual, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_peak_e, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(gain) && amp_param_isfast(qual);
+	amp_param_set(&filt->param[opt_freq_e], freq);
+	amp_param_set(&filt->param[opt_gain_e], gain);
+	amp_param_set(&filt->param[opt_qual_e], qual);
+
+	return filt;
+}
+
+/**
+ * Create a resonance filter.
+ *   @freq: The frequency.
+ *   @gain: The gain.
+ *   @qual: The quality.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+
+struct amp_filt_t *amp_filt_res(struct amp_param_t *freq, struct amp_param_t *qual, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_res_e, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(qual);
+	amp_param_set(&filt->param[opt_freq_e], freq);
+	amp_param_set(&filt->param[opt_qual_e], qual);
+
+	return filt;
+}
+
+/**
  * Create a Moog VCF.
  *   @freq: The frequency.
  *   @res: The resonance.
@@ -208,7 +251,7 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len];
 
-			cont |= amp_param_proc(filt->param[opt_freq_e], buf, time, len);
+			cont |= amp_param_proc(filt->param[opt_freq_e], freq, time, len);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_lpf_proc(buf[i], dsp_lpf_init(freq[i], filt->rate), filt->s);
@@ -226,7 +269,7 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len];
 
-			cont |= amp_param_proc(filt->param[opt_freq_e], buf, time, len);
+			cont |= amp_param_proc(filt->param[opt_freq_e], freq, time, len);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_hpf_proc(buf[i], dsp_hpf_init(freq[i], filt->rate), filt->s);
@@ -240,12 +283,51 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 		break;
 
+	case amp_filt_peak_e:
+		if(!filt->fast) {
+			double freq[len], gain[len], qual[len], rate = filt->rate;
+
+			cont |= amp_param_proc(filt->param[opt_freq_e], freq, time, len);
+			cont |= amp_param_proc(filt->param[opt_gain_e], gain, time, len);
+			cont |= amp_param_proc(filt->param[opt_gain_e], qual, time, len);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_peak_proc(buf[i], dsp_peak_init(freq[i], gain[i], qual[i], rate), filt->s);
+		}
+		else {
+			struct dsp_peak_t c = dsp_peak_init(filt->param[opt_freq_e]->flt, filt->param[opt_gain_e]->flt, filt->param[opt_qual_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_peak_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_res_e:
+		if(!filt->fast) {
+			double freq[len], qual[len], rate = filt->rate;
+
+			cont |= amp_param_proc(filt->param[opt_freq_e], freq, time, len);
+			cont |= amp_param_proc(filt->param[opt_qual_e], qual, time, len);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_res_proc(buf[i], dsp_res_init(freq[i], qual[i], rate), filt->s);
+		}
+		else {
+			struct dsp_svf_t c = dsp_res_init(filt->param[opt_freq_e]->flt, filt->param[opt_qual_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_res_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
 	case amp_filt_moog_e:
 		if(!filt->fast) {
 			double freq[len], res[len];
 
-			cont |= amp_param_proc(filt->param[opt_freq_e], buf, time, len);
-			cont |= amp_param_proc(filt->param[opt_res_e], buf, time, len);
+			cont |= amp_param_proc(filt->param[opt_freq_e], freq, time, len);
+			cont |= amp_param_proc(filt->param[opt_res_e], res, time, len);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_moog_proc(buf[i], dsp_moog_init(freq[i], res[i], filt->rate), filt->s);
@@ -300,6 +382,44 @@ struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, 
 		return NULL;
 
 	return amp_pack_effect(amp_filt_effect(amp_filt_hpf(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a peaking filter from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *amp_peak_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq, *gain, *qual;
+
+	*err = amp_match_unpack(value, "(P,P,P)", &freq, &gain, &qual);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_peak(freq, gain, qual, amp_core_rate(env))));
+}
+
+/**
+ * Create a resonance filter from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *amp_res_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq, *qual;
+
+	*err = amp_match_unpack(value, "(P,P)", &freq, &qual);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_res(freq, qual, amp_core_rate(env))));
 }
 
 /**

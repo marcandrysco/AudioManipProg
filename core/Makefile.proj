@@ -1,4 +1,4 @@
 # run rules
 
 run: install
-	$(MAKE) run -C ../rt
+	$(MAKE) run -C ../sin

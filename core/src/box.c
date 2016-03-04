@@ -270,6 +270,7 @@ void match_str(char **str, size_t *len, const char **format)
 void amp_match_str(char *str, size_t len, const char *format)
 {
 	match_str(&str, &len, &format);
+	*str = '\0';
 
 	assert(*format == '\0');
 }

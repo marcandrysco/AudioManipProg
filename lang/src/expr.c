@@ -203,18 +203,6 @@ struct ml_expr_t *ml_expr_value(struct ml_value_t *value)
 	return ml_expr_new(ml_expr_value_e, (union ml_expr_u){ .value = value }, (struct ml_tag_t){ NULL, 0, 0, 0 });
 }
 
-/*
-void ml_vprintf(const char *restrict format, va_list args)
-{
-}
-
-void ml_printf(const char *restrict format, ...)
-{
-	va_start(args, format);
-	ml_vprintf(format, args);
-	va_end(args);
-}
-*/
 
 /**
  * Evaluate an expression.
@@ -285,13 +273,13 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 
 				value = ml_expr_eval(expr->data.app.value, env, err);
 				if(value != NULL) {
-					if(!ml_pat_match(sub, pat, value))
+					if(!ml_pat_match(&sub, pat, value))
 						fail("Cannot match pattern.");
 
 					ml_value_delete(value);
 
 					if(func->data.closure.rec != NULL)
-						ml_env_add(sub, strdup(func->data.closure.rec), ml_value_copy(func));
+						ml_env_add(&sub, strdup(func->data.closure.rec), ml_value_copy(func));
 
 					if(pat->next)
 						value = ml_value_closure(ml_closure(ml_env_copy(sub), ml_pat_copy(pat->next), NULL, ml_expr_copy(func->data.closure.expr)));
@@ -329,7 +317,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			closure = ml_closure(ml_env_copy(env), ml_pat_copy(expr->data.let.pat->next), strdup(id), ml_expr_copy(expr->data.let.value));
 
 			sub = ml_env_copy(env);
-			ml_env_add(sub, strdup(id), ml_value_closure(closure));
+			ml_env_add(&sub, strdup(id), ml_value_closure(closure));
 
 			ret = ml_expr_eval(expr->data.let.expr, sub, err);
 
@@ -347,7 +335,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 
 			sub = ml_env_copy(env);
 
-			if(ml_pat_match(sub, expr->data.let.pat, value))
+			if(ml_pat_match(&sub, expr->data.let.pat, value))
 				ret = ml_expr_eval(expr->data.let.expr, sub, err);
 			else
 				ret = NULL, *err = ml_aprintf("Match failed.");
@@ -390,7 +378,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 
 				sub = ml_env_copy(env);
 
-				if(ml_pat_match(sub, with->pat, value)) {
+				if(ml_pat_match(&sub, with->pat, value)) {
 					ml_value_delete(value);
 
 					value = ml_expr_eval(with->expr, sub, err);
@@ -575,6 +563,7 @@ struct ml_match_t *ml_match_new(struct ml_expr_t *expr)
 
 	match = malloc(sizeof(struct ml_match_t));
 	match->expr = expr;
+	match->head = match->tail = NULL;
 
 	return match;
 }

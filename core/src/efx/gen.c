@@ -3,12 +3,10 @@
 
 /**
  * Generator structure.
- *   @thru: The passthrough level.
  *   @module: The module.
  */
 
 struct amp_gen_t {
-	double thru;
 	struct amp_module_t module;
 };
 
@@ -27,17 +25,15 @@ const struct amp_effect_i amp_gen_iface = {
 
 /**
  * Create a generator effect.
- *   @thru: The passthrough level.
  *   @module: Consumed. The module.
  *   &returns: The gen.
  */
 
-struct amp_gen_t *amp_gen_new(double thru, struct amp_module_t module)
+struct amp_gen_t *amp_gen_new(struct amp_module_t module)
 {
 	struct amp_gen_t *gen;
 
 	gen = malloc(sizeof(struct amp_gen_t));
-	gen->thru = thru;
 	gen->module = module;
 
 	return gen;
@@ -51,7 +47,7 @@ struct amp_gen_t *amp_gen_new(double thru, struct amp_module_t module)
 
 struct amp_gen_t *amp_gen_copy(struct amp_gen_t *gen)
 {
-	return amp_gen_new(gen->thru, amp_module_copy(gen->module));
+	return amp_gen_new(amp_module_copy(gen->module));
 }
 
 /**
@@ -76,14 +72,13 @@ void amp_gen_delete(struct amp_gen_t *gen)
 
 struct ml_value_t *amp_gen_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
-	double thru;
 	struct amp_module_t module;
 
-	*err = amp_match_unpack(value, "(f,M)", &thru, &module);
+	*err = amp_match_unpack(value, "M", &module);
 	if(*err != NULL)
 		return NULL;
 
-	return amp_pack_effect((struct amp_effect_t){ amp_gen_new(thru, module), &amp_gen_iface });
+	return amp_pack_effect((struct amp_effect_t){ amp_gen_new(module), &amp_gen_iface });
 }
 
 
@@ -111,15 +106,13 @@ bool amp_gen_proc(struct amp_gen_t *gen, double *buf, struct amp_time_t *time, u
 {
 	bool cont;
 	unsigned int i;
-	double thru, tmp[len];
-
-	thru = gen->thru;
+	double tmp[len];
 
 	dsp_zero_d(tmp, len);
 	cont = amp_module_proc(gen->module, tmp, time, len);
 
 	for(i = 0; i < len; i++)
-		buf[i] = tmp[i] + thru * buf[i];
+		buf[i] += tmp[i];
 
 	return cont;
 }

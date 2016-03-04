@@ -3,11 +3,16 @@
 
 /**
  * Compressor structure.
+ *   @fast: The fast flag.
+ *   @vol, ctrl, rate: The volume, control, and sample rate.
  *   @atk, rel, thres, ratio: The compressor parameters.
  */
 
 struct amp_comp_t {
-	struct amp_value_t atk, rel, thresh, ratio;
+	bool fast;
+
+	double vol, ctrl, rate;
+	struct amp_param_t *atk, *rel, *thresh, *ratio;
 };
 
 
@@ -29,18 +34,23 @@ const struct amp_effect_i amp_comp_iface = {
  *   @rel: The release time.
  *   @thresh: The threshold.
  *   @ratio: The ratio.
+ *   @rate; The sample rate.
  *   &returns: The comp.
  */
 
-struct amp_comp_t *amp_comp_new(struct amp_value_t atk, struct amp_value_t rel, struct amp_value_t thresh, struct amp_value_t ratio)
+struct amp_comp_t *amp_comp_new(struct amp_param_t *atk, struct amp_param_t *rel, struct amp_param_t *thresh, struct amp_param_t *ratio, double rate)
 {
 	struct amp_comp_t *comp;
 
 	comp = malloc(sizeof(struct amp_comp_t));
+	comp->fast = amp_param_isfast(atk) || amp_param_isfast(rel) || amp_param_isfast(thresh) || amp_param_isfast(ratio);
+	comp->vol = 0.0;
+	comp->ctrl = 1.0;
 	comp->atk = atk;
 	comp->rel = rel;
 	comp->thresh = thresh;
 	comp->ratio = ratio;
+	comp->rate = rate;
 
 	return comp;
 }
@@ -53,7 +63,7 @@ struct amp_comp_t *amp_comp_new(struct amp_value_t atk, struct amp_value_t rel, 
 
 struct amp_comp_t *amp_comp_copy(struct amp_comp_t *comp)
 {
-	return amp_comp_new(amp_value_copy(comp->atk), amp_value_copy(comp->rel), amp_value_copy(comp->thresh), amp_value_copy(comp->ratio));
+	return amp_comp_new(amp_param_copy(comp->atk), amp_param_copy(comp->rel), amp_param_copy(comp->thresh), amp_param_copy(comp->ratio), comp->rate);
 }
 
 /**
@@ -63,10 +73,10 @@ struct amp_comp_t *amp_comp_copy(struct amp_comp_t *comp)
 
 void amp_comp_delete(struct amp_comp_t *comp)
 {
-	amp_value_delete(comp->atk);
-	amp_value_delete(comp->rel);
-	amp_value_delete(comp->thresh);
-	amp_value_delete(comp->ratio);
+	amp_param_delete(comp->atk);
+	amp_param_delete(comp->rel);
+	amp_param_delete(comp->thresh);
+	amp_param_delete(comp->ratio);
 	free(comp);
 }
 
@@ -81,12 +91,13 @@ void amp_comp_delete(struct amp_comp_t *comp)
 
 struct ml_value_t *amp_comp_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
-	struct amp_value_t atk, rel, thresh, ratio;
+	struct amp_param_t *atk, *rel, *thresh, *ratio;
 
-	*err = amp_value_scan(value, env, &atk, &rel, &thresh, &ratio, NULL);
-	ml_value_delete(value);
+	*err = amp_match_unpack(value, "(P,P,P,P)", &atk, &rel, &thresh, &ratio);
+	if(*err != NULL)
+		return NULL;
 
-	return (*err == NULL) ? amp_pack_effect((struct amp_effect_t){ amp_comp_new(atk, rel, thresh, ratio), &amp_comp_iface }) : NULL;
+	return amp_pack_effect((struct amp_effect_t){ amp_comp_new(atk, rel, thresh, ratio, amp_core_rate(env)), &amp_comp_iface });
 }
 
 
@@ -98,10 +109,10 @@ struct ml_value_t *amp_comp_make(struct ml_value_t *value, struct ml_env_t *env,
 
 void amp_comp_info(struct amp_comp_t *comp, struct amp_info_t info)
 {
-	//amp_value_info(&comp->atk, info);
-	//amp_value_info(&comp->rel, info);
-	//amp_value_info(&comp->thresh, info);
-	//amp_value_info(&comp->ratio, info);
+	amp_param_info(comp->atk, info);
+	amp_param_info(comp->rel, info);
+	amp_param_info(comp->thresh, info);
+	amp_param_info(comp->ratio, info);
 }
 
 /**
@@ -114,4 +125,23 @@ void amp_comp_info(struct amp_comp_t *comp, struct amp_info_t info)
 
 void amp_comp_proc(struct amp_comp_t *comp, double *buf, struct amp_time_t *time, unsigned int len)
 {
+	double vol, ctrl;
+	unsigned int i;
+
+	vol = comp->vol;
+	ctrl = comp->ctrl;
+
+	if(comp->fast) {
+		struct dsp_comp_t dsp;
+
+		dsp = dsp_comp_init(comp->atk->flt * comp->rate, comp->rel->flt * comp->rate, comp->thresh->flt, comp->ratio->flt);
+
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_comp_proc(&dsp, buf[i], &vol, &ctrl);
+	}
+	else {
+	}
+
+	comp->vol = vol;
+	comp->ctrl = ctrl;
 }

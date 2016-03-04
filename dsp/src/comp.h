@@ -3,68 +3,58 @@
 
 /**
  * Compressor structure.
- *   @rate: The sample rate.
- *   @vol, ctrl: The volume and control parameters.
+ *   @atk, rel, thresh, ratio: The parameters.
  */
 
 struct dsp_comp_t {
-	unsigned int rate;
-
-	double vol, ctrl;
 	double atk, rel, thresh, ratio;
 };
 
 
-/*
- * compressor declarations
- */
-
-struct dsp_comp_t dsp_comp_init(unsigned int rate);
-void dsp_comp_proc(struct dsp_comp_t *comp, double *buf, unsigned int len);
-
-
 /**
- * Set the attack on the compressor.
- *   @comp: The compressor.
- *   @len: The attack length in seconds.
+ * Initialize a compressor.
+ *   @atk: The attack length in samples.
+ *   @rel: The release length in samples.
+ *   @thresh: The threshold.
+ *   @ratio: The ratio.
+ *   &returns: The compressor.
  */
 
-static inline void dsp_comp_atk(struct dsp_comp_t *comp, double len)
+static inline struct dsp_comp_t dsp_comp_init(double atk, double rel, double thresh, double ratio)
 {
-	comp->atk = 1.0 - dsp_decay_d(0.95, len, comp->rate);
+	struct dsp_comp_t comp;
+
+	comp.atk = 1.0 - dsp_decay_d(0.5, atk);
+	comp.rel = 1.0 - dsp_decay_d(0.5, rel);
+	comp.thresh = thresh;
+	comp.ratio = 1.0 / ratio;
+
+	return comp;
 }
 
 /**
- * Set the release on the compressor.
+ * Process the compressor.
  *   @comp: The compressor.
- *   @len: The release length in seconds.
+ *   @buf: The buffer.
+ *   @len: The length.
  */
 
-static inline void dsp_comp_rel(struct dsp_comp_t *comp, double len)
+static inline double dsp_comp_proc(struct dsp_comp_t *comp, double x, double *vol, double *ctrl)
 {
-	comp->rel = 1.0 - dsp_decay_d(0.95, len, comp->rate);
-}
+	double y, diff;
 
-/**
- * Set the threshold on the compressor.
- *   @comp: The compressor.
- *   @thresh: The threshold in decibels.
- */
+	y = x;
+	x = fabs(y);
 
-static inline void dsp_comp_thresh(struct dsp_comp_t *comp, double db)
-{
-	comp->thresh = dsp_db2amp_d(db);
-}
+	diff = x - *vol;
+	diff = (diff > 0) ? (comp->atk * diff) : (comp->rel * diff);
+	*vol = *vol + diff;
 
-/**
- * Set the ratio on the compressor.
- *   @comp: The compressor.
- *   @thresh: The ratio.
- */
+	diff = ((x <= comp->thresh) ? 1.0 : (x / (comp->thresh + (x - comp->thresh) * comp->ratio))) - *ctrl;
+	diff = (diff > 0) ? (comp->atk * diff) : (comp->rel * diff);
+	*ctrl = *ctrl + diff;
 
-static inline void dsp_comp_ratio(struct dsp_comp_t *comp, double db)
-{
-	comp->ratio = 1.0 / dsp_db2amp_d(db);
+	return y / *ctrl;
 }
 
 #endif

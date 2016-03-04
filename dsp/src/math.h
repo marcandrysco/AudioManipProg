@@ -72,16 +72,15 @@ static inline double dsp_db2amp_f(double db)
 
 
 /**
- * Calculate the exponential decay constant.
+ * Calculate the exponential decay constant as a float.
  *   @target: The target value.
- *   @len: The time in seconds to reach the target.
- *   @rate: The sample rate.
+ *   @len: The time in samples to reach the target.
  *   &returns: The exponential structure.
  */
 
-static inline double dsp_decay_d(double target, double len, unsigned int rate)
+static inline double dsp_decay_d(double target, double len)
 {
-	return (len > 0.0) ? dsp_pow_d(1.0 - target, 1.0 / (len * rate)) : 0.0;
+	return (len > 0) ? dsp_pow_d(1.0 - target, 1.0 / len) : 0.0;
 }
 
 #endif

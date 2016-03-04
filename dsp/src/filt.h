@@ -31,7 +31,7 @@ static inline struct dsp_lpf_t dsp_lpf_init(double freq, double rate)
 
 static inline double dsp_lpf_freq(struct dsp_lpf_t c, double rate)
 {
-	return atan(c.g) * rate / M_PI;
+	return atanf(c.g) * rate / M_PI;
 }
 
 /**
@@ -153,6 +153,141 @@ static inline double dsp_moog_proc(double x, struct dsp_moog_t moog, double *s)
 	x = y;
 	
 	return x;
+}
+
+
+/**
+ * State variable filter structure.
+ *   @g: The gain element.
+ *   @r: The resonance.
+ */
+
+struct dsp_svf_t {
+	double g;
+	double r;
+};
+
+/**
+ * Initialize a state variable filter.
+ *   @freq: The frequencer.
+ *   @res: The resonance.
+ *   @rate: The sample rate.
+ *   &returns: The state variable filter.
+ */
+
+static inline struct dsp_svf_t dsp_svf_init(double freq, double res, unsigned int rate)
+{
+	double w = tanf(freq * M_PI / rate);
+
+	return (struct dsp_svf_t){ w, 1.0 - res };
+}
+
+/**
+ * Process a state variable filter.
+ *   @y: The outputs.
+ *   @x: The input.
+ *   @c: The constant.
+ *   @s: The state. Must have at least two variables.
+ */
+
+static inline void dsp_svf_proc(double *y, double x, struct dsp_svf_t c, double *s)
+{
+	y[0] = (x - 2*c.r*s[0] - c.g*s[0] - s[1]) / (1 + 2*c.r*c.g + c.g*c.g);
+	y[1] = s[0] + y[0]*c.g;
+	y[2] = s[1] + y[1]*c.g;
+
+	s[0] = y[1] + y[0]*c.g;
+	s[1] = y[2] + y[1]*c.g;
+}
+
+/**
+ * Process a low-pass state variable filter.
+ *   @x: The input.
+ *   @c: The constant.
+ *   @s: The state. Must have at least two variables.
+ *   &returns: The output.
+ */
+
+static inline double dsp_svf_low(double x, struct dsp_svf_t c, double *s)
+{
+	double y[3];
+
+	dsp_svf_proc(y, x, c, s);
+
+	return y[2];
+}
+
+/**
+ * Initialize a SVF for a resonant filter.
+ *   @freq: The frequencer.
+ *   @qual: The quality.
+ *   @rate: The sample rate.
+ *   &returns: The state variable filter.
+ */
+
+static inline struct dsp_svf_t dsp_res_init(double freq, double qual, unsigned int rate)
+{
+	return dsp_svf_init(freq, 1.0 - 1.0 / qual, rate);
+}
+
+/**
+ * Process a resonant filter.
+ *   @x: The input.
+ *   @c: The constant.
+ *   @gain: The gain.
+ *   @s: The state. Must have at least two variables.
+ */
+
+static inline double dsp_res_proc(double x, struct dsp_svf_t svf, double *s)
+{
+	double y[3];
+
+	dsp_svf_proc(y, x, svf, s);
+
+	return 2 * svf.r * y[1];
+}
+
+
+/**
+ * Peaking filter structure.
+ *   @g: The gain.
+ *   @svf: The state variable data.
+ */
+
+struct dsp_peak_t {
+	double g;
+	struct dsp_svf_t svf;
+};
+
+/**
+ * Initialize a peaking filter.
+ *   @freq: The frequency.
+ *   @gain: The gain.
+ *   @qual: The quality.
+ *   @rate: The sample rate.
+ *   &returns: The state variable filter.
+ */
+
+static inline struct dsp_peak_t dsp_peak_init(double freq, double gain, double qual, unsigned int rate)
+{
+	return (struct dsp_peak_t){ gain, dsp_svf_init(freq, 1.0 - 1.0 / qual, rate) };
+}
+
+/**
+ * Process a peaking filter.
+ *   @x: The input.
+ *   @c: The constant.
+ *   @gain: The gain.
+ *   @s: The state. Must have at least two variables.
+ */
+
+static inline double dsp_peak_proc(double x, struct dsp_peak_t peak, double *s)
+{
+	double y[3];
+
+	dsp_svf_proc(y, x, peak.svf, s);
+
+	return (peak.g - 1.0) * 2 * peak.svf.r * y[1] + x;
 }
 
 #endif

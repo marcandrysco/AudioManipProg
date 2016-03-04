@@ -5,7 +5,7 @@
  * comp declarations
  */
 
-struct amp_comp_t *amp_comp_new(struct amp_value_t atk, struct amp_value_t rel, struct amp_value_t thresh, struct amp_value_t ratio);
+struct amp_comp_t *amp_comp_new(struct amp_param_t *atk, struct amp_param_t *rel, struct amp_param_t *thresh, struct amp_param_t *ratio, double rate);
 struct amp_comp_t *amp_comp_copy(struct amp_comp_t *comp);
 void amp_comp_delete(struct amp_comp_t *comp);
 

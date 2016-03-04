@@ -99,13 +99,22 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 		fprintf(stderr, "%s\n", err), free(err); return;
 	}
 
+	value = ml_env_lookup(env, "clock");
+	if(value != NULL) {
+		box = amp_unbox_value(value, amp_box_clock_e);
+		if(box != NULL)
+			amp_clock_set(&engine->clock, amp_clock_copy(box->data.clock));
+		else
+			fprintf(stderr, "Type for 'seq' is not valid.\n");
+	}
+
 	value = ml_env_lookup(env, "seq");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_seq_e);
 		if(box != NULL)
 			amp_seq_set(&engine->seq, amp_seq_copy(box->data.seq));
 		else
-			fprintf(stderr, "Type for 'effect' is not valid.\n");
+			fprintf(stderr, "Type for 'seq' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "instr");
@@ -114,7 +123,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 		if(box != NULL)
 			amp_instr_set(&engine->instr, amp_instr_copy(box->data.instr));
 		else
-			fprintf(stderr, "Type for 'effect' is not valid.\n");
+			fprintf(stderr, "Type for 'instr' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "effect");
@@ -129,14 +138,14 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	}
 
 #if DEBUG
-	struct ml_bind_t *bind;
+	struct ml_env_t *iter;
 
-	for(bind = env->bind; bind != NULL; bind = bind->next) {
-		if(bind->id[0] != '_')
+	for(iter = env; iter != NULL; iter = iter->up) {
+		if(iter->id[0] != '_')
 			continue;
 
-		printf("%s: ", bind->id);
-		ml_value_print(bind->value, stdout);
+		printf("%s: ", iter->id);
+		ml_value_print(iter->value, stdout);
 		printf("\n");
 	}
 #endif
@@ -148,16 +157,20 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 /**
  * Execute the audio engine.
  *   @audio: The audio device.
+ *   @file: The file list.
  *   @comm: Optional. Consumed. The communication structure.
  */
 
-void amp_exec(struct amp_audio_t audio, struct amp_comm_t *comm)
+void amp_exec(struct amp_audio_t audio, char **file, struct amp_comm_t *comm)
 {
 	bool quit = false;
+	char **ml;
 	struct amp_engine_t *engine;
 
-	engine = amp_engine_new((char *[]){ "test.ml", NULL }, comm);
-	amp_engine_update(engine, "test.ml");
+	engine = amp_engine_new(file, comm);
+
+	for(ml = file; *ml != NULL; ml++)
+		amp_engine_update(engine, *ml);
 
 	amp_audio_exec(audio, callback, engine);
 

@@ -275,7 +275,7 @@ struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err)
 
 				num[i++] = byte;
 				byte = fgetc(file), tag.off++, tag.col++;
-			} while(isalnum(byte) || (byte == '.'));
+			} while(isalnum(byte) || (byte == '.') || (byte == 'e') || (byte == '-' && num[i-1] == 'e'));
 
 			errno = 0;
 			num[i] = '\0';
@@ -294,6 +294,16 @@ struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err)
 			byte = fgetc(file), tag.off++, tag.col++;
 
 			while((byte != '"') && (byte != EOF)) {
+				if(byte == '\\') {
+					byte = fgetc(file), tag.off++, tag.col++;
+					switch(byte) {
+					case '\\': break;
+					case 't': byte = '\t'; break;
+					case 'n': byte = '\n'; break;
+					default: fail("Invalid escaped sequence '\\%c'.", byte);
+					}
+				}
+
 				if(i == sizeof(str))
 					fail("Identifier too long.");
 

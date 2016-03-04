@@ -198,6 +198,63 @@ struct ml_value_t *ml_value_impl(ml_impl_f impl)
 
 
 /**
+ * Compare two value for their order.
+ *   @left: The left value.
+ *   @right: The right value.
+ *   &returns: Their order.
+ */
+
+int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right)
+{
+	if(left->type > right->type)
+		return 1;
+	else if(left->type < right->type)
+		return -1;
+
+	switch(left->type) {
+	case ml_value_nil_e:
+		return 0;
+
+	case ml_value_bool_e:
+		if(left->data.flag > right->data.flag)
+			return 1;
+		else if(left->data.flag < right->data.flag)
+			return -1;
+		else
+			return 0;
+
+	case ml_value_num_e:
+		if(left->data.num > right->data.num)
+			return 1;
+		else if(left->data.num < right->data.num)
+			return -1;
+		else
+			return 0;
+
+	case ml_value_str_e:
+		return strcmp(left->data.str, right->data.str);
+
+	case ml_value_tuple_e:
+		return 0;
+
+	case ml_value_list_e:
+		return 0;
+
+	case ml_value_closure_e:
+		return 0;
+
+	case ml_value_box_e:
+		return 0;
+
+	case ml_value_impl_e:
+		return 0;
+	}
+
+	fprintf(stderr, "Invalid value type.\n"), abort();
+}
+
+
+/**
  * Print a value.
  *   @value: The value.
  *   @file: The file.

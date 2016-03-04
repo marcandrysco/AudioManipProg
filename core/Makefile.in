@@ -15,12 +15,14 @@ OBJ = src/box.o \
       src/cache.o \
       src/core.o \
       src/key.o \
+      src/io.o \
       src/math.o \
       src/midi.o \
       src/param.o \
       \
       src/clk/basic.o \
       \
+      src/efx/bitcrush.o \
       src/efx/chain.o \
       src/efx/clip.o \
       src/efx/comp.o \
@@ -37,10 +39,12 @@ OBJ = src/box.o \
       \
       src/instr/mixer.o \
       src/instr/pan.o \
+      src/instr/series.o \
       src/instr/splice.o \
       \
       src/mod/adsr.o \
       src/mod/mul.o \
+      src/mod/noise.o \
       src/mod/osc.o \
       src/mod/patch.o \
       src/mod/sample.o \
@@ -65,10 +69,12 @@ INC = src/defs.h \
       src/cache.h \
       src/core.h \
       src/key.h \
+      src/io.h \
       src/math.h \
       src/midi.h \
       src/param.h \
       \
+      src/efx/bitcrush.h \
       src/efx/chain.h \
       src/efx/clip.h \
       src/efx/comp.h \
@@ -85,10 +91,12 @@ INC = src/defs.h \
       \
       src/instr/mixer.h \
       src/instr/pan.h \
+      src/instr/series.h \
       src/instr/splice.h \
       \
       src/mod/adsr.h \
       src/mod/mul.h \
+      src/mod/noise.h \
       src/mod/osc.h \
       src/mod/patch.h \
       src/mod/sample.h \

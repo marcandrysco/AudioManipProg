@@ -110,13 +110,14 @@ struct ml_value_t *amp_basic_make(struct ml_value_t *value, struct ml_env_t *env
 		fail();
 
 	tuple = value->data.tuple;
-	if(tuple.len != 4)
+	if(tuple.len != 3)
 		fail();
 
 	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_list_e))
 		fail();
 
-	basic = amp_basic_new(tuple.value[0]->data.num, tuple.value[0]->data.num, amp_core_rate(env));
+	basic = amp_basic_new(tuple.value[0]->data.num, tuple.value[1]->data.num, amp_core_rate(env));
+	ml_value_delete(value);
 
 	return amp_pack_clock(amp_basic_clock(basic));
 }

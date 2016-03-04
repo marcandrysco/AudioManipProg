@@ -8,7 +8,7 @@
  *   @err: The error.
  */
 
-void ml_parse_top(struct ml_token_t *token, struct ml_env_t *env, char **err)
+void ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, char **err)
 {
 #undef fail
 #define fail(str) do { ml_pat_delete(pat); ml_expr_erase(expr); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", token->tag.file, token->tag.line, token->tag.col, str); return; } while(0)
@@ -40,11 +40,11 @@ void ml_parse_top(struct ml_token_t *token, struct ml_env_t *env, char **err)
 			if(pat->type != ml_pat_id_e)
 				fail("Invalid function declaration.");
 
-			closure = ml_closure(ml_env_copy(env), ml_pat_copy(pat->next), strdup(pat->data.id), ml_expr_copy(expr));
+			closure = ml_closure(ml_env_copy(*env), ml_pat_copy(pat->next), strdup(pat->data.id), ml_expr_copy(expr));
 			ml_env_add(env, strdup(pat->data.id), ml_value_closure(closure));
 		}
 		else {
-			value = ml_expr_eval(expr, env, err);
+			value = ml_expr_eval(expr, *env, err);
 			if(value == NULL)
 				fail(*err);
 
@@ -91,6 +91,14 @@ struct ml_pat_t *ml_parse_pat_value(struct ml_token_t **token, char **err)
 
 	if((*token)->type == ml_token_id_e) {
 		pat = ml_pat_id(strdup((*token)->data.str));
+		*token = (*token)->next;
+	}
+	else if((*token)->type == ml_token_num_e) {
+		pat = ml_pat_value(ml_value_num((*token)->data.flt));
+		*token = (*token)->next;
+	}
+	else if((*token)->type == ml_token_str_e) {
+		pat = ml_pat_value(ml_value_str(strdup((*token)->data.str)));
 		*token = (*token)->next;
 	}
 	else if((*token)->type == ml_token_lparen_e) {
@@ -233,8 +241,9 @@ struct ml_expr_t *ml_parse_stmt(struct ml_token_t **token, char **err)
 		if((*token)->type != ml_token_with_e)
 			fail("Expected 'with'.");
 
-		*token = (*token)->next;
 		match = ml_match_new(expr);
+
+		*token = (*token)->next;
 		while((*token)->type == ml_token_pipe_e) {
 			*token = (*token)->next;
 			pat = ml_parse_pat(token, err, false);
@@ -628,8 +637,19 @@ struct ml_expr_t *ml_parse_value(struct ml_token_t **token, char **err)
 			expr = ml_expr_value(ml_value_impl(ml_eval_ceil));
 		else if(strcmp((*token)->data.str, "round") == 0)
 			expr = ml_expr_value(ml_value_impl(ml_eval_round));
-		else
-			expr = ml_expr_id(strdup((*token)->data.str));
+		else {
+			struct ml_eval_t *eval;
+
+			for(eval = ml_eval_arr; eval->id != NULL; eval++) {
+				if(strcmp(eval->id, (*token)->data.str) == 0)
+					break;
+			}
+
+			if(eval->id != NULL)
+				expr = ml_expr_value(ml_value_impl(eval->func));
+			else
+				expr = ml_expr_id(strdup((*token)->data.str));
+		}
 	}
 	else if((*token)->type == ml_token_lbrace_e) {
 		*token = (*token)->next;

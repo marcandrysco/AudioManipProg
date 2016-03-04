@@ -29,6 +29,56 @@ enum audio_e {
 
 
 /**
+ * Create a string list.
+ *   &returns: The list.
+ */
+
+char **strlist_new(void)
+{
+	char **list;
+
+	list = malloc(sizeof(char *));
+	list[0] = NULL;
+
+	return list;
+}
+
+/**
+ * Add a string to the string list.
+ *   @list: Ref. The string list reference.
+ *   @str: The new string.
+ */
+
+void strlist_add(char ***list, char *str)
+{
+	unsigned int i;
+
+	i = 0;
+	while((*list)[i] != NULL)
+		i++;
+
+	*list = realloc(*list, (i + 2) * sizeof(void *));
+	(*list)[i] = str;
+	(*list)[i+1] = NULL;
+}
+
+/**
+ * Delete a string list.
+ *   @list: The string list.
+ */
+
+void strlist_delete(char **list)
+{
+	unsigned int i;
+
+	for(i = 0; list[i] != NULL; i++)
+		free(list[i]);
+
+	free(list);
+}
+
+
+/**
  * Main entry point.
  *   @argc: The number of arguments.
  *   @argv: The argument array.
@@ -40,15 +90,37 @@ int main(int argc, char **argv)
 	struct amp_audio_t audio;
 	struct amp_comm_t *comm;
 	const struct amp_audio_i *iface = NULL;
-	char **arg, *val, *conf = NULL;
+	char **arg, **file, *val, *conf = NULL;
 
+	file = strlist_new();
 	comm = amp_comm_new();
+
+	if(0) {
+		struct ml_env_t *env;
+
+		env = ml_env_new();
+		ml_env_proc("min.ml", &env);
+
+		struct ml_env_t *iter;
+
+		for(iter = env; iter != NULL; iter = iter->up) {
+			if(iter->id[0] != '_')
+				continue;
+
+			printf("%s: ", iter->id);
+			ml_value_print(iter->value, stdout);
+			printf("\n");
+		}
+
+		ml_env_delete(env);
+
+		return 0;
+	}
 
 	for(arg = argv + 1; *arg != NULL; arg++) {
 		if((*arg)[0] != '-')
-			fprintf(stderr, "Invalid option '%s'.\n", *arg), exit(1);
-
-		if((*arg)[1] == '-') {
+			strlist_add(&file, strdup(*arg));
+		else if((*arg)[1] == '-') {
 			if((val = optlong(&arg, "--alsa")) != NULL) {
 				if(iface != NULL)
 					fprintf(stderr, "Cannot specify multiple audio interfaces.\n"), exit(1);
@@ -118,8 +190,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "No audio interface selected.\n"), exit(1);
 
 	audio = amp_audio_open(conf, iface);
-	amp_exec(audio, comm);
+	amp_exec(audio, file, comm);
 	amp_audio_close(audio);
+	strlist_delete(file);
 
 #ifdef DEBUG
 	if(DBG_memcnt != 0)

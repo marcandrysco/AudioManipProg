@@ -1,15 +1,6 @@
 #include "common.h"
 
 
-bool ml_match_cons(struct ml_value_t *value, struct ml_value_t *head, struct ml_value_t *tail)
-{
-	if(value->type != ml_value_list_e)
-		return false;
-
-	return true;
-}
-
-
 /**
  * Create a new pattern.
  *   @type: The type.
@@ -56,6 +47,10 @@ struct ml_pat_t *ml_pat_copy(struct ml_pat_t *pat)
 			(*copy)->data.list[0] = ml_pat_copy(pat->data.list[0]);
 			(*copy)->data.list[1] = ml_pat_copy(pat->data.list[1]);
 			break;
+
+		case ml_pat_value_e:
+			(*copy)->data.value = ml_value_copy(pat->data.value);
+			break;
 		}
 
 		pat = pat->next;
@@ -91,6 +86,10 @@ void ml_pat_delete(struct ml_pat_t *pat)
 		case ml_pat_list_e:
 			ml_pat_delete(pat->data.list[0]);
 			ml_pat_delete(pat->data.list[1]);
+			break;
+
+		case ml_pat_value_e:
+			ml_value_delete(pat->data.value);
 			break;
 		}
 
@@ -134,6 +133,17 @@ struct ml_pat_t *ml_pat_list(struct ml_pat_t *head, struct ml_pat_t *tail)
 	return ml_pat_new(ml_pat_list_e, (union ml_pat_u){ .list = { head, tail } });
 }
 
+/**
+ * Create a value pattern.
+ *   @value: Consumed. The value.
+ *   &returns: The pattern.
+ */
+
+struct ml_pat_t *ml_pat_value(struct ml_value_t *value)
+{
+	return ml_pat_new(ml_pat_value_e, (union ml_pat_u){ .value = value });
+}
+
 
 /**
  * Print a pattern.
@@ -156,6 +166,10 @@ void ml_pat_print(struct ml_pat_t *pat, FILE *file)
 		case ml_pat_list_e:
 			ml_fprintf(file, "list(%Mp,%Mp)", pat->data.list[0], pat->data.list[1]);
 			break;
+
+		case ml_pat_value_e:
+			ml_fprintf(file, "value(%Mv)", pat->data.value);
+			break;
 		}
 
 		pat = pat->next;
@@ -174,7 +188,7 @@ void ml_pat_print(struct ml_pat_t *pat, FILE *file)
  *   &returns: True if successful, false otherwise.
  */
 
-bool ml_pat_match(struct ml_env_t *env, struct ml_pat_t *pat, struct ml_value_t *value)
+bool ml_pat_match(struct ml_env_t **env, struct ml_pat_t *pat, struct ml_value_t *value)
 {
 	switch(pat->type) {
 	case ml_pat_id_e:
@@ -228,6 +242,9 @@ bool ml_pat_match(struct ml_env_t *env, struct ml_pat_t *pat, struct ml_value_t 
 
 			return suc;
 		}
+
+	case ml_pat_value_e:
+		return ml_value_cmp(value, pat->data.value) == 0;
 	}
 
 	fprintf(stderr, "Invalid pattern type.\n"), abort();

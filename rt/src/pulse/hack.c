@@ -103,8 +103,8 @@ void pulse_hack_proc(struct pulse_hack_t *hack, double **buf, unsigned int len)
 	bufwrite(&hack->out, buf, len);
 	bufread(&hack->in, tmp, len);
 
-	dsp_scale_d(tmp[0], 0.2, len);
-	dsp_scale_d(tmp[1], 0.2, len);
+	dsp_scale_d(tmp[0], 0.5, len);
+	dsp_scale_d(tmp[1], 0.5, len);
 	dsp_add_d(buf[0], tmp[0], len);
 	dsp_add_d(buf[1], tmp[1], len);
 }

@@ -2,49 +2,13 @@
 
 
 /**
- * Create a new binding.
- *   @id: Consumed. The identifier.
- *   @value: Consumed. The value.
- *   &returns: The binding.
- */
-
-struct ml_bind_t *ml_bind_new(char *id, struct ml_value_t *value)
-{
-	struct ml_bind_t *bind;
-
-	bind = malloc(sizeof(struct ml_bind_t));
-	bind->id = id;
-	bind->value = value;
-
-	return bind;
-}
-
-/**
- * Delete a binding.
- *   @bind: The binding.
- */
-
-void ml_bind_delete(struct ml_bind_t *bind)
-{
-	ml_value_delete(bind->value);
-	free(bind->id);
-	free(bind);
-}
-
-
-/**
  * Create a blank environment.
  *   &returns: The environment.
  */
 
 struct ml_env_t *ml_env_new(void)
 {
-	struct ml_env_t *env;
-
-	env = malloc(sizeof(struct ml_env_t));
-	env->bind = NULL;
-
-	return env;
+	return NULL;
 }
 
 /**
@@ -55,20 +19,10 @@ struct ml_env_t *ml_env_new(void)
 
 struct ml_env_t *ml_env_copy(struct ml_env_t *env)
 {
-	struct ml_env_t *copy;
-	struct ml_bind_t **bind, *cur;
+	if(env != NULL)
+		env->refcnt++;
 
-	copy = malloc(sizeof(struct ml_env_t));
-	bind = &copy->bind;
-
-	for(cur = env->bind; cur != NULL; cur = cur->next) {
-		*bind = ml_bind_new(strdup(cur->id), ml_value_copy(cur->value));
-		bind = &(*bind)->next;
-	}
-
-	*bind = NULL;
-
-	return copy;
+	return env;
 }
 
 /**
@@ -78,25 +32,33 @@ struct ml_env_t *ml_env_copy(struct ml_env_t *env)
 
 void ml_env_delete(struct ml_env_t *env)
 {
-	struct ml_bind_t *cur, *next;
+	struct ml_env_t *up;
 
-	for(cur = env->bind; cur != NULL; cur = next) {
-		next = cur->next;
-		ml_bind_delete(cur);
+	while(true) {
+		if(env == NULL)
+			break;
+		else if(--env->refcnt > 0)
+			break;
+
+		up = env->up;
+
+		ml_value_delete(env->value);
+		free(env->id);
+		free(env);
+
+		env = up;
 	}
-
-	free(env);
 }
 
 
 /**
  * Process a file path against an environment.
  *   @path: The path.
- *   @env: The environment.
+ *   @env: The environment pointer.
  *   &returns: The error if failed, null if successful.
  */
 
-char *ml_env_proc(const char *path, struct ml_env_t *env)
+char *ml_env_proc(const char *path, struct ml_env_t **env)
 {
 	char *err = NULL;
 	struct ml_token_t *token;
@@ -120,13 +82,17 @@ char *ml_env_proc(const char *path, struct ml_env_t *env)
  *   @value: Consumed. The value.
  */
 
-void ml_env_add(struct ml_env_t *env, char *id, struct ml_value_t *value)
+void ml_env_add(struct ml_env_t **env, char *id, struct ml_value_t *value)
 {
-	struct ml_bind_t *bind;
+	struct ml_env_t *next;
 
-	bind = ml_bind_new(id, value);
-	bind->next = env->bind;
-	env->bind = bind;
+	next = malloc(sizeof(struct ml_env_t));
+	next->id = id;
+	next->value = value;
+	next->up = *env;
+	next->refcnt = 1;
+
+	*env = next;
 }
 
 /**
@@ -138,11 +104,11 @@ void ml_env_add(struct ml_env_t *env, char *id, struct ml_value_t *value)
 
 struct ml_value_t *ml_env_lookup(struct ml_env_t *env, const char *id)
 {
-	struct ml_bind_t *bind;
+	while(env != NULL) {
+		if(strcmp(env->id, id) == 0)
+			return env->value;
 
-	for(bind = env->bind; bind != NULL; bind = bind->next) {
-		if(strcmp(bind->id, id) == 0)
-			return bind->value;
+		env = env->up;
 	}
 
 	return NULL;

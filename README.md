@@ -51,7 +51,9 @@ APIs. To select different APIs, use the appropriate configure flags (e.g.
 
 ### Examples
 
-
+The [Examples](ex/README.md) provide simple programs for performing real
+time processing of audio. The code is heavily documented to both demonstrate
+the capabilities of AMP and serve as a foundation for creating new programs.
 
 ## Architecture
 

@@ -5,7 +5,7 @@
  * generator declarations
  */
 
-struct amp_gen_t *amp_gen_new(double thru, struct amp_module_t module);
+struct amp_gen_t *amp_gen_new(struct amp_module_t module);
 struct amp_gen_t *amp_gen_copy(struct amp_gen_t *gen);
 void amp_gen_delete(struct amp_gen_t *gen);
 

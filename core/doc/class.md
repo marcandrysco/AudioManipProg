@@ -58,12 +58,14 @@ instrument is the base class for processing audio in real time.
 
     Instr = Mixer [Instr]
           | Pan ((Value, Value), (Value, Value))
-          | Splice (Effect, (Num, Num), (Num, Num))
+          | Series [Instr]
+          | Splice ((Param, Param), Effect)
 
 AmpCore provides the following set of `Instr` instances:
 
   * [Mixer](instr/mixer.md) sums together a set of instruments.
   * [Pan](instr/pan.md) performs a delay and gain panning of an instrument.
+  * [Series](instr/series.md) processes a set of instruments in series.
   * [Splice](instr/splice.md) splices together a stereo instrument into an
       mono effect
 
@@ -78,6 +80,7 @@ generates a signal given an input `Module` and a processing `Effect`.
            | Mul (Param, Param)
            | Osc (osc-type, Param, Param)
            | Patch (Module, Effect)
+           | Sample (string, int, num, Key)
            | Trig ()
            | Sum [Param]
 
@@ -87,7 +90,7 @@ AmpCore provides the following set of `Module` instances:
   * [Mul](mod/mul.md) multiplies a pair of signals.
   * [Osc](mod/osc.md) generates an oscillating output.
   * [Patch](mod/patch.md) uses an `Effect` and `Module` as a generator.
-  * [Sampler](mod/sampler.md) generates audio from sound samples.
+  * [Sample](mod/sample.md) generates audio from a sound sample.
   * [Trig](mod/trig.md) creates a signal based off a note event.
   * [Sum](mod/sum.d) performs an arithmetic sum of signals.
 

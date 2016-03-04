@@ -9,7 +9,7 @@ struct amp_pan_t;
 
 extern struct amp_instr_i amp_pan_iface;
 
-struct amp_pan_t *amp_pan_new(void);
+struct amp_pan_t *amp_pan_new(struct amp_param_t *lvol, struct amp_param_t *rvol, double ldelay, double rdelay, double rate);
 struct amp_pan_t *amp_pan_copy(struct amp_pan_t *pan);
 void amp_pan_delete(struct amp_pan_t *pan);
 
