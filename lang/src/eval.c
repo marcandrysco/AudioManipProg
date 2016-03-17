@@ -324,7 +324,7 @@ struct ml_value_t *ml_eval_concat(struct ml_value_t *value, struct ml_env_t *env
 	else if((tuple.value[0]->type == ml_value_str_e) || (tuple.value[1]->type == ml_value_str_e)) {
 		char *str;
 
-		str = ml_aprintf("%s%s", tuple.value[0]->data.str, tuple.value[1]->data.str);
+		str = mprintf("%s%s", tuple.value[0]->data.str, tuple.value[1]->data.str);
 		ml_value_delete(value);
 
 		return ml_value_str(str);
@@ -481,7 +481,7 @@ struct ml_value_t *ml_eval_fail(struct ml_value_t *value, struct ml_env_t *env, 
 	if(value->type != ml_value_str_e)
 		fail("Type error. Function 'fail' requires type 'string'.");
 
-	*err = ml_aprintf("fail: %s", value->data.str);
+	*err = mprintf("fail: %s", value->data.str);
 	ml_value_delete(value);
 	
 	return NULL;
@@ -494,7 +494,7 @@ struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env,
 	if(value->type != ml_value_num_e)
 		fail("Type error. Function 'i2str' requires type 'Num'.");
 
-	ret = ml_value_str(ml_aprintf("%d", (int)value->data.num));
+	ret = ml_value_str(mprintf("%d", (int)value->data.num));
 	ml_value_delete(value);
 
 	return ret;

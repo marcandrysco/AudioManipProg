@@ -6,7 +6,6 @@
  *   @buf: The buffer.
  *   @len: The length.
  */
-
 static inline void dsp_clamp_d(double *buf, unsigned int len)
 {
 	unsigned int i;
@@ -25,7 +24,6 @@ static inline void dsp_clamp_d(double *buf, unsigned int len)
  *   @buf: The buffer.
  *   @len: The length.
  */
-
 static inline void dsp_zero_f(float *buf, unsigned int len)
 {
 	unsigned int i;
@@ -39,7 +37,6 @@ static inline void dsp_zero_f(float *buf, unsigned int len)
  *   @buf: The buffer.
  *   @len: The length.
  */
-
 static inline void dsp_zero_d(double *buf, unsigned int len)
 {
 	unsigned int i;
@@ -55,7 +52,6 @@ static inline void dsp_zero_d(double *buf, unsigned int len)
  *   @src: The source.
  *   @len: The length.
  */
-
 static inline void dsp_copy_d(double *dest, double *src, unsigned int len)
 {
 	unsigned int i;
@@ -71,7 +67,6 @@ static inline void dsp_copy_d(double *dest, double *src, unsigned int len)
  *   @src: The source.
  *   @len: The length.
  */
-
 static inline void dsp_add_d(double *dest, double *src, unsigned int len)
 {
 	unsigned int i;
@@ -87,7 +82,6 @@ static inline void dsp_add_d(double *dest, double *src, unsigned int len)
  *   @fact: The scaling factoring.
  *   @len: The length.
  */
-
 static inline void dsp_scale_d(double *buf, double fact, unsigned int len)
 {
 	unsigned int i;

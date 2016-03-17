@@ -1,5 +1,5 @@
-#ifndef EFX_SYNTH_H
-#define EFX_SYNTH_H
+#ifndef MOD_SYNTH_H
+#define MOD_SYNTH_H
 
 /*
  * synthesizer declarations
@@ -7,9 +7,9 @@
 
 struct amp_synth_t;
 
-extern struct amp_effect_i amp_synth_iface;
+extern struct amp_module_i amp_synth_iface;
 
-struct amp_synth_t *amp_synth_new(uint16_t dev, unsigned int n, struct amp_module_t module);
+struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, struct amp_module_t module);
 struct amp_synth_t *amp_synth_copy(struct amp_synth_t *synth);
 void amp_synth_delete(struct amp_synth_t *synth);
 

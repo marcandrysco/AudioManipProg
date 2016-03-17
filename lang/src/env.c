@@ -68,7 +68,7 @@ char *ml_env_proc(const char *path, struct ml_env_t **env)
 	if(token == NULL)
 		return err;
 
-	ml_parse_top(token, env, &err);
+	err = ml_parse_top(token, env, path);
 	ml_token_clean(token);
 
 	return err;

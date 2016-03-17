@@ -5,17 +5,7 @@
  * common headers
  */
 
-#define _GNU_SOURCE
-#include <ctype.h>
-#include <errno.h>
-#include <locale.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include <hax.h>
 
 #include "debug.h"
 #include "defs.h"
@@ -30,35 +20,14 @@
 #include "value.h"
 
 
-static inline char *ml_aprintf(const char *format, ...)
-{
-	va_list args;
-	char *err;
-
-	va_start(args, format);
-	if(vasprintf(&err, format, args) < 0)
-		fprintf(stderr, "Allocation failure. %s.\n", strerror(errno)), abort();
-	va_end(args);
-
-#if DEBUG
-	DBG_memcnt++;
-#endif
-	return err;
-}
-
 static inline void *ml_eprintf(char **err, const char *format, ...)
 {
 	va_list args;
 
 	va_start(args, format);
-	
-	if(vasprintf(err, format, args) < 0)
-		fprintf(stderr, "Allocation failure. %s.\n", strerror(errno)), abort();
+	*err = vmprintf(format, args);
 	va_end(args);
 
-#if DEBUG
-	DBG_memcnt++;
-#endif
 	return NULL;
 }
 

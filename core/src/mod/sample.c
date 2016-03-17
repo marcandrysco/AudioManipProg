@@ -25,7 +25,6 @@ struct play_t {
 struct amp_sample_t {
 	struct amp_file_t *file;
 	struct dsp_buf_t *buf;
-	struct amp_key_t key;
 	double decay;
 
 	unsigned int n;
@@ -53,7 +52,7 @@ const struct amp_module_i amp_sample_iface = {
  *   &returns: The sample.
  */
 
-struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, double decay, struct amp_key_t key)
+struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, double decay)
 {
 	unsigned int i;
 	struct amp_sample_t *sample;
@@ -63,7 +62,6 @@ struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, dou
 	sample->buf = amp_file_buf(file);
 	sample->n = n;
 	sample->decay = decay;
-	sample->key = key;
 
 	for(i = 0; i < n; i++)
 		sample->play[i].idx = INT_MAX;
@@ -79,7 +77,7 @@ struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, dou
 
 struct amp_sample_t *amp_sample_copy(struct amp_sample_t *sample)
 {
-	return amp_sample_new(amp_file_copy(sample->file), sample->n, sample->decay, sample->key);
+	return amp_sample_new(amp_file_copy(sample->file), sample->n, sample->decay);
 }
 
 /**
@@ -105,10 +103,9 @@ void amp_sample_delete(struct amp_sample_t *sample)
 struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
-#define fail(format, ...) do { *err = amp_printf(format ?: "Type error. Expected '(string,int,num,Key)'.", ##__VA_ARGS__); ml_value_delete(value); return NULL; } while(0);
+#define fail(format, ...) do { *err = amp_printf(format ?: "Type error. Expected '(string,int,num)'.", ##__VA_ARGS__); ml_value_delete(value); return NULL; } while(0);
 
 	struct ml_tuple_t tuple;
-	struct amp_key_t key;
 	struct amp_file_t *file;
 	struct amp_sample_t *sample;
 	struct amp_cache_t *cache = amp_core_cache(env);
@@ -117,20 +114,17 @@ struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *en
 		fail(NULL);
 
 	tuple = value->data.tuple;
-	if(tuple.len != 4)
+	if(tuple.len != 3)
 		fail(NULL);
 
 	if((tuple.value[0]->type != ml_value_str_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_num_e))
-		fail(NULL);
-
-	if(!amp_key_scan(&key, tuple.value[3]))
 		fail(NULL);
 
 	file = amp_cache_open(cache, tuple.value[0]->data.str, 0);
 	if(file == NULL)
 		fail("Cannot open sample '%s'.", tuple.value[1]->data.str);
 
-	sample = amp_sample_new(file, tuple.value[1]->data.num, tuple.value[1]->data.num, key);
+	sample = amp_sample_new(file, tuple.value[1]->data.num, tuple.value[1]->data.num);
 	ml_value_delete(value);
 
 	return amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
@@ -145,11 +139,10 @@ struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *en
 
 void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 {
-	if(info.type == amp_info_action_e) {
-		double vel;
+	if(info.type == amp_info_note_e) {
 		unsigned int i;
 
-		if(!amp_key_proc(&sample->key, info.data.action, &vel))
+		if(info.data.note->vel == 0.0)
 			return;
 
 		for(i = 0; i < sample->n; i++) {
@@ -160,7 +153,9 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 		if(i == sample->n)
 			return;
 
-		sample->play[i].idx = -info.data.action->delay;
+		sample->play[i].vol = 1.0;
+		//sample->play[i].idx = -info.data.action->delay;
+		sample->play[i].idx = 0;
 	}
 }
 
@@ -177,6 +172,9 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 {
 	int idx;
 	unsigned int i, j;
+	bool cont = false;
+
+	dsp_zero_d(buf, len);
 
 	for(j = 0; j < sample->n; j++) {
 		struct play_t *play = &sample->play[j];
@@ -184,6 +182,7 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 		if(play->idx == INT_MAX)
 			continue;
 
+		cont = true;
 		idx = play->idx;
 
 		for(i = 0; i < len; i++, idx++) {
@@ -198,5 +197,5 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 		play->idx = (idx < (int)sample->buf->len) ? idx : INT_MAX;
 	}
 
-	return false;
+	return cont;
 }

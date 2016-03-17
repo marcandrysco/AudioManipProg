@@ -117,6 +117,25 @@ void amp_reverb_delete(struct amp_reverb_t *reverb)
 
 
 /**
+ * Create a pure delay reverb.
+ *   @len: The length.
+ *   @gain: The gain.
+ *   @rate: The sample rate.
+ *   &returns: The reverb.
+ */
+
+struct amp_reverb_t *amp_reverb_delay(double len, struct amp_param_t *gain, double rate)
+{
+	struct amp_reverb_t *reverb;
+
+	reverb = amp_reverb_new(amp_reverb_delay_e, len, rate);
+	reverb->fast = amp_param_isfast(gain);
+	amp_param_set(&reverb->param[opt_gain_e], gain);
+
+	return reverb;
+}
+
+/**
  * Create an allpass reverb.
  *   @len: The length.
  *   @gain: The gain.
@@ -206,6 +225,24 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 	struct dsp_ring_t *ring = reverb->ring;
 
 	switch(reverb->type) {
+	case amp_reverb_delay_e:
+		if(!reverb->fast) {
+			double gain[len];
+
+			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len);
+
+			for(i = 0; i < len; i++)
+				buf[i] = gain[i] * dsp_ring_proc(ring, buf[i]);
+		}
+		else {
+			double gain = reverb->param[opt_gain_e]->flt;
+
+			for(i = 0; i < len; i++)
+				buf[i] = gain * dsp_ring_proc(ring, buf[i]);
+		}
+
+		break;
+
 	case amp_reverb_allpass_e:
 		if(!reverb->fast) {
 			double gain[len];
@@ -265,7 +302,27 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 
 
 /**
- * Create a low-pass reverb from a value.
+ * Create a pure delay reverb from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+
+struct ml_value_t *amp_delay_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double len;
+	struct amp_param_t *gain;
+
+	*err = amp_match_unpack(value, "(f,P)", &len, &gain);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_reverb_effect(amp_reverb_delay(len, gain, amp_core_rate(env))));
+}
+
+/**
+ * Create an all-pass reverb from a value.
  *   @value: The value.
  *   @env: The environment.
  *   @err: The error.

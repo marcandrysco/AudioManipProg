@@ -1,12 +1,19 @@
 #ifndef INSTR_SPLICE_H
 #define INSTR_SPLICE_H
 
+/**
+ * Splice structure.
+ *   @left, right: The left and right input gain.
+ *   @effect: The effect.
+ */
+struct amp_splice_t {
+	struct amp_value_t left, right;
+	struct amp_effect_t effect;
+};
+
 /*
  * splice declarations
  */
-
-struct amp_splice_t;
-
 extern struct amp_instr_i amp_splice_iface;
 
 struct amp_splice_t *amp_splice_new(struct amp_value_t left, struct amp_value_t right, struct amp_effect_t effect);

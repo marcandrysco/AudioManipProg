@@ -21,15 +21,18 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <hax.h>
 #include <libdsp.h>
 #include <muselang.h>
 #include <amplib.h>
 
+#include "config.h"
 #include "debug.h"
 #include "defs.h"
 
 #include "argv.h"
 #include "comm.h"
+#include "engine.h"
 #include "exec.h"
 #include "watch.h"
 

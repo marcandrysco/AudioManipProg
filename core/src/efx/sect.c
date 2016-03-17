@@ -1,40 +1,16 @@
 #include "../common.h"
 
 
-/**
- * Section structure.
- *   @head, tail: The head and tail.
- */
-
-struct amp_sect_t {
-	struct inst_t *head, *tail;
-};
-
-/**
- * Instance structure.
- *   @mix: The mix.
- *   @effect: The effect.
- *   @prev, next: The previous and next instances.
- */
-
-struct inst_t {
-	double mix;
-	struct amp_effect_t effect;
-	struct inst_t *prev, *next;
-};
-
-
 /*
  * local declarations
  */
 
-static struct inst_t *inst_new(double mix, struct amp_effect_t effect);
-static void inst_delete(struct inst_t *inst);
+static struct amp_sect_inst_t *inst_new(double mix, struct amp_effect_t effect);
+static void inst_delete(struct amp_sect_inst_t *inst);
 
 /*
  * global variables
  */
-
 const struct amp_effect_i amp_sect_iface = {
 	(amp_info_f)amp_sect_info,
 	(amp_effect_f)amp_sect_proc,
@@ -47,7 +23,6 @@ const struct amp_effect_i amp_sect_iface = {
  * Create a section effect.
  *   &returns: The section.
  */
-
 struct amp_sect_t *amp_sect_new(void)
 {
 	struct amp_sect_t *sect;
@@ -63,10 +38,9 @@ struct amp_sect_t *amp_sect_new(void)
  *   @sect: The original sect.
  *   &returns: The copied sect.
  */
-
 struct amp_sect_t *amp_sect_copy(struct amp_sect_t *sect)
 {
-	struct inst_t *inst;
+	struct amp_sect_inst_t *inst;
 	struct amp_sect_t *copy;
 	
 	copy = amp_sect_new();
@@ -81,10 +55,9 @@ struct amp_sect_t *amp_sect_copy(struct amp_sect_t *sect)
  * Delete a section effect.
  *   @sect: The section.
  */
-
 void amp_sect_delete(struct amp_sect_t *sect)
 {
-	struct inst_t *cur, *next;
+	struct amp_sect_inst_t *cur, *next;
 
 	for(cur = sect->head; cur != NULL; cur = next) {
 		next = cur->next;
@@ -101,10 +74,9 @@ void amp_sect_delete(struct amp_sect_t *sect)
  *   @mix: The mix.
  *   @effect: The effect.
  */
-
 void amp_sect_prepend(struct amp_sect_t *sect, double mix, struct amp_effect_t effect)
 {
-	struct inst_t *inst;
+	struct amp_sect_inst_t *inst;
 
 	inst = inst_new(mix, effect);
 	inst->next = sect->head;
@@ -119,10 +91,9 @@ void amp_sect_prepend(struct amp_sect_t *sect, double mix, struct amp_effect_t e
  *   @mix: The mix.
  *   @effect: The effect.
  */
-
 void amp_sect_append(struct amp_sect_t *sect, double mix, struct amp_effect_t effect)
 {
-	struct inst_t *inst;
+	struct amp_sect_inst_t *inst;
 
 	inst = inst_new(mix, effect);
 	inst->prev = sect->tail;
@@ -139,7 +110,6 @@ void amp_sect_append(struct amp_sect_t *sect, double mix, struct amp_effect_t ef
  *   @err: The rror.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
@@ -159,18 +129,18 @@ struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env,
 			struct ml_tuple_t tuple = link->value->data.tuple;
 
 			if(tuple.len != 2)
-				fail("Type error. Effects section instance must take the form 'Effect' or '(num,Effect)'.");
+				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
 
 			box = amp_unbox_value(tuple.value[1], amp_box_effect_e);
 			if((tuple.value[0]->type != ml_value_num_e) || (box == NULL))
-				fail("Type error. Effects section instance must take the form 'Effect' or '(num,Effect)'.");
+				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
 
 			amp_sect_append(sect, tuple.value[0]->data.num, amp_effect_copy(box->data.effect));
 		}
 		else {
 			box = amp_unbox_value(link->value, amp_box_effect_e);
 			if(box == NULL)
-				fail("Type error. Effects section instance must take the form 'Effect' or '(num,Effect)'.");
+				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
 
 			amp_sect_append(sect, 1.0, amp_effect_copy(box->data.effect));
 		}
@@ -187,10 +157,9 @@ struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @sect: The section.
  *   @info: The info.
  */
-
 void amp_sect_info(struct amp_sect_t *sect, struct amp_info_t info)
 {
-	struct inst_t *inst;
+	struct amp_sect_inst_t *inst;
 
 	for(inst = sect->head; inst != NULL; inst = inst->next)
 		amp_effect_info(inst->effect, info);
@@ -202,11 +171,12 @@ void amp_sect_info(struct amp_sect_t *sect, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   &returns: The continuation flag.
  */
-
-void amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time, unsigned int len)
 {
-	struct inst_t *inst;
+	bool cont = false;
+	struct amp_sect_inst_t *inst;
 	double in[len], out[len];
 
 	dsp_copy_d(in, buf, len);
@@ -216,13 +186,13 @@ void amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time
 		dsp_copy_d(buf, in, len);
 
 		if(inst->mix == 1.0)
-			amp_effect_proc(inst->effect, buf, time, len);
+			cont |= amp_effect_proc(inst->effect, buf, time, len);
 		else {
 			unsigned int i;
 			double mix = inst->mix, tmp[len];
 
 			dsp_copy_d(tmp, buf, len);
-			amp_effect_proc(inst->effect, tmp, time, len);
+			cont |= amp_effect_proc(inst->effect, tmp, time, len);
 
 			for(i = 0; i < len; i++)
 				buf[i] = mix * tmp[i] + (1.0 - mix) * buf[i];
@@ -232,6 +202,8 @@ void amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time
 	}
 
 	dsp_copy_d(buf, out, len);
+
+	return cont;
 }
 
 
@@ -241,12 +213,11 @@ void amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time
  *   @effect: The effect.
  *   &returns: The instance.
  */
-
-static struct inst_t *inst_new(double mix, struct amp_effect_t effect)
+static struct amp_sect_inst_t *inst_new(double mix, struct amp_effect_t effect)
 {
-	struct inst_t *inst;
+	struct amp_sect_inst_t *inst;
 
-	inst = malloc(sizeof(struct inst_t));
+	inst = malloc(sizeof(struct amp_sect_inst_t));
 	inst->mix = mix;
 	inst->effect = effect;
 
@@ -257,8 +228,7 @@ static struct inst_t *inst_new(double mix, struct amp_effect_t effect)
  * Delete an instance.
  *   @inst: The instance.
  */
-
-static void inst_delete(struct inst_t *inst)
+static void inst_delete(struct amp_sect_inst_t *inst)
 {
 	amp_effect_delete(inst->effect);
 	free(inst);

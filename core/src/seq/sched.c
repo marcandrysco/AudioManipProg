@@ -241,6 +241,9 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_queue_t *queue, struct
 	if(sched->cur == NULL)
 		return;
 
+	if(amp_time_cmp(time[0], time[len]) == 0)
+		return;
+
 	for(i = 0; i < len; i++) {
 		cur = sched->cur;
 

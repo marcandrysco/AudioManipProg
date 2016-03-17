@@ -1,22 +1,9 @@
 #include "../common.h"
 
 
-/**
- * Splice structure.
- *   @left, right: The left and right input gain.
- *   @effect: The effect.
- */
-
-struct amp_splice_t {
-	struct amp_value_t left, right;
-	struct amp_effect_t effect;
-};
-
-
 /*
  * local declarations
  */
-
 struct amp_instr_i amp_splice_iface = {
 	(amp_info_f)amp_splice_info,
 	(amp_instr_f)amp_splice_proc,

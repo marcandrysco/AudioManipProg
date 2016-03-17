@@ -27,12 +27,12 @@ OBJ = src/box.o \
       src/efx/clip.o \
       src/efx/comp.o \
       src/efx/effect.o \
+      src/efx/expcrush.o \
       src/efx/filt.o \
       src/efx/gain.o \
       src/efx/gen.o \
       src/efx/reverb.o \
       src/efx/sect.o \
-      src/efx/synth.o \
       \
       src/handler/handler.o \
       src/handler/midi.o \
@@ -48,7 +48,9 @@ OBJ = src/box.o \
       src/mod/osc.o \
       src/mod/patch.o \
       src/mod/sample.o \
+      src/mod/shot.o \
       src/mod/sum.o \
+      src/mod/synth.o \
       src/mod/trig.o \
       \
       src/seq/merge.o \
@@ -79,12 +81,12 @@ INC = src/defs.h \
       src/efx/clip.h \
       src/efx/comp.h \
       src/efx/effect.h \
+      src/efx/expcrush.h \
       src/efx/filt.h \
       src/efx/gain.h \
       src/efx/gen.h \
       src/efx/reverb.h \
       src/efx/sect.h \
-      src/efx/synth.h \
       \
       src/handler/handler.h \
       src/handler/midi.h \
@@ -100,7 +102,9 @@ INC = src/defs.h \
       src/mod/osc.h \
       src/mod/patch.h \
       src/mod/sample.h \
+      src/mod/shot.h \
       src/mod/sum.h \
+      src/mod/synth.h \
       src/mod/trig.h \
       \
       src/seq/merge.h \

@@ -23,6 +23,16 @@ int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right);
 
 void ml_value_print(struct ml_value_t *value, FILE *file);
 
+/**
+ * Delete a value if non-null.
+ *   @value: The value.
+ */
+static inline void ml_value_erase(struct ml_value_t *value)
+{
+	if(value != NULL)
+		ml_value_delete(value);
+}
+
 /*
  * tuple declarations
  */

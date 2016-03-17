@@ -62,4 +62,15 @@ void ml_pat_print(struct ml_pat_t *pat, FILE *file);
 
 bool ml_pat_match(struct ml_env_t **env, struct ml_pat_t *pat, struct ml_value_t *value);
 
+
+/**
+ * Delete a pattern if non-null.
+ *   @pat: The pattern.
+ */
+static inline void ml_pat_erase(struct ml_pat_t *pat)
+{
+	if(pat != NULL)
+		ml_pat_delete(pat);
+}
+
 #endif

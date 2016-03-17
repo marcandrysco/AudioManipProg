@@ -31,7 +31,7 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 {
 	switch(expr->type) {
 	case ml_expr_id_e:
-		return ml_expr_id(strdup(expr->data.id));
+		return ml_expr_id(strdup(expr->data.id), expr->tag);
 
 	case ml_expr_set_e:
 		return ml_expr_set(ml_set_copy(expr->data.set));
@@ -55,7 +55,7 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 		return ml_expr_value(ml_value_copy(expr->data.value));
 	}
 
-	fprintf(stderr, "Invalid expression\n"), abort();
+	fatal("Invalid expression.");
 }
 
 /**
@@ -112,12 +112,13 @@ void ml_expr_delete(struct ml_expr_t *expr)
 /**
  * Create an identifier expression.
  *   @id: Consumed. The identifier.
+ *   @tag: The tag.
  *   &returns: The expression.
  */
 
-struct ml_expr_t *ml_expr_id(char *id)
+struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_id_e, (union ml_expr_u){ .id = id }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_id_e, (union ml_expr_u){ .id = id }, tag);
 }
 
 /**
@@ -310,7 +311,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			const char *id = expr->data.let.pat->data.id;
 
 			if(expr->data.let.pat->type != ml_pat_id_e) {
-				*err = ml_aprintf("Invalid function declarations.");
+				*err = mprintf("Invalid function declarations.");
 				return NULL;
 			}
 			
@@ -338,7 +339,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			if(ml_pat_match(&sub, expr->data.let.pat, value))
 				ret = ml_expr_eval(expr->data.let.expr, sub, err);
 			else
-				ret = NULL, *err = ml_aprintf("Match failed.");
+				ret = NULL, *err = mprintf("Match failed.");
 
 			ml_env_delete(sub);
 			ml_value_delete(value);
@@ -357,7 +358,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			if(value->type == ml_value_bool_e)
 				ret = ml_expr_eval(value->data.flag ? expr->data.cond.ontrue : expr->data.cond.onfalse, env, err);
 			else
-				*err = ml_aprintf("Invalid type. Expected 'bool'.");
+				*err = mprintf("Invalid type. Expected 'bool'.");
 
 			ml_value_delete(value);
 
@@ -391,7 +392,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 			}
 
 			ml_value_delete(value);
-			*err = ml_aprintf("Match failed.");
+			*err = mprintf("Match failed.");
 
 			return NULL;
 		}

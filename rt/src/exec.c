@@ -1,32 +1,6 @@
 #include "common.h"
 
 
-/**
- * Engine structure.
- *   @run, toggle: The run and toggle flag.
- *   @core: The core.
- *   @notify: The notifier.
- *   @clock: The clock.
- *   @seq: The sequencer.
- *   @instr: The instrument.
- *   @effect: The effect.
- *   @comm: MIDI device communcation.
- */
-
-struct amp_engine_t {
-	bool run, toggle;
-	struct amp_core_t *core;
-	struct amp_notify_t *notify;
-
-	struct amp_clock_t clock;
-	struct amp_seq_t seq;
-	struct amp_instr_t instr;
-	struct amp_effect_t effect[2];
-
-	struct amp_comm_t *comm;
-};
-
-
 /*
  * local declarations
  */
@@ -47,6 +21,9 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 	struct amp_engine_t *engine;
 
 	engine = malloc(sizeof(struct amp_engine_t));
+	engine->rev = 1;
+	engine->lock = sys_mutex_init(0);
+	engine->sync = sys_mutex_init(0);
 	engine->run = engine->toggle = false;
 	engine->core = amp_core_new(96000);
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
@@ -56,8 +33,6 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 	engine->effect[1] = amp_effect_null;
 	engine->comm = comm ?: amp_comm_new();
 	engine->notify = amp_notify_new(list, notify, engine);
-
-	engine->toggle = true;
 
 	return engine;
 }
@@ -77,6 +52,8 @@ void amp_engine_delete(struct amp_engine_t *engine)
 	amp_effect_erase(engine->effect[0]);
 	amp_effect_erase(engine->effect[1]);
 	amp_core_delete(engine->core);
+	sys_mutex_destroy(&engine->lock);
+	sys_mutex_destroy(&engine->sync);
 	free(engine);
 }
 
@@ -94,12 +71,15 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	struct amp_box_t *box;
 	struct ml_env_t *env;
 
+	sys_mutex_lock(&engine->sync);
+	sys_mutex_lock(&engine->lock);
+
 	env = amp_core_eval(engine->core, path, &err);
 	if(env == NULL) {
 		fprintf(stderr, "%s\n", err), free(err); return;
 	}
 
-	value = ml_env_lookup(env, "clock");
+	value = ml_env_lookup(env, "amp.clock");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_clock_e);
 		if(box != NULL)
@@ -108,7 +88,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			fprintf(stderr, "Type for 'seq' is not valid.\n");
 	}
 
-	value = ml_env_lookup(env, "seq");
+	value = ml_env_lookup(env, "amp.seq");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_seq_e);
 		if(box != NULL)
@@ -117,7 +97,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			fprintf(stderr, "Type for 'seq' is not valid.\n");
 	}
 
-	value = ml_env_lookup(env, "instr");
+	value = ml_env_lookup(env, "amp.instr");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_instr_e);
 		if(box != NULL)
@@ -126,7 +106,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			fprintf(stderr, "Type for 'instr' is not valid.\n");
 	}
 
-	value = ml_env_lookup(env, "effect");
+	value = ml_env_lookup(env, "amp.effect");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_effect_e);
 		if(box != NULL) {
@@ -137,6 +117,13 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			fprintf(stderr, "Type for 'effect' is not valid.\n");
 	}
 
+	value = ml_env_lookup(env, "amp.run");
+	if(value != NULL) {
+		if(value->type != ml_value_bool_e)
+			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'bool'.\n");
+
+		engine->toggle = value->data.flag;
+	}
 #if DEBUG
 	struct ml_env_t *iter;
 
@@ -150,6 +137,10 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	}
 #endif
 
+	engine->rev++;
+	sys_mutex_unlock(&engine->lock);
+	sys_mutex_unlock(&engine->sync);
+
 	ml_env_delete(env);
 }
 
@@ -158,22 +149,51 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
  * Execute the audio engine.
  *   @audio: The audio device.
  *   @file: The file list.
+ *   @plugin: The plugin list.
  *   @comm: Optional. Consumed. The communication structure.
  */
 
-void amp_exec(struct amp_audio_t audio, char **file, struct amp_comm_t *comm)
+void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_comm_t *comm)
 {
-	bool quit = false;
-	char **ml;
+	char **ml, **el;
 	struct amp_engine_t *engine;
 
 	engine = amp_engine_new(file, comm);
+
+	for(el = plugin; *el != NULL; el++) {
+		char *err;
+
+		err = amp_core_plugin(engine->core, *el);
+		if(err != NULL)
+			fprintf(stderr, "Warning. %s\n", err);
+	}
 
 	for(ml = file; *ml != NULL; ml++)
 		amp_engine_update(engine, *ml);
 
 	amp_audio_exec(audio, callback, engine);
 
+	/*
+	while(true) {
+		unsigned int n = amp_http_poll(http, NULL) + 1;
+		struct sys_poll_t poll[n];
+
+		poll[0] = sys_poll_fd(STDIN_FILENO, sys_poll_in_e);
+		amp_http_poll(http, poll+1);
+
+		sys_poll(poll, n, -1);
+
+		if(poll[0].revents)
+			break;
+
+		amp_http_proc(http, poll+1);
+	}
+
+	int c;
+	while((c = getchar()) != '\n' && c != EOF);
+	*/
+
+	bool quit = false;
 	while(!quit) {
 		unsigned int argc;
 		char **argv, buf[256];
@@ -221,6 +241,9 @@ static void callback(double **buf, unsigned int len, void *arg)
 		//printf("xrun\n");
 		return;
 	}
+
+	if(!sys_mutex_trylock(&engine->lock))
+		return;
 
 	run = engine->toggle;
 	if(engine->run != run) {
@@ -278,6 +301,8 @@ static void callback(double **buf, unsigned int len, void *arg)
 
 	if(engine->effect[1].iface != NULL)
 		amp_effect_proc(engine->effect[1], buf[1], time, len);
+
+	sys_mutex_unlock(&engine->lock);
 }
 
 /**

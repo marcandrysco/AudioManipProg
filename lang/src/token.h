@@ -36,6 +36,7 @@
  *   @ml_token_then_e: Then.
  *   @ml_token_else_e: Else.
  *   @ml_token_func_e: Function.
+ *   @ml_token_import_e: Import.
  *   @ml_token_comment_e: Comment.
  *   @ml_token_end_e: End-of-input.
  */
@@ -74,8 +75,9 @@ enum ml_token_e {
 	ml_token_then_e,
 	ml_token_else_e,
 	ml_token_func_e,
+	ml_token_import_e,
 	ml_token_comment_e,
-	ml_token_end_e
+	ml_token_end_e,
 };
 
 /**

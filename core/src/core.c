@@ -1,4 +1,5 @@
 #include "common.h"
+#include <dlfcn.h>
 
 
 /*
@@ -25,6 +26,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	core = malloc(sizeof(struct amp_core_t));
 	core->env = ml_env_new();
 	core->cache = amp_cache_new();
+	core->plugin = NULL;
 
 	ml_env_add(&core->env, strdup("rate"), ml_value_num(rate));
 	ml_env_add(&core->env, strdup("conf.rate"), ml_value_num(rate));
@@ -35,9 +37,11 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
 
 	/* effects */
+	ml_env_add(&core->env, strdup("Bitcrush"), ml_value_impl(amp_bitcrush_make));
 	ml_env_add(&core->env, strdup("Chain"), ml_value_impl(amp_chain_make));
 	ml_env_add(&core->env, strdup("Clip"), ml_value_impl(amp_clip_make));
 	ml_env_add(&core->env, strdup("Comp"), ml_value_impl(amp_comp_make));
+	ml_env_add(&core->env, strdup("Expcrush"), ml_value_impl(amp_expcrush_make));
 	ml_env_add(&core->env, strdup("Gain"), ml_value_impl(amp_gain_make));
 	ml_env_add(&core->env, strdup("Gen"), ml_value_impl(amp_gen_make));
 	ml_env_add(&core->env, strdup("Sect"), ml_value_impl(amp_sect_make));
@@ -57,8 +61,9 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Noise"), ml_value_impl(amp_noise_make));
 	ml_env_add(&core->env, strdup("Osc"), ml_value_impl(amp_osc_make));
 	ml_env_add(&core->env, strdup("Patch"), ml_value_impl(amp_patch_make));
-	ml_env_add(&core->env, strdup("Sum"), ml_value_impl(amp_sum_make));
 	ml_env_add(&core->env, strdup("Sample"), ml_value_impl(amp_sample_make));
+	ml_env_add(&core->env, strdup("Shot"), ml_value_impl(amp_shot_make));
+	ml_env_add(&core->env, strdup("Sum"), ml_value_impl(amp_sum_make));
 	ml_env_add(&core->env, strdup("Trig"), ml_value_impl(amp_trig_make));
 
 	/* sequencers */
@@ -75,6 +80,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	/* reverberators */
 	ml_env_add(&core->env, strdup("Allpass"), ml_value_impl(amp_allpass_make));
 	ml_env_add(&core->env, strdup("Comb"), ml_value_impl(amp_comb_make));
+	ml_env_add(&core->env, strdup("Delay"), ml_value_impl(amp_delay_make));
 	ml_env_add(&core->env, strdup("Lpcf"), ml_value_impl(amp_lpcf_make));
 
 	/* helper functions */
@@ -94,6 +100,15 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 void amp_core_delete(struct amp_core_t *core)
 {
+	struct amp_plugin_t *cur, *next;
+
+	for(cur = core->plugin; cur != NULL; cur = next) {
+		next = cur->next;
+
+		dlclose(cur->ref);
+		free(cur);
+	}
+
 	ml_env_delete(core->env);
 	amp_cache_delete(core->cache);
 	free(core);
@@ -162,6 +177,40 @@ struct ml_env_t *amp_core_eval(struct amp_core_t *core, const char *path, char *
 	ml_env_delete(env);
 
 	return NULL;
+}
+
+/**
+ * Load a plugin into the core.
+ *   @core: The core.
+ *   @path: The path.
+ *   &returns: Error.
+ */
+
+char *amp_core_plugin(struct amp_core_t *core, const char *path)
+{
+#define onexit if(lib != NULL) dlclose(lib);
+	void *lib;
+	amp_plugin_f func;
+	struct amp_plugin_t *plugin;
+
+	lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+	if(lib == NULL)
+		fail("Failed to open plugin '%s'. %s.", path, dlerror());
+
+	func = dlsym(lib, "amp_plugin");
+	if(func == NULL)
+		fail("Failed to open plugin '%s'. Library missing 'amp_plugin' symbol.", path);
+
+	func(core);
+
+	plugin = malloc(sizeof(struct amp_plugin_t));
+	plugin->ref = lib;
+	plugin->next = core->plugin;
+
+	core->plugin = plugin;
+
+	return NULL;
+#undef onexit
 }
 
 

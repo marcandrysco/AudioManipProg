@@ -77,6 +77,14 @@ void strlist_delete(char **list)
 	free(list);
 }
 
+bool handler(const char *path, struct http_args_t *args, void *arg)
+{
+	printf("req: %s\n", path);
+
+	hprintf(args->file, "Hello!\n");
+
+	return true;
+}
 
 /**
  * Main entry point.
@@ -90,38 +98,19 @@ int main(int argc, char **argv)
 	struct amp_audio_t audio;
 	struct amp_comm_t *comm;
 	const struct amp_audio_i *iface = NULL;
-	char **arg, **file, *val, *conf = NULL;
+	char **arg, **file, **plugin, *val, *conf = NULL;
 
 	file = strlist_new();
+	plugin = strlist_new();
 	comm = amp_comm_new();
-
-	if(0) {
-		struct ml_env_t *env;
-
-		env = ml_env_new();
-		ml_env_proc("min.ml", &env);
-
-		struct ml_env_t *iter;
-
-		for(iter = env; iter != NULL; iter = iter->up) {
-			if(iter->id[0] != '_')
-				continue;
-
-			printf("%s: ", iter->id);
-			ml_value_print(iter->value, stdout);
-			printf("\n");
-		}
-
-		ml_env_delete(env);
-
-		return 0;
-	}
 
 	for(arg = argv + 1; *arg != NULL; arg++) {
 		if((*arg)[0] != '-')
 			strlist_add(&file, strdup(*arg));
 		else if((*arg)[1] == '-') {
-			if((val = optlong(&arg, "--alsa")) != NULL) {
+			if((val = optlong(&arg, "--plugin")) != NULL)
+				strlist_add(&plugin, strdup(val));
+			else if((val = optlong(&arg, "--alsa")) != NULL) {
 				if(iface != NULL)
 					fprintf(stderr, "Cannot specify multiple audio interfaces.\n"), exit(1);
 
@@ -190,14 +179,18 @@ int main(int argc, char **argv)
 		fprintf(stderr, "No audio interface selected.\n"), exit(1);
 
 	audio = amp_audio_open(conf, iface);
-	amp_exec(audio, file, comm);
+	amp_exec(audio, file, plugin, comm);
 	amp_audio_close(audio);
 	strlist_delete(file);
+	strlist_delete(plugin);
 
 #ifdef DEBUG
 	if(DBG_memcnt != 0)
 		fprintf(stderr, "allocated memory: %d\n", DBG_memcnt);
 #endif
+
+	if(hax_memcnt != 0)
+		fprintf(stderr, "allocated memory: %d\n", hax_memcnt);
 
 	return 0;
 }

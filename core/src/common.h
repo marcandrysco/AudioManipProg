@@ -19,8 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "muselang.h"
-#include "libdsp.h"
+#include <hax.h>
+#include <muselang.h>
+#include <libdsp.h>
 
 #include "config.h"
 
@@ -49,12 +50,12 @@
 #include "efx/clip.h"
 #include "efx/comp.h"
 #include "efx/effect.h"
+#include "efx/expcrush.h"
 #include "efx/filt.h"
 #include "efx/gain.h"
 #include "efx/gen.h"
 #include "efx/reverb.h"
 #include "efx/sect.h"
-#include "efx/synth.h"
 
 #include "handler/handler.h"
 #include "handler/midi.h"
@@ -70,7 +71,9 @@
 #include "mod/osc.h"
 #include "mod/patch.h"
 #include "mod/sample.h"
+#include "mod/shot.h"
 #include "mod/sum.h"
+#include "mod/synth.h"
 #include "mod/trig.h"
 
 #include "seq/merge.h"
@@ -84,13 +87,8 @@ static inline char *amp_printf(const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	if(vasprintf(&err, format, args) < 0)
-		fprintf(stderr, "Allocation failure. %s.\n", strerror(errno)), abort();
+	err = vmprintf(format, args);
 	va_end(args);
-
-#if DEBUG
-	DBG_memcnt++;
-#endif
 
 	return err;
 }
@@ -100,13 +98,8 @@ static inline void *amp_eprintf(char **err, const char *format, ...)
 	va_list args;
 
 	va_start(args, format);
-	if(vasprintf(err, format, args) < 0)
-		fprintf(stderr, "Allocation failure. %s.\n", strerror(errno)), abort();
+	*err = vmprintf(format, args);
 	va_end(args);
-
-#if DEBUG
-	DBG_memcnt++;
-#endif
 
 	return NULL;
 }

@@ -1,12 +1,28 @@
 #ifndef INSTR_SERIES_H
 #define INSTR_MIXER_H
 
+/**
+ * Series structure.
+ *   @head, tail: The head and tail instances.
+ */
+struct amp_series_t {
+	struct amp_series_inst_t *head, *tail;
+};
+
+/**
+ * Instance structure.
+ *   @instr: The instrument.
+ *   @prev, next: The previous and next instances.
+ */
+struct amp_series_inst_t {
+	struct amp_instr_t instr;
+
+	struct amp_series_inst_t *prev, *next;
+};
+
 /*
  * series declarations
  */
-
-struct amp_series_t;
-
 extern struct amp_instr_i amp_series_iface;
 
 struct amp_series_t *amp_series_new(void);

@@ -44,7 +44,7 @@ libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
 sharedir='$(PREFIX)/share'
 cflags='-O2 -g -fpic `pkg-config --cflags sndfile` -ffast-math -Wall -I$(INCDIR) '
-ldflags='-lm -ldsp -lmuselang `pkg-config --libs sndfile` -ffast-math -L$(LIBDIR) '
+ldflags='-lm -ldsp -lmuselang -lhax `pkg-config --libs sndfile` -ffast-math -L$(LIBDIR) '
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
     --rpath)

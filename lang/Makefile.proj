@@ -1,7 +1,7 @@
 # run rules
 
 run: install
-	$(MAKE) run -C ../rt
+	$(MAKE) run -C ../sin
 
 debug: install
-	$(MAKE) debug -C ../rt
+	$(MAKE) debug -C ../sin

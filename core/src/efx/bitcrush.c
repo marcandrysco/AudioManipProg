@@ -3,7 +3,7 @@
 
 /**
  * Bitcrusher structure.
- *   @scale: The scale.
+ *   @bits: The bits.
  */
 
 struct amp_bitcrush_t {
@@ -31,34 +31,34 @@ const struct amp_effect_i amp_bitcrush_iface = {
 
 struct amp_bitcrush_t *amp_bitcrush_new(struct amp_param_t *bits)
 {
-	struct amp_bitcrush_t *bitcrush;
+	struct amp_bitcrush_t *crush;
 
-	bitcrush = malloc(sizeof(struct amp_bitcrush_t));
-	bitcrush->bits = bits;
+	crush = malloc(sizeof(struct amp_bitcrush_t));
+	crush->bits = bits;
 
-	return bitcrush;
+	return crush;
 }
 
 /**
  * Copy a bitcrusher effect.
- *   @bitcrush: The original bitcrush.
- *   &returns: The copied bitcrush.
+ *   @crush: The original bitcrusher.
+ *   &returns: The copied bitcrusher.
  */
 
-struct amp_bitcrush_t *amp_bitcrush_copy(struct amp_bitcrush_t *bitcrush)
+struct amp_bitcrush_t *amp_bitcrush_copy(struct amp_bitcrush_t *crush)
 {
-	return amp_bitcrush_new(amp_param_copy(bitcrush->bits));
+	return amp_bitcrush_new(amp_param_copy(crush->bits));
 }
 
 /**
  * Delete a bitcrusher effect.
- *   @bitcrush: The bitcrusher.
+ *   @crush: The bitcrusher.
  */
 
-void amp_bitcrush_delete(struct amp_bitcrush_t *bitcrush)
+void amp_bitcrush_delete(struct amp_bitcrush_t *crush)
 {
-	amp_param_delete(bitcrush->bits);
-	free(bitcrush);
+	amp_param_delete(crush->bits);
+	free(crush);
 }
 
 
@@ -72,45 +72,55 @@ void amp_bitcrush_delete(struct amp_bitcrush_t *bitcrush)
 
 struct ml_value_t *amp_bitcrush_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
-	struct amp_param_t *scale;
+	struct amp_param_t *bits;
 
-	*err = amp_match_unpack(value, "P", &scale);
+	*err = amp_match_unpack(value, "P", &bits);
 	if(*err != NULL)
 		return NULL;
 
-	return amp_pack_effect((struct amp_effect_t){ amp_bitcrush_new(scale), &amp_bitcrush_iface });
+	return amp_pack_effect((struct amp_effect_t){ amp_bitcrush_new(bits), &amp_bitcrush_iface });
 }
 
 
 /**
  * Handle information on a bitcrusher.
- *   @bitcrush: The bitcrusher.
+ *   @crush: The bitcrusher.
  *   @info: The information.
  */
 
-void amp_bitcrush_info(struct amp_bitcrush_t *bitcrush, struct amp_info_t info)
+void amp_bitcrush_info(struct amp_bitcrush_t *crush, struct amp_info_t info)
 {
-	amp_param_info(bitcrush->bits, info);
+	amp_param_info(crush->bits, info);
 }
 
 /**
  * Process a bitcrusher.
- *   @bitcrush: The bitcrusher.
+ *   @crush: The bitcrusher.
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   &returns: The continuation flag.
  */
-
-void amp_bitcrush_proc(struct amp_bitcrush_t *bitcrush, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_bitcrush_proc(struct amp_bitcrush_t *crush, double *buf, struct amp_time_t *time, unsigned int len)
 {
-	/*
 	unsigned int i;
-	double scale[len];
 
-	amp_param_proc(bitcrush->scale, scale, time, len);
+	if(!amp_param_isfast(crush->bits)) {
+		double t, inc[len];
 
-	for(i = 0; i < len; i++)
-		buf[i] *= scale[i];
-		*/
-		//buf[i] *= bitcrush->scale.flt;
+		amp_param_proc(crush->bits, inc, time, len);
+
+		for(i = 0; i < len; i++) {
+			t = dsp_pow_f(2.0f, fmax(inc[i], 1e-10));
+			buf[i] = round(buf[i] * t) / t;
+		}
+	}
+	else {
+		double inc = dsp_pow_f(2.0f, crush->bits->flt);
+
+		for(i = 0; i < len; i++)
+			buf[i] = round(buf[i] * inc) / inc;
+	}
+
+	return false;
 }

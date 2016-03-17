@@ -1,8 +1,9 @@
 # run rules
 
-run: all
+run: install
+	$(MAKE) run -C ../sin
 	@#./$(BIN) --alsa "'E-MU 0202 | USB' hRun r96000" --midi="a1 Oxygen 25" test.ml
-	./$(BIN) --pulse "'E-MU 0202 | USB' hRun r96000" test.ml
+	@#./$(BIN) --pulse "'E-MU 0202 | USB' hRun r96000" test.ml
 
 debug: all
 	@#gdb ./$(BIN) -ex 'set args --alsa "'\''E-MU 0202 | USB'\'' hRun r96000"' -ex 'run'

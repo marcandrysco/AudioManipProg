@@ -12,6 +12,7 @@ HDR = libdsp.h
 
 OBJ = src/buf.o \
       \
+      src/algo.o \
       src/comp.o \
       src/filt.o \
       src/osc.o \
@@ -22,6 +23,7 @@ INC = src/defs.h \
       src/math.h \
       src/mem.h \
       \
+      src/algo.h \
       src/comp.h \
       src/filt.h \
       src/osc.h \

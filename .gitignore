@@ -3,12 +3,15 @@ config.args
 config.h
 
 *.a
+*.d
 *.o
 *.so
+*.user
 
 *.swp
 *.swo
 
+hax/hax.h
 dsp/libdsp.h
 core/amplib.h
 lang/muselang.h
@@ -17,3 +20,4 @@ rt/amprt
 /bin
 /include
 /lib
+/share

@@ -97,9 +97,9 @@ void amp_gain_info(struct amp_gain_t *gain, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   &returns: The continuation flag.
  */
-
-void amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	unsigned int i;
 	double scale[len];
@@ -108,5 +108,6 @@ void amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time
 
 	for(i = 0; i < len; i++)
 		buf[i] *= scale[i];
-		//buf[i] *= gain->scale.flt;
+
+	return false;
 }

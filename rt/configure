@@ -1,4 +1,135 @@
-#!/bin/sh
+#!/bin/bash
+
+
+## begin configuration options ##
+setconf()
+{
+  bin_target "amprt"
+
+  lib_dep "muselang"
+  lib_dep "ampcore"
+  lib_dep "dsp"
+  lib_dep "hax"
+  lib_dep "pthread"
+  lib_dep "m"
+
+  c_src "src/main.c"
+
+  c_src "src/argv.c"
+  c_src "src/comm.c"
+  c_src "src/exec.c"
+  c_src "src/watch.c"
+
+  if [ "$alsa" ] ; then
+    c_src "src/alsa/audio.c"
+    c_src "src/alsa/midi.c"
+  fi 
+
+  if [ "$pulse" ] ; then
+    c_src "src/pulse/audio.c"
+    c_src "src/pulse/conn.c"
+    c_src "src/pulse/hack.c"
+  fi 
+}
+## end configuration options ##
+
+
+nl="`printf '\nX'`" ; nl="${nl%X}"
+tab="`printf '\tX'`" ; tab="${tab%X}"
+
+# Check if a string has a space
+#   @str: The string.
+#   &returns: Non-zero if space found, zero otherwise.
+chk_space()
+{
+  for __chk_space in "$@" ; do
+    test -z "${__chk_space%%* *}" && return 1
+    test -z "${__chk_space%%*	*}" && return 1
+  done
+  return 0
+}
+
+# Set the binary target
+#   @path: The target path.
+bin_target()
+{
+  test $# -ne 1 && fail "bin_target function takes 1 argument"
+  chk_space "$1" || fail "bin_target parameter '$1' has spaces"
+
+  target="$1"
+  install="${install}${nl}${tab}install --mode 0755 -D $1 \$(BINDIR)/$1"
+}
+
+# Set the library target
+#   @path: The target path.
+lib_target()
+{
+  test $# -ne 1 && fail "lib_target function takes 1 argument"
+  chk_space "$1" || fail "lib_target parameter '$1' has spaces"
+  test ${1##*.} != "so" && fail "lib_target argument has invalid extension '.${1##*.}'"
+  ldflags="$ldflags -shared"
+
+  target="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(LIBDIR)/$1"
+}
+
+# Set the header target
+#   @path: The target path.
+hdr_target()
+{
+  test $# -ne 1 && fail "hdr_target function takes 1 argument"
+  chk_space "$1" || fail "hdr_target parameter '$1' has spaces"
+
+  hdr="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(INCDIR)/$1"
+}
+
+# Add a C source file to the Makefile.
+#   @path: The source path.
+c_src()
+{
+  test $# -ne 1 && fail "c_src function takes 1 argument"
+  chk_space "$1" || fail "c_src parameter '$1' has spaces"
+  test ${1##*.} != "c" && fail "c_src argument has invalid extension '.${1##*.}'"
+
+  obj="$obj ${1%.*}.o"
+  inc="$inc ${1%.*}.h"
+  deps="$deps ${1%.*}.d"
+}
+
+# Add a header source file to the Makefile.
+#   @path: The source path.
+h_src()
+{
+  test $# -ne 1 && fail "h_src function takes 1 argument"
+  chk_space "$1" || fail "h_src parameter '$1' has spaces"
+  test ${1##*.} != "h" && fail "h_src argument has invalid extension '.${1##*.}'"
+
+  inc="$inc $1"
+}
+
+# Add an asset to the share directory.
+#   @path: The source path.
+share_src()
+{
+  test $# -ne 2 && fail "share_src function takes 2 arguments"
+  chk_space "$1" || fail "share_src parameter '$1' has spaces"
+  chk_space "$2" || fail "share_src parameter '$2' has spaces"
+
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(SHAREDIR)/$2"
+}
+
+
+# Add a library as dependency
+#   @lib: The library name without prefix 'lib' or postfix '.so'.
+lib_dep()
+{
+  test $# -ne 1 && fail "lib_dep function takes 1 argument"
+  chk_space "$1" || fail "lib_dep parameter '$1' has spaces"
+
+  ldflags="$ldflags -l$1"
+}
+
 
 ##
 # quote Function
@@ -27,6 +158,22 @@ quote()
 	printf %s "'$__quote_str'"
 }
 
+##
+# fail Function
+#   Print an error message and terminate. The function does not return.
+# Version
+#   1.0
+# Parameters
+#   string err
+#     The error string.
+#.
+fail()
+{
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+
 # build arguments list
 args=""
 for opt in "$@" ; do
@@ -36,45 +183,45 @@ done
 # append config.args file
 test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
 
-# parse options
-rpath=0
+#initialize options
+toolchain="" #toolchain
+release=""   #release flag
+debug=""     #debug flag
+rpath=""     #rpath build
+obj=""       #object files
+windows=""   #windows build
+alsa=""      #use alsa
+pulse=""     #use pulse
+pkgcfg=""
+
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
 sharedir='$(PREFIX)/share'
-cflags='-O2 -g -fpic -ffast-math -Wall -I$(INCDIR) '
-ldflags='-lm -lpthread -lampcore -ldsp -lmuselang -ffast-math -L$(LIBDIR) '
-obj=''
-inc=''
-pkgcfg=''
+cflags='-g -fpic -std=gnu11 -Wall -I$(INCDIR) -MD'
+ldflags='-L$(LIBDIR)'
+
+# parse options
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
-    --rpath)
-      rpath=1 ; shift
+    --release | --debug | --rpath | --windows)
+      eval "${1#--}=1" ; shift
       ;;
-    --prefix)
-      test "$#" -eq 1 && { printf "missing prefix parameter" >&2 ; exit 1 ; }
-      prefix="$2" ; shift 2
-      ;;
-    --prefix=*)
-      prefix="${1#*=}" ; shift
-      ;;
-    --debug)
-      cflags="${cflags}-Werror -DDEBUG " ; shift
+    --toolchain=* | --prefix=*)
+      name="${1#--}" ; name="${name%%=*}" ; val="${1#*=}" ; shift
+      eval "$name=`quote "$val"`"
       ;;
     --alsa)
-      obj="${obj}src/alsa/audio.o src/alsa/midi.o "
-      inc="${inc}src/alsa/audio.h src/alsa/midi.h "
-      pkgcfg="${pkgcfg}alsa "
-      cflags="${cflags}-DALSA "
+      alsa=1
+      pkgcfg="${pkgcfg} alsa"
+      cflags="${cflags} -DALSA"
       shift
       ;;
     --pulse)
-      obj="${obj}src/pulse/conn.o src/pulse/audio.o src/pulse/hack.o "
-      inc="${inc}src/pulse/conn.h src/pulse/audio.h src/pulse/hack.h "
-      pkgcfg="${pkgcfg}libpulse "
-      cflags="${cflags}-DPULSE "
+      pulse=1
+      pkgcfg="${pkgcfg} libpulse"
+      cflags="${cflags} -DPULSE"
       shift
       ;;
     *)
@@ -84,21 +231,93 @@ while [ "$#" -gt 0 ] ; do
 done
 
 if [ "$pkgcfg" ] ; then
-      cflags="${cflags}\`pkg-config --cflags ${pkgcfg% }\`"
-      ldflags="${ldflags}\`pkg-config --libs ${pkgcfg% }\`"
+      cflags="${cflags} \`pkg-config --cflags ${pkgcfg% }\`"
+      ldflags="${ldflags} \`pkg-config --libs ${pkgcfg% }\`"
 fi
 
-test "$rpath" && ldflags="${ldflags}-Wl,-rpath=\$(LIBDIR) "
+# sanity check
+test "$release" && test "$debug" && fail "cannot use both --debug and --release"
+
+# delayed options
+test "$rpath" && ldflags="$ldflags -Wl,-rpath=\$(LIBDIR)"
+test "$debug" && cflags="$cflags -Werror"
+
+# build tools
+test "$toolchain" && toolchain="$toolchain-"
+cc="${toolchain}gcc"
+ld="${toolchain}gcc"
+
+# process configuration information
+target="" ; obj="" ; hdr="" ; inc="" ; deps="" ; install=""
+setconf
+
+test -z "$target" && fail "missing target"
+test -z "$obj" && fail "missing object files"
 
 # build makefile
-rm -f Makefile
-echo "ARGS    = $args" >> Makefile
-echo "PREFIX  = $prefix" >> Makefile
-echo "BINDIR  = $bindir" >> Makefile
-echo "LIBDIR  = $libdir" >> Makefile
-echo "INCDIR  = $incdir" >> Makefile
-echo "CFLAGS  = ${cflags% }" >> Makefile
-echo "LDFLAGS = ${ldflags% }" >> Makefile
-echo "OBJX    = $obj" >> Makefile
-echo "INCX    = $inc" >> Makefile
-cat Makefile.in >> Makefile
+mkfile="Makefile"
+rm -f "$mkfile"
+cat <<EOF >> "$mkfile"
+CC       = $cc
+LD       = $ld
+
+CFLAGS   = $cflags
+LDFLAGS  = $ldflags
+
+ARGS     = ${args}
+PREFIX   = ${prefix}
+BINDIR   = ${bindir}
+LIBDIR   = ${libdir}
+INCDIR   = ${incdir}
+SHAREDIR = ${sharedir}
+
+all: $target $hdr
+
+$target:$obj
+	\$(CC)  $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
+
+%.o: %.c Makefile configure
+	\$(CC) -c $< -o \$@ \$(CFLAGS)
+
+Makefile: configure \$(wildcard config.args)
+	./configure \$(ARGS)
+
+clean:
+	rm -f $target $obj
+
+install: all$install
+
+EOF
+
+if [ "$hdr" ] ; then
+  cat <<EOF >> "$mkfile"
+$hdr:$inc Makefile
+	rm -f \$@
+	printf '#ifndef LIBHAX_H\n#define LIBHAX_H\n' >> \$@
+	for inc in $inc ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
+	printf '#endif\n' >> \$@
+EOF
+fi
+
+echo "" >> "$mkfile"
+echo "-include Makefile.user Makefile.proj" >> "$mkfile"
+echo "" >> "$mkfile"
+
+for dep in $deps ; do
+  echo "-include $dep" >> "$mkfile"
+  rm -f "$dep"
+done
+
+# build config.h
+cfg="src/config.h"
+rm -f "$cfg"
+
+echo "#ifndef CONFIG_H" >> "$cfg"
+echo "#define CONFIG_H" >> "$cfg"
+test "$debug" && echo "#define DEBUG 1" >> "$cfg"
+test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
+test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
+echo "#define SHAREDIR \"${prefix}/share"\" >> "$cfg"
+echo "#endif" >> "$cfg"
+
+exit 0

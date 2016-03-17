@@ -24,21 +24,34 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 		switch(*byte) {
 		case '*':
 			token = ml_token_comment_e;
-			do {
-				do {
+
+			{
+				int nest = 1;
+
+				*byte = fgetc(file), tag->off++, tag->col++;
+
+				while(true) {
+					if(*byte == '*') {
+						*byte = fgetc(file), tag->off++, tag->col++;
+						if(*byte == ')') {
+							if(--nest == 0)
+								break;
+						}
+					}
+					else if(*byte == '(') {
+						*byte = fgetc(file), tag->off++, tag->col++;
+						if(*byte == '*')
+							nest++;
+					}
+					else if(*byte == EOF)
+						break;
+
 					*byte = fgetc(file), tag->off++, tag->col++;
-					if(*byte == '\n')
-						tag->line++, tag->col = 0;
-				} while(*byte != '*' && *byte != EOF);
+				}
 
 				if(*byte == EOF)
 					return ml_token_end_e;
-
-				*byte = fgetc(file), tag->off++, tag->col++;
-			} while(*byte != ')' && *byte != EOF);
-
-			if(*byte == EOF)
-				return ml_token_end_e;
+			}
 
 			break;
 
@@ -122,6 +135,8 @@ enum ml_token_e ml_token_keyword(const char *str)
 {
 	if(strcmp(str, "let") == 0)
 		return ml_token_let_e;
+	else if(strcmp(str, "import") == 0)
+		return ml_token_import_e;
 	else if(strcmp(str, "in") == 0)
 		return ml_token_in_e;
 	else if(strcmp(str, "match") == 0)

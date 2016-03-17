@@ -1,32 +1,9 @@
 #include "../common.h"
 
 
-/**
- * Series structure.
- *   @head, tail: The head and tail instances.
- */
-
-struct amp_series_t {
-	struct inst_t *head, *tail;
-};
-
-/**
- * Instance structure.
- *   @instr: The instrument.
- *   @prev, next: The previous and next instances.
- */
-
-struct inst_t {
-	struct amp_instr_t instr;
-
-	struct inst_t *prev, *next;
-};
-
-
 /*
  * local declarations
  */
-
 struct amp_instr_i amp_series_iface = {
 	(amp_info_f)amp_series_info,
 	(amp_instr_f)amp_series_proc,
@@ -39,7 +16,6 @@ struct amp_instr_i amp_series_iface = {
  * Create a new series.
  *   &returns: The series.
  */
-
 struct amp_series_t *amp_series_new(void)
 {
 	struct amp_series_t *series;
@@ -55,10 +31,9 @@ struct amp_series_t *amp_series_new(void)
  *   @series: The original series.
  *   &returns: The copied series.
  */
-
 struct amp_series_t *amp_series_copy(struct amp_series_t *series)
 {
-	struct inst_t *inst;
+	struct amp_series_inst_t *inst;
 	struct amp_series_t *copy;
 
 	copy = amp_series_new();
@@ -73,10 +48,9 @@ struct amp_series_t *amp_series_copy(struct amp_series_t *series)
  * Delete a series.
  *   @series: The series.
  */
-
 void amp_series_delete(struct amp_series_t *series)
 {
-	struct inst_t *cur, *next;
+	struct amp_series_inst_t *cur, *next;
 
 	for(cur = series->head; cur != NULL; cur = next) {
 		next = cur->next;
@@ -96,7 +70,6 @@ void amp_series_delete(struct amp_series_t *series)
  *   @err: The rror.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_series_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
@@ -129,12 +102,11 @@ struct ml_value_t *amp_series_make(struct ml_value_t *value, struct ml_env_t *en
  *   @series: The series.
  *   @instr: The instrument.
  */
-
 void amp_series_prepend(struct amp_series_t *series, struct amp_instr_t instr)
 {
-	struct inst_t *inst;
+	struct amp_series_inst_t *inst;
 
-	inst = malloc(sizeof(struct inst_t));
+	inst = malloc(sizeof(struct amp_series_inst_t));
 	inst->instr = instr;
 	inst->next = series->head;
 	inst->prev = NULL;
@@ -147,12 +119,11 @@ void amp_series_prepend(struct amp_series_t *series, struct amp_instr_t instr)
  *   @series: The series.
  *   @instr: The instrument.
  */
-
 void amp_series_append(struct amp_series_t *series, struct amp_instr_t instr)
 {
-	struct inst_t *inst;
+	struct amp_series_inst_t *inst;
 
-	inst = malloc(sizeof(struct inst_t));
+	inst = malloc(sizeof(struct amp_series_inst_t));
 	inst->instr = instr;
 	inst->prev = series->tail;
 	inst->next = NULL;
@@ -166,10 +137,9 @@ void amp_series_append(struct amp_series_t *series, struct amp_instr_t instr)
  *   @series: The series.
  *   @info: The information.
  */
-
 void amp_series_info(struct amp_series_t *series, struct amp_info_t info)
 {
-	struct inst_t *inst;
+	struct amp_series_inst_t *inst;
 
 	for(inst = series->head; inst != NULL; inst = inst->next)
 		amp_instr_info(inst->instr, info);
@@ -182,10 +152,9 @@ void amp_series_info(struct amp_series_t *series, struct amp_info_t info)
  *   @time: The time.
  *   @len: The length.
  */
-
 void amp_series_proc(struct amp_series_t *series, double **buf, struct amp_time_t *time, unsigned int len)
 {
-	struct inst_t *inst;
+	struct amp_series_inst_t *inst;
 
 	for(inst = series->head; inst != NULL; inst = inst->next)
 		amp_instr_proc(inst->instr, buf, time, len);

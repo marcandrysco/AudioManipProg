@@ -32,10 +32,18 @@ let nat' start len = seq start (start+len-1)
 
 (*** Attack-Sustain-Decay-Release variants ***)
 
-(* AtkRel (attack:Num, release:Num)
- *   Only an attack and release without sustain *)
-let AtkRel ((l,h),(a,r)) = ADSR ((l,h),(a,r,0,1))
+(* Attack-Release constructor
+ *   @l,h (num,num): The low and high value pair.
+ *   @a,r (num,num): The attack and release lengths.
+ *   &ret (Module): The ADSR module.
+ *)
+let AtkRel ((l,h),(a,r)) = ADSR ((l,h),(a,r,0,r))
 
 (* ASR (attack:Num, release:Num)
  *   ASDR without any decay, sustained at 1 *)
 let ASR ((l,h),(a,r)) = ADSR ((l,h),(a,0,1,r))
+
+
+(*** Alternate constructors ***)
+let Mute = Gain 0
+let Gen' (dev,key,mod) = Chain [ Mute , Gen(dev,key,mod) ]
