@@ -4,7 +4,10 @@
 ## begin configuration options ##
 setconf()
 {
+  noinc=1
+
   bin_target "amprt"
+  hdr_target "amprt.h"
 
   lib_dep "muselang"
   lib_dep "ampcore"
@@ -17,6 +20,7 @@ setconf()
 
   c_src "src/argv.c"
   c_src "src/comm.c"
+  c_src "src/engine.c"
   c_src "src/exec.c"
   c_src "src/watch.c"
 
@@ -30,6 +34,8 @@ setconf()
     c_src "src/pulse/conn.c"
     c_src "src/pulse/hack.c"
   fi 
+
+  h_src "src/inc.h"
 }
 ## end configuration options ##
 
@@ -93,8 +99,8 @@ c_src()
   test ${1##*.} != "c" && fail "c_src argument has invalid extension '.${1##*.}'"
 
   obj="$obj ${1%.*}.o"
-  inc="$inc ${1%.*}.h"
   deps="$deps ${1%.*}.d"
+  test -z "$noinc" && inc="$inc ${1%.*}.h"
 }
 
 # Add a header source file to the Makefile.
@@ -193,6 +199,7 @@ windows=""   #windows build
 alsa=""      #use alsa
 pulse=""     #use pulse
 pkgcfg=""
+noinc=""     #disable automated include
 
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
@@ -290,10 +297,11 @@ install: all$install
 EOF
 
 if [ "$hdr" ] ; then
+  guard="`printf 'LIB%s_H' "${hdr%%.*}" | tr '[a-z]' '[A-Z]'`"
   cat <<EOF >> "$mkfile"
 $hdr:$inc Makefile
 	rm -f \$@
-	printf '#ifndef LIBHAX_H\n#define LIBHAX_H\n' >> \$@
+	printf '#ifndef $guard\n#define $guard\n' >> \$@
 	for inc in $inc ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
 	printf '#endif\n' >> \$@
 EOF

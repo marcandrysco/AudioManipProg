@@ -12,6 +12,7 @@
 #	include "win/defs.h"
 #	include "win/poll.h"
 #	include "win/sock.h"
+#	include "win/thread.h"
 #else
 #	include "posix/defs.h"
 #	include "posix/poll.h"
@@ -19,6 +20,7 @@
 #	include "posix/thread.h"
 #endif
 
+#include "avltree.h"
 #include "chunk.h"
 #include "complex.h"
 #include "file.h"

@@ -22,6 +22,7 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -42,7 +43,44 @@ struct sys_poll_t;
  */
 #define fail(...) do { do { onexit } while(0); return mprintf(__VA_ARGS__); } while(0)
 #define chkfail(ptr) do { char *err = ptr; if(err != NULL) { do { onexit } while(0); return err; } } while(0)
+#define chkwarn(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); free(err); } } while(0)
 #define chkexit(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); exit(1); } } while(0)
 #define chkabort(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); abort(); } } while(0)
+
+/**
+ * Create callback.
+ *   &returns: The pointer.
+ */
+typedef void *(*new_f)(void);
+
+/**
+ * Copy callback.
+ *   @ptr: The original pointer.
+ *   &returns: The copied pointer.
+ */
+typedef void *(*copy_f)(void *ptr);
+
+/**
+ * Delete callback.
+ *   @ptr: The pointer.
+ */
+typedef void (*delete_f)(void *ptr);
+
+/**
+ * Compare two refrences.
+ *   @left: The left reference.
+ *   @right: The right reference.
+ *   &returns: Their order.
+ */
+typedef int (*compare_f)(const void *left, const void *right);
+
+/**
+ * Retrive the parent data structure from a member pointer.
+ *   @ptr: The member poitner.
+ *   @type: The parent type.
+ *   @member: The member identifier.
+ *   &returns: The parent pointer.
+ */
+#define getparent(ptr, type, member) ((type *)((void *)(ptr) - offsetof(type, member)))
 
 #endif

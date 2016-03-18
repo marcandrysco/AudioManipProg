@@ -16,6 +16,7 @@ dsp/libdsp.h
 core/amplib.h
 lang/muselang.h
 rt/amprt
+rt/amprt.h
 
 /bin
 /include

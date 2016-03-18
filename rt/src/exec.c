@@ -15,7 +15,6 @@ static void notify(const char *path, void *arg);
  *   @comm: Consumed. Optional. The communication structure.
  *   &returns: The engine.
  */
-
 struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 {
 	struct amp_engine_t *engine;
@@ -33,6 +32,10 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 	engine->effect[1] = amp_effect_null;
 	engine->comm = comm ?: amp_comm_new();
 	engine->notify = amp_notify_new(list, notify, engine);
+	engine->watch = NULL;
+	engine->rt = (struct amp_rt_t){ engine, amp_engine_watch };
+
+	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt)));
 
 	return engine;
 }
@@ -41,9 +44,17 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
  * Delete an engine.
  *   @engine: The engine.
  */
-
 void amp_engine_delete(struct amp_engine_t *engine)
 {
+	struct amp_watch_t *watch;
+
+	while(engine->watch != NULL) {
+		watch = engine->watch;
+		engine->watch = watch->next;
+
+		free(watch);
+	}
+
 	amp_notify_delete(engine->notify);
 	amp_comm_delete(engine->comm);
 	amp_clock_delete(engine->clock);
@@ -152,7 +163,6 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
  *   @plugin: The plugin list.
  *   @comm: Optional. Consumed. The communication structure.
  */
-
 void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_comm_t *comm)
 {
 	char **ml, **el;

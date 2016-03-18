@@ -5,11 +5,19 @@
 /*
  * local declarations
  */
-
 static void *ref_copy(void *ref);
 static void ref_delete(void *ref);
 
 static const struct ml_box_i ref_iface = { "AmpRef", ref_copy, ref_delete };
+
+/*
+ * global variables
+ */
+struct ml_box_i amp_box_iface = {
+	"Amp",
+	(void *(*)(void *))amp_box_copy,
+	(void (*)(void *))amp_box_delete
+};
 
 
 /**
@@ -17,7 +25,6 @@ static const struct ml_box_i ref_iface = { "AmpRef", ref_copy, ref_delete };
  *   @rate: The sample rate.
  *   &returns: The core.
  */
-
 struct amp_core_t *amp_core_new(unsigned int rate)
 {
 	char *err;
@@ -97,13 +104,17 @@ struct amp_core_t *amp_core_new(unsigned int rate)
  * Delete a core.
  *   @core: The core.
  */
-
 void amp_core_delete(struct amp_core_t *core)
 {
+	amp_plugin_f func;
 	struct amp_plugin_t *cur, *next;
 
 	for(cur = core->plugin; cur != NULL; cur = next) {
 		next = cur->next;
+
+		func = dlsym(cur->ref, "amp_plugin_unload");
+		if(func != NULL)
+			func(core);
 
 		dlclose(cur->ref);
 		free(cur);
@@ -120,7 +131,6 @@ void amp_core_delete(struct amp_core_t *core)
  *   @env: The environment.
  *   &returns: The rate.
  */
-
 unsigned int amp_core_rate(struct ml_env_t *env)
 {
 	struct ml_value_t *value;
@@ -140,7 +150,6 @@ unsigned int amp_core_rate(struct ml_env_t *env)
  *   @env: The environment.
  *   &returns: The cache.
  */
-
 struct amp_cache_t *amp_core_cache(struct ml_env_t *env)
 {
 	struct ml_value_t *value;
@@ -163,7 +172,6 @@ struct amp_cache_t *amp_core_cache(struct ml_env_t *env)
  *   @err: The error.
  *   &returns: The box or null.
  */
-
 struct ml_env_t *amp_core_eval(struct amp_core_t *core, const char *path, char **err)
 {
 	struct ml_env_t *env;
@@ -185,7 +193,6 @@ struct ml_env_t *amp_core_eval(struct amp_core_t *core, const char *path, char *
  *   @path: The path.
  *   &returns: Error.
  */
-
 char *amp_core_plugin(struct amp_core_t *core, const char *path)
 {
 #define onexit if(lib != NULL) dlclose(lib);
@@ -197,7 +204,7 @@ char *amp_core_plugin(struct amp_core_t *core, const char *path)
 	if(lib == NULL)
 		fail("Failed to open plugin '%s'. %s.", path, dlerror());
 
-	func = dlsym(lib, "amp_plugin");
+	func = dlsym(lib, "amp_plugin_load");
 	if(func == NULL)
 		fail("Failed to open plugin '%s'. Library missing 'amp_plugin' symbol.", path);
 
@@ -214,16 +221,15 @@ char *amp_core_plugin(struct amp_core_t *core, const char *path)
 }
 
 
-/*
- * global variables
+/**
+ * Create a boxed reference.
+ *   @ref: The reference.
+ *   &returns: The boxed object.
  */
-
-struct ml_box_i amp_box_iface = {
-	"Amp",
-	(void *(*)(void *))amp_box_copy,
-	(void (*)(void *))amp_box_delete
-};
-
+struct ml_box_t amp_box_ref(void *ref)
+{
+	return (struct ml_box_t){ ref, &ref_iface };
+}
 
 /**
  * Copy a reference.
@@ -244,3 +250,42 @@ static void *ref_copy(void *ref)
 static void ref_delete(void *ref)
 {
 }
+
+#if 0
+/**
+ * Create a boxed object.
+ *   @ref: The reference.
+ *   @copy: The copy function.
+ *   @delete: The deletion function.
+ *   &returns: The boxed object.
+ */
+struct ml_box_t amp_box_ref(void *ref, amp_copy_f copy, amp_delete_f delete)
+{
+	struct obj_t *obj;
+
+	obj = malloc(sizeof(struct obj_t));
+	*obj = (struct obj_t){ ref, copy, delete };
+
+	return (struct ml_box_t){ obj, &obj_iface };
+}
+
+/**
+ * Copy a reference.
+ *   @ref: The reference.
+ *   &returns: The copy.
+ */
+
+static void *ref_copy(void *ref)
+{
+	return ref;
+}
+
+/**
+ * Delete a reference.
+ *   @ref: The reference.
+ */
+
+static void ref_delete(void *ref)
+{
+}
+#endif

@@ -3,8 +3,14 @@
 /*
  * global variables
  */
-
 ssize_t hax_memcnt = 0;
+
+/*
+ * local variables
+ */
+#if DEBUG
+static sys_mutex_t lock;
+#endif
 
 
 /**
@@ -22,7 +28,9 @@ void *hax_malloc(size_t nbytes)
 		fatal("Memory allocation failed, %s.", strerror(errno));
 
 #if DEBUG
+	sys_mutex_lock(&lock);
 	hax_memcnt++;
+	sys_mutex_unlock(&lock);
 #endif
 
 	return ptr;
@@ -39,7 +47,9 @@ void hax_free(void *ptr)
 		fatal("Attempted to free null pointer,");
 
 #if DEBUG
+	sys_mutex_lock(&lock);
 	hax_memcnt--;
+	sys_mutex_unlock(&lock);
 #endif
 
 	free(ptr);

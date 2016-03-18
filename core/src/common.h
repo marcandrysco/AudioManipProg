@@ -74,6 +74,7 @@
 #include "mod/shot.h"
 #include "mod/sum.h"
 #include "mod/synth.h"
+#include "mod/track.h"
 #include "mod/trig.h"
 
 #include "seq/merge.h"

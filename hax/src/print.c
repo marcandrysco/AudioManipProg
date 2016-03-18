@@ -112,7 +112,7 @@ void hax_vhprintf(struct io_file_t file, const char *restrict format, va_list ar
 		else if(*ptr == '%')
 			io_file_write(file, ptr, 1);
 		else {
-			ptr = strpbrk(ptr, "diouxXfFeEgGaAspn");
+			ptr = strpbrk(ptr, "diouxXfFeEgGaAscpn");
 			if(ptr == NULL)
 				fatal("Invalid printf format '%s'.", format);
 

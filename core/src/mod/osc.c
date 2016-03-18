@@ -9,7 +9,6 @@
  *   @prev: The previous warp.
  *   @rate: Sample rate.
  */
-
 struct amp_osc_t {
 	double t;
 	enum amp_osc_e type;
@@ -23,7 +22,6 @@ struct amp_osc_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_osc_iface = {
 	(amp_info_f)amp_osc_info,
 	(amp_effect_f)amp_osc_proc,
@@ -39,7 +37,6 @@ const struct amp_module_i amp_osc_iface = {
  *   @warp: Consumed. The warping parameter.
  *   &returns: The oscillator.
  */
-
 struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, struct amp_param_t *warp, unsigned int rate)
 {
 	struct amp_osc_t *osc;
@@ -60,7 +57,6 @@ struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, str
  *   @osc: The original oscillator.
  *   &returns: The copied oscillator.
  */
-
 struct amp_osc_t *amp_osc_copy(struct amp_osc_t *osc)
 {
 	return amp_osc_new(osc->type, amp_param_copy(osc->freq), amp_param_copy(osc->warp), osc->rate);
@@ -70,7 +66,6 @@ struct amp_osc_t *amp_osc_copy(struct amp_osc_t *osc)
  * Delete an oscillator.
  *   @osc: The oscillator.
  */
-
 void amp_osc_delete(struct amp_osc_t *osc)
 {
 	amp_param_delete(osc->freq);
@@ -105,7 +100,6 @@ struct ml_value_t *amp_osc_make(struct ml_value_t *value, struct ml_env_t *env, 
  *   @osc: The oscillator.
  *   @info: The information.
  */
-
 void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info)
 {
 	if(info.type == amp_info_note_e) {
@@ -125,7 +119,6 @@ void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info)
  *   @len: The length.
  *   &returns: The continuation flag.
  */
-
 bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	double t, freq[len];
@@ -175,7 +168,6 @@ bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, u
  *   @str: The string.
  *   &returns: The enumerated value.
  */
-
 int amp_osc_type(const char *str)
 {
 	if(strcmp(str, "sine") == 0)

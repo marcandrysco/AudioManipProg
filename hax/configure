@@ -20,15 +20,18 @@ setconf()
   if [ "$windows" ] ; then
     c_src "src/win/poll.c"
     c_src "src/win/sock.c"
+    c_src "src/win/thread.c"
   else
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/thread.c"
   fi
 
+  c_src "src/avltree.c"
   c_src "src/chunk.c"
   c_src "src/complex.c"
   c_src "src/file.c"
+  c_src "src/func.c"
   c_src "src/list.c"
   c_src "src/mem.c"
   c_src "src/print.c"
@@ -40,6 +43,9 @@ setconf()
 ## end configuration options ##
 
 
+##### marc_andrysco configure script, rev 2 #####
+
+# special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
 tab="`printf '\tX'`" ; tab="${tab%X}"
 
@@ -98,8 +104,8 @@ c_src()
   test ${1##*.} != "c" && fail "c_src argument has invalid extension '.${1##*.}'"
 
   obj="$obj ${1%.*}.o"
-  inc="$inc ${1%.*}.h"
   deps="$deps ${1%.*}.d"
+  test -z "$noinc" && inc="$inc ${1%.*}.h"
 }
 
 # Add a header source file to the Makefile.
@@ -184,6 +190,7 @@ debug=""     #debug flag
 rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
+noinc=""     #disable automated include
 
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
@@ -264,10 +271,11 @@ install: all$install
 EOF
 
 if [ "$hdr" ] ; then
+  guard="`printf 'LIB%s_H' "${hdr%%.*}" | tr '[a-z]' '[A-Z]'`"
   cat <<EOF >> "$mkfile"
 $hdr:$inc Makefile
 	rm -f \$@
-	printf '#ifndef LIBHAX_H\n#define LIBHAX_H\n' >> \$@
+	printf '#ifndef $guard\n#define $guard\n' >> \$@
 	for inc in $inc ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
 	printf '#endif\n' >> \$@
 EOF

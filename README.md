@@ -5,6 +5,8 @@ The Audio Manipulation Program (or AMP) is a set of tools for performing real
 time audio synthesis, processing, mixing, and mastering. The project is split
 into four components:
 
+  * [cHax](hax/README.Md) - Cross-platform library for augmenting the C
+  * standard library.
   * [libDSP](dsp/README.md) - Low-level digital signal processing library.
     This library provides the building blocks used to create more
     sophisticated processing effects.
@@ -24,11 +26,12 @@ Manipulation Program software stack.
 
 ## Licensing
 
-The libraries (libDSP, MuseLang, and AmpCore) are licensed under the GNU
-LGPLv3. The applications (AmpRT) are licensed under the GNU GPLv3. Source code
-compiled by MuseLang,and plugins run using AmpCore, and audio created by AMP
-are _not_ restricted in any way; authors are free to license their source
-code, plugins, and audio however they wish.
+The AMP libraries (libDSP, MuseLang, and AmpCore) are licensed under the GNU
+LGPLv3. The applications (AmpRT) are licensed under the GNU GPLv3. The cHax
+library is licensed under the MIT License. Source code compiled by MuseLang,
+plugins run using AmpCore, and audio created by AMP are _not_ restricted in
+any way; authors are free to license their source code, plugins, and audio
+however they wish.
 
 ## Getting Started
 

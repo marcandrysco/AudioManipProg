@@ -4,7 +4,6 @@
 /*
  * communication declarations
  */
-
 struct amp_comm_t *amp_comm_new(void);
 void amp_comm_delete(struct amp_comm_t *comm);
 

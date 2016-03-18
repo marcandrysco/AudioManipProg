@@ -51,6 +51,7 @@ OBJ = src/box.o \
       src/mod/shot.o \
       src/mod/sum.o \
       src/mod/synth.o \
+      src/mod/track.o \
       src/mod/trig.o \
       \
       src/seq/merge.o \
@@ -105,6 +106,7 @@ INC = src/defs.h \
       src/mod/shot.h \
       src/mod/sum.h \
       src/mod/synth.h \
+      src/mod/track.h \
       src/mod/trig.h \
       \
       src/seq/merge.h \
