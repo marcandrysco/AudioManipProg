@@ -29,7 +29,6 @@
 #include "defs.h"
 #include "clk/defs.h"
 #include "efx/defs.h"
-#include "handler/defs.h"
 #include "instr/defs.h"
 #include "mod/defs.h"
 #include "seq/defs.h"
@@ -37,6 +36,7 @@
 #include "box.h"
 #include "cache.h"
 #include "core.h"
+#include "ctrl.h"
 #include "key.h"
 #include "io.h"
 #include "math.h"
@@ -56,13 +56,12 @@
 #include "efx/gen.h"
 #include "efx/reverb.h"
 #include "efx/sect.h"
-
-#include "handler/handler.h"
-#include "handler/midi.h"
+#include "efx/track.h"
 
 #include "instr/mixer.h"
 #include "instr/pan.h"
 #include "instr/series.h"
+#include "instr/single.h"
 #include "instr/splice.h"
 
 #include "mod/adsr.h"
@@ -74,7 +73,6 @@
 #include "mod/shot.h"
 #include "mod/sum.h"
 #include "mod/synth.h"
-#include "mod/track.h"
 #include "mod/trig.h"
 
 #include "seq/merge.h"

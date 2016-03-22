@@ -9,7 +9,8 @@ struct ml_env_t;
 struct ml_token_t;
 
 char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *path);
-struct ml_expr_t *ml_parse_stmt(struct ml_token_t **token, char **err);
+char *ml_parse_stmt(struct ml_expr_t **expr, struct ml_token_t **token);
+
 struct ml_expr_t *ml_parse_expr(struct ml_token_t **token, char **err);
 struct ml_expr_t *ml_parse_set(struct ml_token_t **token, char **err);
 struct ml_expr_t *ml_parse_list(struct ml_token_t **token, char **err);

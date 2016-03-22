@@ -60,6 +60,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Mixer"), ml_value_impl(amp_mixer_make));
 	ml_env_add(&core->env, strdup("Pan"), ml_value_impl(amp_pan_make));
 	ml_env_add(&core->env, strdup("Series"), ml_value_impl(amp_series_make));
+	ml_env_add(&core->env, strdup("Single"), ml_value_impl(amp_single_make));
 	ml_env_add(&core->env, strdup("Splice"), ml_value_impl(amp_splice_make));
 
 	/* modules */

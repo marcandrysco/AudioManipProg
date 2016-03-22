@@ -5,6 +5,7 @@
  * input device. The inputs are mixed into a mono signal before processing.
  * The output is written to both left and right output channels.
  *
+ * Licensed under the MIT License (see LICENSE for details).
  *)
 
 
@@ -34,5 +35,11 @@ let crush = 5
  *   this to zero will completely remove the tube amp model. *)
 let drive = 5
 
+(***** End Options *****)
 
-let effect = Chain [ ]
+
+let chain = Chain []
+
+(* the root element is a two-channel instrument 'amp.instr', the splice
+ * instrument used to combine channels and apply a one-channel effect chain *)
+let amp.instr = Splice(chain)

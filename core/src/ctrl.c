@@ -1,30 +1,4 @@
-#include "../common.h"
-
-
-/**
- * Control handler structure.
- *   @exp: The exponential flag.
- *   @val, low, high: The current, low, and high values.
- *   @dev, key: The listening device and key.
- */
-
-struct amp_ctrl_t {
-	bool exp;
-	double val, low, high;
-
-	uint16_t dev, key;
-};
-
-
-/*
- * global variables
- */
-
-struct amp_handler_i amp_ctrl_iface = {
-	(amp_handler_f)amp_ctrl_proc,
-	(amp_copy_f)amp_ctrl_copy,
-	(amp_delete_f)amp_ctrl_delete
-};
+#include "common.h"
 
 
 /**
@@ -35,7 +9,6 @@ struct amp_handler_i amp_ctrl_iface = {
  *   @exp: The exponential value.
  *   &returns: The control handler.
  */
-
 struct amp_ctrl_t *amp_ctrl_new(double val, double low, double high, bool exp, uint16_t dev, uint16_t key)
 {
 	struct amp_ctrl_t *ctrl;
@@ -56,7 +29,6 @@ struct amp_ctrl_t *amp_ctrl_new(double val, double low, double high, bool exp, u
  *   @ctrl: The original control handler.
  *   &returns: The copy.
  */
-
 struct amp_ctrl_t *amp_ctrl_copy(struct amp_ctrl_t *ctrl)
 {
 	return amp_ctrl_new(ctrl->val, ctrl->low, ctrl->high, ctrl->exp, ctrl->dev, ctrl->key);
@@ -66,7 +38,6 @@ struct amp_ctrl_t *amp_ctrl_copy(struct amp_ctrl_t *ctrl)
  * Delete a control handler.
  *   @ctrl: The control handler.
  */
-
 void amp_ctrl_delete(struct amp_ctrl_t *ctrl)
 {
 	free(ctrl);
@@ -80,7 +51,6 @@ void amp_ctrl_delete(struct amp_ctrl_t *ctrl)
  *   @err: The rror.
  *   &returns: The valueor null.
  */
-
 struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
@@ -128,7 +98,7 @@ struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env,
 
 	ml_value_delete(value);
 
-	return amp_pack_handler(amp_ctrl_handler(amp_ctrl_new(val, low, high, false, dev, key)));
+	return amp_pack_ctrl(amp_ctrl_new(val, low, high, false, dev, key));
 }
 
 
@@ -138,7 +108,6 @@ struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @event: The event.
  *   &returns: The updated value.
  */
-
 double amp_ctrl_proc(struct amp_ctrl_t *ctrl, struct amp_event_t event)
 {
 	double val;

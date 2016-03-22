@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 
 ## begin configuration options ##
@@ -25,6 +25,7 @@ setconf()
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/thread.c"
+    c_src "src/posix/time.c"
   fi
 
   c_src "src/avltree.c"
@@ -117,6 +118,17 @@ h_src()
   test ${1##*.} != "h" && fail "h_src argument has invalid extension '.${1##*.}'"
 
   inc="$inc $1"
+}
+
+# Add an asset to the share directory.
+#   @path: The source path.
+share_src()
+{
+  test $# -ne 2 && fail "share_src function takes 2 arguments"
+  chk_space "$1" || fail "share_src parameter '$1' has spaces"
+  chk_space "$2" || fail "share_src parameter '$2' has spaces"
+
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(SHAREDIR)/$2"
 }
 
 
@@ -298,6 +310,7 @@ echo "#ifndef CONFIG_H" >> "$cfg"
 echo "#define CONFIG_H" >> "$cfg"
 test "$debug" && echo "#define DEBUG 1" >> "$cfg"
 test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
+echo "#define SHAREDIR \"${prefix}/share"\" >> "$cfg"
 echo "#endif" >> "$cfg"
 
 exit 0

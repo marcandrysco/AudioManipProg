@@ -8,7 +8,6 @@
  *   @tag: The tag.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_new(enum ml_expr_e type, union ml_expr_u data, struct ml_tag_t tag)
 {
 	struct ml_expr_t *expr;
@@ -26,7 +25,6 @@ struct ml_expr_t *ml_expr_new(enum ml_expr_e type, union ml_expr_u data, struct 
  *   @expr: The expression.
  *   &returns: The copy.
  */
-
 struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 {
 	switch(expr->type) {
@@ -62,7 +60,6 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
  * Delete an expression.
  *   @expr: The expression.
  */
-
 void ml_expr_delete(struct ml_expr_t *expr)
 {
 	switch(expr->type) {
@@ -115,7 +112,6 @@ void ml_expr_delete(struct ml_expr_t *expr)
  *   @tag: The tag.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
 {
 	return ml_expr_new(ml_expr_id_e, (union ml_expr_u){ .id = id }, tag);
@@ -126,7 +122,6 @@ struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
  *   @set: Consumed. The set.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_set(struct ml_set_t set)
 {
 	return ml_expr_new(ml_expr_set_e, (union ml_expr_u){ .set = set }, (struct ml_tag_t){ NULL, 0, 0, 0 });
@@ -138,7 +133,6 @@ struct ml_expr_t *ml_expr_set(struct ml_set_t set)
  *   @expr: Consumed. The expression.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_func(struct ml_pat_t *pat, struct ml_expr_t *expr)
 {
 	return ml_expr_new(ml_expr_func_e, (union ml_expr_u){ .func = { pat, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
@@ -176,7 +170,6 @@ struct ml_expr_t *ml_expr_let(struct ml_pat_t *pat, struct ml_expr_t *value, str
  *   @onfalse: Consumed. The false expression.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue)
 {
 	return ml_expr_new(ml_expr_cond_e, (union ml_expr_u){ .cond = { eval, onfalse, ontrue } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
@@ -187,7 +180,6 @@ struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse
  *   @match: Consumed. The match.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_match(struct ml_match_t *match)
 {
 	return ml_expr_new(ml_expr_match_e, (union ml_expr_u){ .match = match }, (struct ml_tag_t){ NULL, 0, 0, 0 });
@@ -198,10 +190,9 @@ struct ml_expr_t *ml_expr_match(struct ml_match_t *match)
  *   @value: The constant value.
  *   &returns: The expression.
  */
-
 struct ml_expr_t *ml_expr_value(struct ml_value_t *value)
 {
-	return ml_expr_new(ml_expr_value_e, (union ml_expr_u){ .value = value }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_value_e, (union ml_expr_u){ .value = value }, value->tag);
 }
 
 
@@ -212,7 +203,6 @@ struct ml_expr_t *ml_expr_value(struct ml_value_t *value)
  *   @err: The error.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, char **err)
 {
 #undef fail
@@ -291,6 +281,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 				ml_env_delete(sub);
 			}
 			else if(func->type == ml_value_impl_e) {
+				*err = NULL;
 				value = ml_expr_eval(expr->data.app.value, env, err);
 				if(value != NULL)
 					value = func->data.impl(value, env, err);
@@ -338,8 +329,9 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 
 			if(ml_pat_match(&sub, expr->data.let.pat, value))
 				ret = ml_expr_eval(expr->data.let.expr, sub, err);
-			else
+			else {
 				ret = NULL, *err = mprintf("Match failed.");
+			}
 
 			ml_env_delete(sub);
 			ml_value_delete(value);
@@ -410,7 +402,6 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
  *   @expr: The expression.
  *   @file: The file.
  */
-
 void ml_expr_print(struct ml_expr_t *expr, FILE *file)
 {
 	switch(expr->type) {
@@ -480,7 +471,6 @@ void ml_expr_print(struct ml_expr_t *expr, FILE *file)
  * Create a set.
  *   &returns: The set.
  */
-
 struct ml_set_t ml_set_new(void)
 {
 	return (struct ml_set_t){ 0, malloc(0) };
@@ -492,7 +482,6 @@ struct ml_set_t ml_set_new(void)
  *   @right: The right expression.
  *   &returns: The set.
  */
-
 struct ml_set_t ml_set_new2(struct ml_expr_t *left, struct ml_expr_t *right)
 {
 	struct ml_set_t set;
@@ -510,7 +499,6 @@ struct ml_set_t ml_set_new2(struct ml_expr_t *left, struct ml_expr_t *right)
  *   @set: The original set.
  *   &returns: The copied set.
  */
-
 struct ml_set_t ml_set_copy(struct ml_set_t set)
 {
 	unsigned int i;
@@ -528,7 +516,6 @@ struct ml_set_t ml_set_copy(struct ml_set_t set)
  * Delete a set.
  *   @set: The set.
  */
-
 void ml_set_delete(struct ml_set_t set)
 {
 	unsigned int i;
@@ -544,7 +531,6 @@ void ml_set_delete(struct ml_set_t set)
  *   @set: The set.
  *   @value: Consume The value.
  */
-
 void ml_set_add(struct ml_set_t *set, struct ml_expr_t *expr)
 {
 	set->expr = realloc(set->expr, (set->len + 1) * sizeof(void *));
@@ -557,7 +543,6 @@ void ml_set_add(struct ml_set_t *set, struct ml_expr_t *expr)
  *   @expr: Consumed. The expression.
  *   &returns: The match.
  */
-
 struct ml_match_t *ml_match_new(struct ml_expr_t *expr)
 {
 	struct ml_match_t *match;
@@ -574,7 +559,6 @@ struct ml_match_t *ml_match_new(struct ml_expr_t *expr)
  *   @match: The match.
  *   &returns: The copy.
  */
-
 struct ml_match_t *ml_match_copy(struct ml_match_t *match)
 {
 	struct ml_with_t *with;
@@ -592,7 +576,6 @@ struct ml_match_t *ml_match_copy(struct ml_match_t *match)
  * Delete a match.
  *   @match: The match.
  */
-
 void ml_match_delete(struct ml_match_t *match)
 {
 	struct ml_with_t *cur, *next;
@@ -616,7 +599,6 @@ void ml_match_delete(struct ml_match_t *match)
  *   @pat: Consumed. The pattern.
  *   @expr: Consumed. The expression.
  */
-
 void ml_match_append(struct ml_match_t *match, struct ml_pat_t *pat, struct ml_expr_t *expr)
 {
 	struct ml_with_t *with;

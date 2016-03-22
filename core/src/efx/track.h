@@ -33,6 +33,8 @@ struct amp_track_data_t {
 /*
  * track declarations
  */
+extern const struct amp_effect_i amp_track_iface;
+
 struct amp_track_t *amp_track_new(char *path);
 struct amp_track_t *amp_track_copy(struct amp_track_t *track);
 void amp_track_delete(struct amp_track_t *track);

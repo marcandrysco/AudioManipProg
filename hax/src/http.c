@@ -222,7 +222,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 			hprintf(file, "%s: %s\n", pair->key, pair->value);
 
 		hprintf(file, "\n");
-		hprintf(file, buf);
+		hprintf(file, "%s", buf);
 	}
 	else
 		hprintf(file, "HTTP/1.1 404 Not Found\nContent-Length: 9\nConnection: close\n\nNot Found");

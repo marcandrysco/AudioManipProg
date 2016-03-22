@@ -43,8 +43,8 @@ struct amp_box_t *amp_box_copy(struct amp_box_t *box)
 {
 	switch(box->type) {
 	case amp_box_clock_e: return amp_box_clock(amp_clock_copy(box->data.clock));
+	case amp_box_ctrl_e: return amp_box_ctrl(amp_ctrl_copy(box->data.ctrl));
 	case amp_box_effect_e: return amp_box_effect(amp_effect_copy(box->data.effect));
-	case amp_box_handler_e: return amp_box_handler(amp_handler_copy(box->data.handler));
 	case amp_box_instr_e: return amp_box_instr(amp_instr_copy(box->data.instr));
 	case amp_box_module_e: return amp_box_module(amp_module_copy(box->data.module));
 	case amp_box_seq_e: return amp_box_seq(amp_seq_copy(box->data.seq));
@@ -62,8 +62,8 @@ void amp_box_delete(struct amp_box_t *box)
 {
 	switch(box->type) {
 	case amp_box_clock_e: amp_clock_delete(box->data.clock); break;
+	case amp_box_ctrl_e: amp_ctrl_delete(box->data.ctrl); break;
 	case amp_box_effect_e: amp_effect_delete(box->data.effect); break;
-	case amp_box_handler_e: amp_handler_delete(box->data.handler); break;
 	case amp_box_instr_e: amp_instr_delete(box->data.instr); break;
 	case amp_box_module_e: amp_module_delete(box->data.module); break;
 	case amp_box_seq_e: amp_seq_delete(box->data.seq); break;
@@ -85,6 +85,17 @@ struct amp_box_t *amp_box_clock(struct amp_clock_t clock)
 }
 
 /**
+ * Create a boxed control.
+ *   @ctrl: The control.
+ *   &returns: The box.
+ */
+
+struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl)
+{
+	return amp_box_new(amp_box_ctrl_e, (union amp_box_u){ .ctrl = ctrl });
+}
+
+/**
  * Create a boxed effect.
  *   @effect: The effect.
  *   &returns: The box.
@@ -93,17 +104,6 @@ struct amp_box_t *amp_box_clock(struct amp_clock_t clock)
 struct amp_box_t *amp_box_effect(struct amp_effect_t effect)
 {
 	return amp_box_new(amp_box_effect_e, (union amp_box_u){ .effect = effect });
-}
-
-/**
- * Create a boxed handler.
- *   @handler: The handler.
- *   &returns: The box.
- */
-
-struct amp_box_t *amp_box_handler(struct amp_handler_t handler)
-{
-	return amp_box_new(amp_box_handler_e, (union amp_box_u){ .handler = handler });
 }
 
 /**
@@ -163,14 +163,14 @@ struct ml_value_t *amp_pack_effect(struct amp_effect_t effect)
 }
 
 /**
- * Pack a handler into a value.
- *   @handler: The handler.
+ * Pack a control into a value.
+ *   @ctrl: The control.
  *   &returns: The value.
  */
 
-struct ml_value_t *amp_pack_handler(struct amp_handler_t handler)
+struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl)
 {
-	return amp_box_value(amp_box_handler(handler));
+	return amp_box_value(amp_box_ctrl(ctrl));
 }
 
 /**
@@ -219,8 +219,8 @@ struct amp_param_t *amp_unbox_param(struct ml_value_t *value)
 
 	if(value->type == ml_value_num_e)
 		return amp_param_flt(value->data.num);
-	else if((box = amp_unbox_value(value, amp_box_handler_e)) != NULL)
-		return amp_param_handler(amp_handler_copy(box->data.handler));
+	else if((box = amp_unbox_value(value, amp_box_ctrl_e)) != NULL)
+		return amp_param_ctrl(amp_ctrl_copy(box->data.ctrl));
 	else if((box = amp_unbox_value(value, amp_box_module_e)) != NULL)
 		return amp_param_module(amp_module_copy(box->data.module));
 	else
@@ -241,7 +241,6 @@ void match_str(char **str, size_t *len, const char **format)
 
 		  break;
 
-	case 'V': snprintf(*str, *len, "Value"); break;
 	case 'I': snprintf(*str, *len, "Instr"); break;
 	case 'E': snprintf(*str, *len, "Effect"); break;
 	case 'M': snprintf(*str, *len, "Module"); break;
@@ -350,7 +349,6 @@ static void match_init(const char **format, va_list *args)
 	case 'E': *va_arg(*args, struct amp_effect_t *) = amp_effect_null; break;
 	case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_null; break;
 	case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_null; break;
-	case 'V': *va_arg(*args, struct amp_value_t *) = amp_value_flt(0.0); break;
 	case 'P': *va_arg(*args, struct amp_param_t **) = NULL; break;
 		
 	case '(':
@@ -402,7 +400,6 @@ static void match_clear(const char **format, va_list *args)
 	case 'E': amp_effect_erase(*va_arg(*args, struct amp_effect_t *)); break;
 	case 'I': amp_instr_erase(*va_arg(*args, struct amp_instr_t *)); break;
 	case 'S': amp_seq_erase(*va_arg(*args, struct amp_seq_t *)); break;
-	case 'V': amp_value_delete(*va_arg(*args, struct amp_value_t *)); break;
 	case 'P': amp_param_erase(*va_arg(*args, struct amp_param_t **)); break;
 		
 	case '(':
@@ -461,21 +458,14 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 
 		return true;
 	}
-	else if((**format == 'V') && (value->type == ml_value_num_e)) {
-		*va_arg(*args, struct amp_value_t *) = amp_value_flt(value->data.num);
-
-		(*format)++;
-
-		return true;
-	}
 	else if(**format == 'P') {
 		struct amp_box_t *box;
 		struct amp_param_t *param;
 
 		if(value->type == ml_value_num_e)
 			param = amp_param_flt(value->data.num);
-		else if((box = amp_unbox_value(value, amp_box_handler_e)) != NULL)
-			param = amp_param_handler(amp_handler_copy(box->data.handler));
+		else if((box = amp_unbox_value(value, amp_box_ctrl_e)) != NULL)
+			param = amp_param_ctrl(amp_ctrl_copy(box->data.ctrl));
 		else if((box = amp_unbox_value(value, amp_box_module_e)) != NULL)
 			param = amp_param_module(amp_module_copy(box->data.module));
 		else
@@ -538,10 +528,10 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		struct amp_box_t *box;
 
 		switch(**format) {
+		case 'C': type = amp_box_ctrl_e; break;
 		case 'E': type = amp_box_effect_e; break;
 		case 'I': type = amp_box_instr_e; break;
 		case 'M': type = amp_box_module_e; break;
-		case 'V': type = amp_box_handler_e; break;
 		case 'S': type = amp_box_seq_e; break;
 		default: fprintf(stderr, "Invalid format.\n"), abort();
 		}
@@ -551,10 +541,10 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 			return false;
 
 		switch(**format) {
+		case 'C': *va_arg(*args, struct amp_ctrl_t **) = amp_ctrl_copy(box->data.ctrl); break;
 		case 'E': *va_arg(*args, struct amp_effect_t *) = amp_effect_copy(box->data.effect); break;
 		case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_copy(box->data.instr); break;
 		case 'M': *va_arg(*args, struct amp_module_t *) = amp_module_copy(box->data.module); break;
-		case 'V': *va_arg(*args, struct amp_value_t *) = amp_value_handler(amp_handler_copy(box->data.handler)); break;
 		case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_copy(box->data.seq); break;
 		}
 

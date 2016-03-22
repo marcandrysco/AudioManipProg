@@ -4,7 +4,6 @@
 /*
  * effect declarations
  */
-
 extern struct amp_effect_t amp_effect_null;
 
 #endif

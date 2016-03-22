@@ -7,7 +7,7 @@
  */
 
 struct amp_clip_t {
-	struct amp_value_t maxlo, satlo, sathi, maxhi;
+	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
 };
 
 
@@ -32,7 +32,7 @@ const struct amp_effect_i amp_clip_iface = {
  *   &returns: The clip.
  */
 
-struct amp_clip_t *amp_clip_new(struct amp_value_t maxlo, struct amp_value_t satlo, struct amp_value_t sathi, struct amp_value_t maxhi)
+struct amp_clip_t *amp_clip_new(struct amp_param_t *maxlo, struct amp_param_t *satlo, struct amp_param_t *sathi, struct amp_param_t *maxhi)
 {
 	struct amp_clip_t *clip;
 
@@ -53,7 +53,7 @@ struct amp_clip_t *amp_clip_new(struct amp_value_t maxlo, struct amp_value_t sat
 
 struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip)
 {
-	return amp_clip_new(amp_value_copy(clip->maxlo), amp_value_copy(clip->satlo), amp_value_copy(clip->sathi), amp_value_copy(clip->maxhi));
+	return amp_clip_new(amp_param_copy(clip->maxlo), amp_param_copy(clip->satlo), amp_param_copy(clip->sathi), amp_param_copy(clip->maxhi));
 }
 
 /**
@@ -63,10 +63,10 @@ struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip)
 
 void amp_clip_delete(struct amp_clip_t *clip)
 {
-	amp_value_delete(clip->maxlo);
-	amp_value_delete(clip->satlo);
-	amp_value_delete(clip->sathi);
-	amp_value_delete(clip->maxhi);
+	amp_param_delete(clip->maxlo);
+	amp_param_delete(clip->satlo);
+	amp_param_delete(clip->sathi);
+	amp_param_delete(clip->maxhi);
 	free(clip);
 }
 
@@ -81,9 +81,9 @@ void amp_clip_delete(struct amp_clip_t *clip)
 
 struct ml_value_t *amp_clip_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
-	struct amp_value_t maxlo, satlo, sathi, maxhi;
+	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
 
-	*err = amp_match_unpack(value, "(V,V,V,V)", &maxlo, &satlo, &sathi, &maxhi);
+	*err = amp_match_unpack(value, "(P,P,P,P)", &maxlo, &satlo, &sathi, &maxhi);
 
 	return (*err == NULL) ? amp_pack_effect((struct amp_effect_t){ amp_clip_new(maxlo, satlo, sathi, maxhi), &amp_clip_iface }) : NULL;
 }
@@ -140,10 +140,10 @@ void amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time
 	unsigned int i;
 	double maxlo, satlo, sathi, maxhi;
 
-	maxlo = clip->maxlo.flt;
-	satlo = clip->satlo.flt;
-	sathi = clip->sathi.flt;
-	maxhi = clip->maxhi.flt;
+	maxlo = clip->maxlo->flt;
+	satlo = clip->satlo->flt;
+	sathi = clip->sathi->flt;
+	maxhi = clip->maxhi->flt;
 
 	for(i = 0; i < len; i++)
 		buf[i] = dsp_clip_d(buf[i], maxlo, satlo, sathi, maxhi);

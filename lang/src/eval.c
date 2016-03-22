@@ -445,6 +445,7 @@ struct ml_eval_t ml_eval_arr[] = {
 	{ "print", ml_eval_print },
 	{ "i2str", ml_eval_i2str },
 	{ "strlen", ml_eval_strlen },
+	{ "isdef", ml_eval_isdef },
 	{ NULL, NULL }
 };
 
@@ -465,7 +466,7 @@ struct ml_value_t *ml_eval_print(struct ml_value_t *value, struct ml_env_t *env,
 	printf("%s", value->data.str);
 	ml_value_delete(value);
 	
-	return ml_value_nil();;
+	return ml_value_nil(value->tag);
 }
 
 /**
@@ -500,6 +501,13 @@ struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env,
 	return ret;
 }
 
+/**
+ * Evaluate a string length.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
 struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct ml_value_t *ret;
@@ -508,6 +516,27 @@ struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env
 		fail("Type error. Function 'strlen' requires type 'string'.");
 
 	ret = ml_value_num(strlen(value->data.str));
+	ml_value_delete(value);
+
+	return ret;
+}
+
+
+/**
+ * Evaluate a string length.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *ml_eval_isdef(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_value_t *ret;
+
+	if(value->type != ml_value_str_e)
+		fail("Type error. Function 'isdef' requires type 'string'.");
+
+	ret = ml_value_bool(ml_env_lookup(env, value->data.str) != NULL);
 	ml_value_delete(value);
 
 	return ret;

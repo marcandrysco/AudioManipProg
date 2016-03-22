@@ -5,7 +5,7 @@
  * clip declarations
  */
 
-struct amp_clip_t *amp_clip_new(struct amp_value_t maxlo, struct amp_value_t satlo, struct amp_value_t sathi, struct amp_value_t maxhi);
+struct amp_clip_t *amp_clip_new(struct amp_param_t *maxlo, struct amp_param_t *satlo, struct amp_param_t *sathi, struct amp_param_t *maxhi);
 struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip);
 void amp_clip_delete(struct amp_clip_t *clip);
 

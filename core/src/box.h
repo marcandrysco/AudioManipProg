@@ -3,16 +3,16 @@
 
 /**
  * Boxed type enumerator.
- *   @amp_box_handler_e: Handler.
  *   @amp_box_clock_e: Clock.
+ *   @amp_box_ctrl_e: Control
+ *   @amp_box_ctrl_e: Control
  *   @amp_box_effect_e: Effect.
  *   @amp_box_instr_e: Instrument.
  *   @amp_box_seq_e: Sequencer.
  */
-
 enum amp_box_e {
-	amp_box_handler_e,
 	amp_box_clock_e,
+	amp_box_ctrl_e,
 	amp_box_effect_e,
 	amp_box_instr_e,
 	amp_box_module_e,
@@ -22,16 +22,15 @@ enum amp_box_e {
 /**
  * Boxed data union.
  *   @clock: The clock.
+ *   @ctrl: Control.
  *   @effect: The effect.
- *   @handler: The handler.
  *   @instr: The instrument.
  *   @seq: The seq.
  */
-
 union amp_box_u {
 	struct amp_clock_t clock;
+	struct amp_ctrl_t *ctrl;
 	struct amp_effect_t effect;
-	struct amp_handler_t handler;
 	struct amp_instr_t instr;
 	struct amp_module_t module;
 	struct amp_seq_t seq;
@@ -42,7 +41,6 @@ union amp_box_u {
  *   @type: The type.
  *   @data: The data.
  */
-
 struct amp_box_t {
 	enum amp_box_e type;
 	union amp_box_u data;
@@ -52,14 +50,12 @@ struct amp_box_t {
 /*
  * null declarations
  */
-
 extern struct amp_instr_t amp_instr_null;
 extern struct amp_seq_t amp_seq_null;
 
 /*
  * box declarations
  */
-
 extern struct ml_box_i amp_box_iface;
 
 struct amp_box_t *amp_box_new(enum amp_box_e type, union amp_box_u data);
@@ -67,8 +63,8 @@ struct amp_box_t *amp_box_copy(struct amp_box_t *box);
 void amp_box_delete(struct amp_box_t *box);
 
 struct amp_box_t *amp_box_clock(struct amp_clock_t clock);
+struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl);
 struct amp_box_t *amp_box_effect(struct amp_effect_t effect);
-struct amp_box_t *amp_box_handler(struct amp_handler_t handler);
 struct amp_box_t *amp_box_instr(struct amp_instr_t instr);
 struct amp_box_t *amp_box_module(struct amp_module_t module);
 struct amp_box_t *amp_box_seq(struct amp_seq_t seq);
@@ -76,16 +72,14 @@ struct amp_box_t *amp_box_seq(struct amp_seq_t seq);
 /*
  * unbox declarations
  */
-
 struct amp_param_t *amp_unbox_param(struct ml_value_t *value);
 
 /*
  * packing declarations
  */
-
 struct ml_value_t *amp_pack_clock(struct amp_clock_t clock);
+struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl);
 struct ml_value_t *amp_pack_effect(struct amp_effect_t effect);
-struct ml_value_t *amp_pack_handler(struct amp_handler_t handler);
 struct ml_value_t *amp_pack_instr(struct amp_instr_t instr);
 struct ml_value_t *amp_pack_module(struct amp_module_t module);
 struct ml_value_t *amp_pack_seq(struct amp_seq_t seq);
@@ -99,7 +93,6 @@ char *amp_match_unpack(struct ml_value_t *value, const char *format, ...);
  *   @box: The AMP boxed value.
  *   &returns: The MuseLang boxed value.
  */
-
 static inline struct ml_box_t amp_box_pack(struct amp_box_t *box)
 {
 	return (struct ml_box_t){ box, &amp_box_iface };
@@ -110,7 +103,6 @@ static inline struct ml_box_t amp_box_pack(struct amp_box_t *box)
  *   @box: The AMP boxed value.
  *   &returns: The MuseLang value.
  */
-
 static inline struct ml_value_t *amp_box_value(struct amp_box_t *box)
 {
 	return ml_value_box(amp_box_pack(box));
@@ -121,7 +113,6 @@ static inline struct ml_value_t *amp_box_value(struct amp_box_t *box)
  *   @box: The MuseLange boxed value.
  *   &returns: The AMP boxed value or null.
  */
-
 static inline struct amp_box_t *amp_box_unpack(struct ml_box_t box)
 {
 	return (box.iface == &amp_box_iface) ? box.ref : NULL;
@@ -133,7 +124,6 @@ static inline struct amp_box_t *amp_box_unpack(struct ml_box_t box)
  *   @type: The requested type.
  *   &returns: The AMP boxed value or null.
  */
-
 static inline struct amp_box_t *amp_unbox_value(struct ml_value_t *value, enum amp_box_e type)
 {
 	struct amp_box_t *box;
@@ -150,7 +140,7 @@ static inline struct amp_box_t *amp_unbox_value(struct ml_value_t *value, enum a
 
 static inline bool amp_unbox_isparam(struct ml_value_t *value)
 {
-	return (value->type == ml_value_num_e) || (amp_unbox_value(value, amp_box_handler_e) != NULL) || (amp_unbox_value(value, amp_box_module_e) != NULL);
+	return (value->type == ml_value_num_e) || (amp_unbox_value(value, amp_box_ctrl_e) != NULL) || (amp_unbox_value(value, amp_box_module_e) != NULL);
 }
 
 #endif

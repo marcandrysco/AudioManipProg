@@ -14,6 +14,7 @@ ML  = core.ml
 OBJ = src/box.o \
       src/cache.o \
       src/core.o \
+      src/ctrl.o \
       src/key.o \
       src/io.o \
       src/math.o \
@@ -33,13 +34,12 @@ OBJ = src/box.o \
       src/efx/gen.o \
       src/efx/reverb.o \
       src/efx/sect.o \
-      \
-      src/handler/handler.o \
-      src/handler/midi.o \
+      src/efx/track.o \
       \
       src/instr/mixer.o \
       src/instr/pan.o \
       src/instr/series.o \
+      src/instr/single.o \
       src/instr/splice.o \
       \
       src/mod/adsr.o \
@@ -51,7 +51,6 @@ OBJ = src/box.o \
       src/mod/shot.o \
       src/mod/sum.o \
       src/mod/synth.o \
-      src/mod/track.o \
       src/mod/trig.o \
       \
       src/seq/merge.o \
@@ -61,7 +60,6 @@ OBJ = src/box.o \
 INC = src/defs.h \
       src/clk/defs.h \
       src/efx/defs.h \
-      src/handler/defs.h \
       src/instr/defs.h \
       src/mod/defs.h \
       src/seq/defs.h \
@@ -71,6 +69,7 @@ INC = src/defs.h \
       src/box.h \
       src/cache.h \
       src/core.h \
+      src/ctrl.h \
       src/key.h \
       src/io.h \
       src/math.h \
@@ -88,13 +87,12 @@ INC = src/defs.h \
       src/efx/gen.h \
       src/efx/reverb.h \
       src/efx/sect.h \
-      \
-      src/handler/handler.h \
-      src/handler/midi.h \
+      src/efx/track.h \
       \
       src/instr/mixer.h \
       src/instr/pan.h \
       src/instr/series.h \
+      src/instr/single.h \
       src/instr/splice.h \
       \
       src/mod/adsr.h \
@@ -106,7 +104,6 @@ INC = src/defs.h \
       src/mod/shot.h \
       src/mod/sum.h \
       src/mod/synth.h \
-      src/mod/track.h \
       src/mod/trig.h \
       \
       src/seq/merge.h \

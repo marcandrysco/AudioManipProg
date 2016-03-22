@@ -4,7 +4,6 @@
 /*
  * structure prototypes
  */
-
 struct ml_env_t;
 
 
@@ -13,7 +12,6 @@ struct ml_env_t;
  *   @file: The file.
  *   @off, line, col: The offset, line, and column info.
  */
-
 struct ml_tag_t {
 	const char *file;
 	unsigned int off, line, col;
@@ -27,7 +25,6 @@ struct ml_tag_t {
  *   @err: The error.
  *   &returns: The processed value.
  */
-
 typedef struct ml_value_t *(*ml_impl_f)(struct ml_value_t *, struct ml_env_t *, char **);
 
 
@@ -49,7 +46,6 @@ struct ml_box_i {
  *   @ref: The reference.
  *   @iface: The interface.
  */
-
 struct ml_box_t {
 	void *ref;
 	const struct ml_box_i *iface;
@@ -60,7 +56,6 @@ struct ml_box_t {
  *   @len: The length.
  *   @value; The value array.
  */
-
 struct ml_tuple_t {
 	unsigned int len;
 	struct ml_value_t **value;
@@ -73,7 +68,6 @@ struct ml_tuple_t {
  *   @rec: The recursive name.
  *   @expr: The expression.
  */
-
 struct ml_closure_t {
 	struct ml_env_t *env;
 	struct ml_pat_t *pat;
@@ -86,7 +80,6 @@ struct ml_closure_t {
  *   @value: The value.
  *   @prev, next: Previous or next link.
  */
-
 struct ml_link_t {
 	struct ml_value_t *value;
 	struct ml_link_t *prev, *next;
@@ -96,7 +89,6 @@ struct ml_link_t {
  * List structure.
  *   @head, tail: The head and tail links.
  */
-
 struct ml_list_t {
 	struct ml_link_t *head, *tail;
 };
@@ -137,7 +129,6 @@ enum ml_value_e {
  *   @box: Bosed value.
  *   @impl: Native imlementation.
  */
-
 union ml_value_u {
 	bool flag;
 	double num;
@@ -151,11 +142,12 @@ union ml_value_u {
 
 /**
  * Value structure.
+ *   @tag: The tag.
  *   @type: The type.
  *   @data: The data.
  */
-
 struct ml_value_t {
+	struct ml_tag_t tag;
 	enum ml_value_e type;
 	union ml_value_u data;
 };
@@ -166,7 +158,6 @@ struct ml_value_t {
  *   @len: The length.
  *   @expr; The expression array.
  */
-
 struct ml_set_t {
 	unsigned int len;
 	struct ml_expr_t **expr;
@@ -177,7 +168,6 @@ struct ml_set_t {
  *   @pat: The pattern.
  *   @expr: The pattern and expression.
  */
-
 struct ml_func_t {
 	struct ml_pat_t *pat;
 	struct ml_expr_t *expr;
@@ -197,7 +187,6 @@ struct ml_app_t {
  *   @pat: The pattern.
  *   @value, expr: The value and expression.
  */
-
 struct ml_let_t {
 	struct ml_pat_t *pat;
 	struct ml_expr_t *value, *expr;
@@ -207,7 +196,6 @@ struct ml_let_t {
  * Condition structure.
  *   @eval, ontrue, onfalse: The evaluation, true, and false expressions.
  */
-
 struct ml_cond_t {
 	struct ml_expr_t *eval, *ontrue, *onfalse;
 };
@@ -223,7 +211,6 @@ struct ml_cond_t {
  *   @ml_expr_match_e: Match
  *   @ml_expr_value_e: Constant value.
  */
-
 enum ml_expr_e {
 	ml_expr_id_e,
 	ml_expr_set_e,
@@ -249,7 +236,6 @@ enum ml_expr_e {
  *   @match: Match.
  *   @value: Constant value.
  */
-
 union ml_expr_u {
 	char *id;
 	struct ml_set_t set;
@@ -267,7 +253,6 @@ union ml_expr_u {
  *   @type: The type.
  *   @data: The data.
  */
-
 struct ml_expr_t {
 	struct ml_tag_t tag;
 	enum ml_expr_e type;

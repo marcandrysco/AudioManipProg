@@ -8,10 +8,10 @@ struct amp_engine_t;
 
 /**
  * Watch function callback.
- *   @engine: The engine.
+ *   @env: The environment.
  *   @arg: The argument.
  */
-typedef void (*amp_watch_f)(struct amp_engine_t *engine, void *arg);
+typedef void (*amp_watch_f)(struct ml_env_t *env, void *arg);
 
 /**
  * RT structure.

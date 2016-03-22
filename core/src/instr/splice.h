@@ -3,11 +3,9 @@
 
 /**
  * Splice structure.
- *   @left, right: The left and right input gain.
  *   @effect: The effect.
  */
 struct amp_splice_t {
-	struct amp_value_t left, right;
 	struct amp_effect_t effect;
 };
 
@@ -16,7 +14,7 @@ struct amp_splice_t {
  */
 extern struct amp_instr_i amp_splice_iface;
 
-struct amp_splice_t *amp_splice_new(struct amp_value_t left, struct amp_value_t right, struct amp_effect_t effect);
+struct amp_splice_t *amp_splice_new(struct amp_effect_t effect);
 struct amp_splice_t *amp_splice_copy(struct amp_splice_t *splice);
 void amp_splice_delete(struct amp_splice_t *splice);
 

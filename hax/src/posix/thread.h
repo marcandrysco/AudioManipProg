@@ -44,7 +44,7 @@ void sys_mutex_lock(struct sys_mutex_t *mutex);
 bool sys_mutex_trylock(struct sys_mutex_t *mutex);
 void sys_mutex_unlock(struct sys_mutex_t *mutex);
 
-#define SYS_MUTEX_INIT PTHREAD_MUTEX_INIT
+#define SYS_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
 
 
 /**

@@ -8,7 +8,6 @@
  *   @ml_pat_list_e: List.
  *   @ml_pat_value_e: Constant value.
  */
-
 enum ml_pat_e {
 	ml_pat_id_e,
 	ml_pat_tuple_e,
@@ -22,7 +21,6 @@ enum ml_pat_e {
  *   @tuple: Patterned tuple.
  *   @list: List pair.
  */
-
 union ml_pat_u {
 	char *id;
 	struct ml_pat_t *tuple;
@@ -36,7 +34,6 @@ union ml_pat_u {
  *   @data: The data.
  *   @next: The next pattern.
  */
-
 struct ml_pat_t {
 	enum ml_pat_e type;
 	union ml_pat_u data;
@@ -48,7 +45,6 @@ struct ml_pat_t {
 /*
  * pattern declarations
  */
-
 struct ml_pat_t *ml_pat_new(enum ml_pat_e type, union ml_pat_u data);
 struct ml_pat_t *ml_pat_copy(struct ml_pat_t *pat);
 void ml_pat_delete(struct ml_pat_t *pat);
@@ -71,6 +67,16 @@ static inline void ml_pat_erase(struct ml_pat_t *pat)
 {
 	if(pat != NULL)
 		ml_pat_delete(pat);
+}
+
+/**
+ * Delete a match if non-null.
+ *   @match: The match.
+ */
+static inline void ml_match_erase(struct ml_match_t *match)
+{
+	if(match != NULL)
+		ml_match_delete(match);
 }
 
 #endif

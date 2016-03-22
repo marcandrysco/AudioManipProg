@@ -5,7 +5,6 @@
  * Create a blank environment.
  *   &returns: The environment.
  */
-
 struct ml_env_t *ml_env_new(void)
 {
 	return NULL;
@@ -16,7 +15,6 @@ struct ml_env_t *ml_env_new(void)
  *   @env: The original environment.
  *   &returns: The copy.
  */
-
 struct ml_env_t *ml_env_copy(struct ml_env_t *env)
 {
 	if(env != NULL)
@@ -29,7 +27,6 @@ struct ml_env_t *ml_env_copy(struct ml_env_t *env)
  * Delete an environment.
  *   @env: The environment.
  */
-
 void ml_env_delete(struct ml_env_t *env)
 {
 	struct ml_env_t *up;
@@ -57,7 +54,6 @@ void ml_env_delete(struct ml_env_t *env)
  *   @env: The environment pointer.
  *   &returns: The error if failed, null if successful.
  */
-
 char *ml_env_proc(const char *path, struct ml_env_t **env)
 {
 	char *err = NULL;
@@ -81,7 +77,6 @@ char *ml_env_proc(const char *path, struct ml_env_t **env)
  *   @id: Consumed. The identifier.
  *   @value: Consumed. The value.
  */
-
 void ml_env_add(struct ml_env_t **env, char *id, struct ml_value_t *value)
 {
 	struct ml_env_t *next;
@@ -101,7 +96,6 @@ void ml_env_add(struct ml_env_t **env, char *id, struct ml_value_t *value)
  *   @id: The identifier.
  *   &returns: The valueor null.
  */
-
 struct ml_value_t *ml_env_lookup(struct ml_env_t *env, const char *id)
 {
 	while(env != NULL) {

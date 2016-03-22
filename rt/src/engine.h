@@ -55,6 +55,10 @@ struct amp_engine_t {
 /*
  * engine declarations
  */
+struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm);
+void amp_engine_delete(struct amp_engine_t *engine);
+
+void amp_engine_update(struct amp_engine_t *engine, const char *path);
 
 void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg);
 

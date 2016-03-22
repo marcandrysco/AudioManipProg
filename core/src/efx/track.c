@@ -11,7 +11,7 @@ static struct amp_track_data_t *data_create(struct amp_track_t *track, int idx);
 /*
  * global variables
  */
-const struct amp_module_i amp_track_iface = {
+const struct amp_effect_i amp_track_iface = {
 	(amp_info_f)amp_track_info,
 	(amp_effect_f)amp_track_proc,
 	(amp_copy_f)amp_track_copy,

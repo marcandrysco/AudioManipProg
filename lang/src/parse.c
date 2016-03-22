@@ -20,20 +20,16 @@ char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *
 
 		if(token->type == ml_token_import_e) {
 			token = token->next;
-			expr = ml_parse_stmt(&token, &err);
-			if(expr == NULL) {
-				if(err)
-					return err;
-				else
-					fail("Invalid let. Expected expression.");
-			}
+			chkfail(ml_parse_stmt(&expr, &token));
+			if(expr == NULL)
+				fatal("Invalid let. Expected expression.");
 
 			value = ml_expr_eval(expr, *env, &err);
 			if(value == NULL)
 				return err;
 
 			if(value->type != ml_value_str_e)
-				fail("Import requries string value.");
+				fatal("Import requries string value.");
 
 			chkfail(ml_env_proc(value->data.str, env)); // TODO: relative to 'path'
 
@@ -45,25 +41,21 @@ char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *
 
 			chkfail(ml_parse_pat(&pat, &token, false));
 			if(pat == NULL)
-				fail("Missin pattern.");
+				fatal("Missin pattern.");
 
 			if(token->type != ml_token_equal_e)
-				fail("Invalid let. Expected '='.");
+				fatal("Invalid let. Expected '='.");
 
 			token = token->next;
-			expr = ml_parse_stmt(&token, &err);
-			if(expr == NULL) {
-				if(err)
-					return err;
-				else
-					fail("Invalid let. Expected expression.");
-			}
+			chkfail(ml_parse_stmt(&expr, &token));
+			if(expr == NULL)
+				fatal("Invalid let. Expected expression.");
 
 			if(pat->next != NULL) {
 				struct ml_closure_t closure;
 
 				if(pat->type != ml_pat_id_e)
-					fail("Invalid function declaration.");
+					fatal("Invalid function declaration.");
 
 				closure = ml_closure(ml_env_copy(*env), ml_pat_copy(pat->next), strdup(pat->data.id), ml_expr_copy(expr));
 				ml_env_add(env, strdup(pat->data.id), ml_value_closure(closure));
@@ -74,7 +66,7 @@ char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *
 					return err;
 
 				if(!ml_pat_match(env, pat, value))
-					fail("Pattern match failed.");
+					fatal("Pattern match failed.");
 
 				ml_value_delete(value);
 			}
@@ -83,7 +75,7 @@ char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *
 			ml_expr_delete(expr);
 		}
 		else
-			fail("Missing let.");
+			fatal("Missing let.");
 	}
 
 	return NULL;
@@ -198,126 +190,133 @@ char *ml_parse_pat_value(struct ml_pat_t **pat, struct ml_token_t **token)
 
 /**
  * Parse a statement.
+ *   @expr: Ref. The expression.
  *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
+ *   &returns: Error.
  */
-
-struct ml_expr_t *ml_parse_stmt(struct ml_token_t **token, char **err)
+char *ml_parse_stmt(struct ml_expr_t **expr, struct ml_token_t **token)
 {
-#undef fail
-#define fail(str, ...) do { ml_pat_delete(pat); ml_expr_erase(left); ml_expr_erase(value); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: " str, (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, ##__VA_ARGS__); return NULL; } while(0)
-
+#define onexit ml_pat_delete(pat); ml_expr_erase(tmp[0]); ml_expr_erase(tmp[1]); ml_match_erase(match);
+	struct ml_match_t *match = NULL;
 	struct ml_pat_t *pat = NULL;
-	struct ml_expr_t *left = NULL, *value = NULL, *expr;
-
-	*err = NULL;
+	struct ml_expr_t *tmp[2] = { NULL, NULL };
 
 	if((*token)->type == ml_token_func_e) {
 		*token = (*token)->next;
-		*err = ml_parse_pat(&pat, token, false);
-		if(*err != NULL)
-			return NULL;
-		else if(pat == NULL)
+		chkfail(ml_parse_pat(&pat, token, false));
+		if(pat == NULL)
 			fail("Missing function parameters.");
 
 		if((*token)->type != ml_token_arrow_e)
 			fail("Missing '->'.");
 
 		*token = (*token)->next;
-		expr = ml_parse_stmt(token, err);
+		chkfail(ml_parse_stmt(expr, token));
 		if(expr == NULL)
-			fail("Missing function expression.", (*token)->type);
+			fail("Missing function expression.");
 
-		return ml_expr_func(pat, expr);
+		*expr = ml_expr_func(pat, *expr);
+		return NULL;
 	}
 	else if((*token)->type == ml_token_let_e) {
 		*token = (*token)->next;
-		*err = ml_parse_pat(&pat, token, false);
-		if(*err != NULL)
-			return NULL;
-		else if(pat == NULL)
+		chkfail(ml_parse_pat(&pat, token, false));
+		if(pat == NULL)
 			fail("Missing function parameters.");
 
 		if((*token)->type != ml_token_equal_e)
-			fail("Expected '='.");
+			fail("Missing '='.");
 
 		*token = (*token)->next;
-		value = ml_parse_stmt(token, err);
-		if(value == NULL)
+		chkfail(ml_parse_stmt(&tmp[0], token));
+		if(tmp[0] == NULL)
 			fail("Missing expression in 'let'.");
 
 		if((*token)->type != ml_token_in_e)
 			fail("Expected 'in'.");
 
 		*token = (*token)->next;
-		expr = ml_parse_stmt(token, err);
-		if(expr == NULL)
+		chkfail(ml_parse_stmt(expr, token));
+		if(*expr == NULL)
 			fail("Missing expression in 'let'.");
 
-		return ml_expr_let(pat, value, expr);
+		*expr = ml_expr_let(pat, tmp[0], *expr);
+		return NULL;
 	}
 	else if((*token)->type == ml_token_if_e) {
+		char *err = NULL;
+
 		*token = (*token)->next;
-		left = ml_parse_expr(token, err);
-		if(left == NULL)
-			return NULL;
+		tmp[0] = ml_parse_expr(token, &err);
+		if(err != NULL)
+			return err;
+		if(tmp[0] == NULL)
+			fail("Missing boolean expression.");
 
 		if((*token)->type != ml_token_then_e)
 			fail("Expected 'then'.");
 
 		*token = (*token)->next;
-		value = ml_parse_stmt(token, err);
-		if(value == NULL)
+		chkfail(ml_parse_stmt(&tmp[1], token));
+		if(tmp[1] == NULL)
 			fail("Missing ontrue expression in 'if'.");
 
 		if((*token)->type != ml_token_else_e)
 			fail("Expected 'else'.");
 
 		*token = (*token)->next;
-		expr = ml_parse_stmt(token, err);
-		if(expr == NULL)
+		chkfail(ml_parse_stmt(expr, token));
+		if(*expr == NULL)
 			fail("Missing onfalse expression in 'if'.");
 
-		return ml_expr_cond(left, value, expr);
+		*expr = ml_expr_cond(tmp[0], tmp[1], *expr);
+		return NULL;
 	}
 	else if((*token)->type == ml_token_match_e) {
-		struct ml_match_t *match;
+		char *err = NULL;
 
 		*token = (*token)->next;
-		expr = ml_parse_expr(token, err);
-		if(expr == NULL)
-			return NULL;
+		tmp[0] = ml_parse_expr(token, &err);
+		if(err != NULL)
+			return err;
+		if(tmp[0] == NULL)
+			fail("Missing match expression.");
 
 		if((*token)->type != ml_token_with_e)
 			fail("Expected 'with'.");
 
-		match = ml_match_new(expr);
+		match = ml_match_new(tmp[0]);
 
 		*token = (*token)->next;
 		while((*token)->type == ml_token_pipe_e) {
+			pat = NULL;
+			tmp[0] = NULL;
+
 			*token = (*token)->next;
-			*err = ml_parse_pat(&pat, token, false);
-			if(*err != NULL)
-				return NULL;
-			else if(pat == NULL)
+			chkfail(ml_parse_pat(&pat, token, false));
+			if(pat == NULL)
 				fail("Missing pattern.");
 
 			if((*token)->type != ml_token_arrow_e)
 				fail("Expected '->'.");
 
 			*token = (*token)->next;
-			expr = ml_parse_stmt(token, err);
-			if(expr == NULL)
+			chkfail(ml_parse_stmt(&tmp[0], token));
+			if(tmp[0] == NULL)
 				fail("Expected expresion.");
 
-			ml_match_append(match, pat, expr);
+			ml_match_append(match, pat, tmp[0]);
 		}
 
-		return ml_expr_match(match);
+		*expr = ml_expr_match(match);
+		return NULL;
 	}
-	else
-		return ml_parse_expr(token, err);
+	else {
+		char *err = NULL;
+		*expr = ml_parse_expr(token, &err);
+		return err;
+	}
+#undef onexit
 }
 
 /**
@@ -363,9 +362,11 @@ struct ml_expr_t *ml_parse_set(struct ml_token_t **token, char **err)
 	struct ml_set_t set;
 	struct ml_expr_t *expr;
 
-	expr = ml_parse_stmt(token, err);
-	if(expr == NULL)
+	*err = ml_parse_stmt(&expr, token);
+	if(*err)
 		return NULL;
+	else if(expr == NULL)
+		fail("Missing expression in set.");
 
 	if((*token)->type != ml_token_comma_e)
 		return expr;
@@ -375,8 +376,10 @@ struct ml_expr_t *ml_parse_set(struct ml_token_t **token, char **err)
 
 	do {
 		*token = (*token)->next;
-		expr = ml_parse_stmt(token, err);
-		if(expr == NULL)
+		*err = ml_parse_stmt(&expr, token);
+		if(*err)
+			return NULL;
+		else if(expr == NULL)
 			fail("Missing expression in set.");
 
 		ml_set_add(&set, expr);
@@ -670,7 +673,7 @@ struct ml_expr_t *ml_parse_value(struct ml_token_t **token, char **err)
 	struct ml_expr_t *expr;
 
 	if((*token)->type == ml_token_nil_e)
-		expr = ml_expr_value(ml_value_nil());
+		expr = ml_expr_value(ml_value_nil((*token)->tag));
 	else if((*token)->type == ml_token_num_e)
 		expr = ml_expr_value(ml_value_num((*token)->data.flt));
 	else if((*token)->type == ml_token_str_e)

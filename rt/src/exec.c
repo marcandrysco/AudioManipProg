@@ -6,67 +6,6 @@
  */
 
 static void callback(double **buf, unsigned int len, void *arg);
-static void notify(const char *path, void *arg);
-
-
-/**
- * Create an engine.
- *   @list: Constant. Optional. The file list.
- *   @comm: Consumed. Optional. The communication structure.
- *   &returns: The engine.
- */
-struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
-{
-	struct amp_engine_t *engine;
-
-	engine = malloc(sizeof(struct amp_engine_t));
-	engine->rev = 1;
-	engine->lock = sys_mutex_init(0);
-	engine->sync = sys_mutex_init(0);
-	engine->run = engine->toggle = false;
-	engine->core = amp_core_new(96000);
-	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
-	engine->seq = amp_seq_null;
-	engine->instr = amp_instr_null;
-	engine->effect[0] = amp_effect_null;
-	engine->effect[1] = amp_effect_null;
-	engine->comm = comm ?: amp_comm_new();
-	engine->notify = amp_notify_new(list, notify, engine);
-	engine->watch = NULL;
-	engine->rt = (struct amp_rt_t){ engine, amp_engine_watch };
-
-	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt)));
-
-	return engine;
-}
-
-/**
- * Delete an engine.
- *   @engine: The engine.
- */
-void amp_engine_delete(struct amp_engine_t *engine)
-{
-	struct amp_watch_t *watch;
-
-	while(engine->watch != NULL) {
-		watch = engine->watch;
-		engine->watch = watch->next;
-
-		free(watch);
-	}
-
-	amp_notify_delete(engine->notify);
-	amp_comm_delete(engine->comm);
-	amp_clock_delete(engine->clock);
-	amp_seq_erase(engine->seq);
-	amp_instr_erase(engine->instr);
-	amp_effect_erase(engine->effect[0]);
-	amp_effect_erase(engine->effect[1]);
-	amp_core_delete(engine->core);
-	sys_mutex_destroy(&engine->lock);
-	sys_mutex_destroy(&engine->sync);
-	free(engine);
-}
 
 
 /**
@@ -149,6 +88,12 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 #endif
 
 	engine->rev++;
+
+	struct amp_watch_t *watch;
+
+	for(watch = engine->watch; watch != NULL; watch = watch->next)
+		watch->func(env, watch->arg);
+
 	sys_mutex_unlock(&engine->lock);
 	sys_mutex_unlock(&engine->sync);
 
@@ -165,6 +110,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
  */
 void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_comm_t *comm)
 {
+	bool quit = false;
 	char **ml, **el;
 	struct amp_engine_t *engine;
 
@@ -183,27 +129,6 @@ void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_c
 
 	amp_audio_exec(audio, callback, engine);
 
-	/*
-	while(true) {
-		unsigned int n = amp_http_poll(http, NULL) + 1;
-		struct sys_poll_t poll[n];
-
-		poll[0] = sys_poll_fd(STDIN_FILENO, sys_poll_in_e);
-		amp_http_poll(http, poll+1);
-
-		sys_poll(poll, n, -1);
-
-		if(poll[0].revents)
-			break;
-
-		amp_http_proc(http, poll+1);
-	}
-
-	int c;
-	while((c = getchar()) != '\n' && c != EOF);
-	*/
-
-	bool quit = false;
 	while(!quit) {
 		unsigned int argc;
 		char **argv, buf[256];
@@ -300,10 +225,8 @@ static void callback(double **buf, unsigned int len, void *arg)
 	if(engine->instr.iface != NULL)
 		amp_instr_proc(engine->instr, buf, time, len);
 	else {
-		unsigned int i;
-
-		for(i = 0; i < len; i++)
-			buf[0][i] = buf[1][i] = buf[0][i] + buf[1][i];
+		dsp_zero_d(buf[0], len);
+		dsp_zero_d(buf[1], len);
 	}
 
 	if(engine->effect[0].iface != NULL)
@@ -313,15 +236,4 @@ static void callback(double **buf, unsigned int len, void *arg)
 		amp_effect_proc(engine->effect[1], buf[1], time, len);
 
 	sys_mutex_unlock(&engine->lock);
-}
-
-/**
- * Handle a change notification.
- *   @path: The path.
- *   @arg: The argument.
- */
-
-static void notify(const char *path, void *arg)
-{
-	amp_engine_update(arg, path);
 }

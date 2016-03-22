@@ -10,8 +10,10 @@
 #	include <windows.h>
 #	include <winsock2.h>
 #else
+#	include <pthread.h>
 #	include <netinet/in.h>
 #	include <sys/socket.h>
+#	include <sys/time.h>
 #endif
 
 #include <assert.h>

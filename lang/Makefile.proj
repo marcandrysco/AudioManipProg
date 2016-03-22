@@ -1,7 +1,0 @@
-# run rules
-
-run: install
-	$(MAKE) run -C ../sin
-
-debug: install
-	$(MAKE) debug -C ../sin

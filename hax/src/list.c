@@ -58,11 +58,7 @@ void list_root_append(struct list_root_t *root, struct list_node_t *node)
 {
 	node->prev = root->tail;
 	node->next = NULL;
-
-	if(root->tail != NULL)
-		root->tail->next = node;
-	else
-		root->head = node;
+	*(root->tail ? &root->tail->next : &root->head) = node;
 
 	root->len++;
 	root->tail = node;

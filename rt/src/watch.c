@@ -5,31 +5,12 @@
 
 
 /**
- * Fatally quit the program. This function does not return.
- *   @format: The error message format.
- *   @...: The printf-style arguments.
- */
-
-void fatal(const char *restrict format, ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	fputc('\n', stderr);
-	abort();
-}
-
-/**
  * Retrieve the basename from the path. The returned pointer points into the
  * string passed in as 'path'; the returned value is valid so long as 'path'
  * is not modified.
  *   @path: The path.
  *   &returns; The basename.
  */
-
 const char *hax_basename(const char *path)
 {
 	const char *ptr = strrchr(path, '/');
@@ -72,7 +53,6 @@ static void *notify_thread(void *arg);
  *   @arg: The argument.
  *   &returns: The notifier.
  */
-
 struct amp_notify_t *amp_notify_new(char **list, amp_notify_f func, void *arg)
 {
 	int err;
@@ -97,7 +77,6 @@ struct amp_notify_t *amp_notify_new(char **list, amp_notify_f func, void *arg)
  * Delete a notifier.
  *   @notify: The notifier.
  */
-
 void amp_notify_delete(struct amp_notify_t *notify)
 {
 	int err;
@@ -140,10 +119,10 @@ static void *notify_thread(void *arg)
 			memcpy(dir, *file, len);
 			dir[len] = '\0';
 
-			inotify_add_watch(fd, dir, IN_MODIFY | IN_MOVED_TO);
+			inotify_add_watch(fd, dir, IN_MODIFY | IN_MOVED_TO | IN_ATTRIB);
 		}
 		else
-			inotify_add_watch(fd, ".", IN_MODIFY | IN_MOVED_TO);
+			inotify_add_watch(fd, ".", IN_MODIFY | IN_MOVED_TO | IN_ATTRIB);
 	}
 
 	fdset[0].fd = notify->pipe[0];

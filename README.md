@@ -6,7 +6,7 @@ time audio synthesis, processing, mixing, and mastering. The project is split
 into four components:
 
   * [cHax](hax/README.Md) - Cross-platform library for augmenting the C
-  * standard library.
+    standard library.
   * [libDSP](dsp/README.md) - Low-level digital signal processing library.
     This library provides the building blocks used to create more
     sophisticated processing effects.
@@ -17,7 +17,7 @@ into four components:
     provides a number of high-level components for editing real time audio.
     Wen combined with MuseLang, user can compose complicated real time
     programs that are written in a high-level language.
-  * [AmpRT](amprt/README.md) - Real time processing application. This program
+  * [AmpRT](rt/README.md) - Real time processing application. This program
     reads in high-level programs written in MuseLang+AmpCore and executes the
     program in real time using an audio device as input and output.
 
@@ -41,16 +41,18 @@ provided examples.
 ### Building
 
 Each subdirectory contains an individual `configure` script for generating a
-`Makefile`. Once the `Makefile` is generate, `make` will build the binary and
+`Makefile`. Once the `Makefile` is generated, `make` will build the binary and
 `make install` will install the binary. The subdirectories have the following
 dependencies:
 
+  * Everything depends on cHax
   * AmpCore depends on libDSP and MuseLang
   * AmpRT depends on AmpCore
 
 By default, AmpRT will attempt to build with against a default set of audio
 APIs. To select different APIs, use the appropriate configure flags (e.g.
-`--alsa`, `--pulse`).
+`--alsa`, `--pulse`). See each directory for more detailed building
+instructions.
 
 ### Examples
 
@@ -68,16 +70,35 @@ functional language.
 
 ### Digital Signal Processing Library
 
-To satisfy high efficiency, the libDSP library provides an extremely fast set
-of low-level building blocks. The library is built using heavily optimized C
-code to ensure both low latency and high throughput. The "hot" path that
+To satisfy high efficiency, [libDSP](dsp/README.md) provides an extremely fast
+set of low-level building blocks. The library is built using heavily optimized
+C code to ensure both low latency and high throughput. The "hot" path that
 processes audio is carefully written to eliminate sources of slowdowns such as
 memory allocation or system calls. Much of the code is directly exported in
 headers as static inline functions to prevent function call overhead.
 
 ### MuseLang
 
+[MuseLang](lang/README.md) is a high-level, ML-like functional programming. By
+itself, it is very similar to other functional languages such as OCaml,
+providing a small set of primitives for basic programs. 
+
 ### AmpCore
+
+[AmpCore](core/README.md) forms the foundation of AMP by gluing together the
+low-level DSP library with the high-level language. AmpCore provides a large
+number of primitive types and classes to MuseLang, each corresponding to a
+very efficient music or signal processing function. Bindings for AmpCore
+include multi-track recording, distortion, reverberation, equalization, and
+more.
+
+Additional functionality may be loaded through the use of plugins, extending
+the base set of AmpCore primitives. Plugins can expose their components
+through MuseLang so that they may be used directly in the high-level,
+functional programs.
 
 ### AmpRT
 
+The [AmpRT](rt/README.md) is a command-line program that executes an AmpCore
+program in real time. Currently, AmpRT only runs on Linux (using ALSA or
+PulseAudio).

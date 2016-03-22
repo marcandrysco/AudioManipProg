@@ -1,9 +1,18 @@
 #ifndef EFX_GAIN_H
 #define EFX_GAIN_H
 
+/**
+ * Gain structure.
+ *   @scale: The scale.
+ */
+struct amp_gain_t {
+	struct amp_param_t *scale;
+};
+
 /*
  * gain declarations
  */
+extern const struct amp_effect_i amp_gain_iface;
 
 struct amp_gain_t *amp_gain_new(struct amp_param_t *scale);
 struct amp_gain_t *amp_gain_copy(struct amp_gain_t *gain);

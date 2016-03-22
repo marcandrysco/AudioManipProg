@@ -3,12 +3,12 @@
 
 /**
  * Create a value.
+ *   @tag: The tag.
  *   @type: The type.
  *   @data: The data.
  *   &returns: The value.
  */
-
-struct ml_value_t *ml_value_new(enum ml_value_e type, union ml_value_u data)
+struct ml_value_t *ml_value_new(struct ml_tag_t tag, enum ml_value_e type, union ml_value_u data)
 {
 	struct ml_value_t *value;
 
@@ -24,12 +24,11 @@ struct ml_value_t *ml_value_new(enum ml_value_e type, union ml_value_u data)
  *   @value: The value.
  *   &returns: The copy.
  */
-
 struct ml_value_t *ml_value_copy(struct ml_value_t *value)
 {
 	switch(value->type) {
 	case ml_value_nil_e:
-		return ml_value_nil();
+		return ml_value_nil(value->tag);
 
 	case ml_value_bool_e:
 		return ml_value_bool(value->data.flag);
@@ -100,12 +99,12 @@ void ml_value_delete(struct ml_value_t *value)
 
 /**
  * Create a nil value.
+ *   @tag: The tag.
  *   &returns: The value.
  */
-
-struct ml_value_t *ml_value_nil(void)
+struct ml_value_t *ml_value_nil(struct ml_tag_t tag)
 {
-	return ml_value_new(ml_value_nil_e, (union ml_value_u){  });
+	return ml_value_new(tag, ml_value_nil_e, (union ml_value_u){  });
 }
 
 /**
@@ -113,10 +112,9 @@ struct ml_value_t *ml_value_nil(void)
  *   @num: The number.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_bool(bool flag)
 {
-	return ml_value_new(ml_value_bool_e, (union ml_value_u){ .flag = flag });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_bool_e, (union ml_value_u){ .flag = flag });
 }
 
 /**
@@ -124,10 +122,9 @@ struct ml_value_t *ml_value_bool(bool flag)
  *   @num: The number.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_num(double num)
 {
-	return ml_value_new(ml_value_num_e, (union ml_value_u){ .num = num });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_num_e, (union ml_value_u){ .num = num });
 }
 
 /**
@@ -135,10 +132,9 @@ struct ml_value_t *ml_value_num(double num)
  *   @str: Consumed. The string.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_str(char *str)
 {
-	return ml_value_new(ml_value_str_e, (union ml_value_u){ .str = str });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_str_e, (union ml_value_u){ .str = str });
 }
 
 /**
@@ -149,7 +145,7 @@ struct ml_value_t *ml_value_str(char *str)
 
 struct ml_value_t *ml_value_tuple(struct ml_tuple_t tuple)
 {
-	return ml_value_new(ml_value_tuple_e, (union ml_value_u){ .tuple = tuple });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_tuple_e, (union ml_value_u){ .tuple = tuple });
 }
 
 /**
@@ -160,7 +156,7 @@ struct ml_value_t *ml_value_tuple(struct ml_tuple_t tuple)
 
 struct ml_value_t *ml_value_list(struct ml_list_t list)
 {
-	return ml_value_new(ml_value_list_e, (union ml_value_u){ .list = list });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_list_e, (union ml_value_u){ .list = list });
 }
 
 /**
@@ -171,7 +167,7 @@ struct ml_value_t *ml_value_list(struct ml_list_t list)
 
 struct ml_value_t *ml_value_closure(struct ml_closure_t closure)
 {
-	return ml_value_new(ml_value_closure_e, (union ml_value_u){ .closure = closure });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_closure_e, (union ml_value_u){ .closure = closure });
 }
 
 /**
@@ -182,7 +178,7 @@ struct ml_value_t *ml_value_closure(struct ml_closure_t closure)
 
 struct ml_value_t *ml_value_box(struct ml_box_t box)
 {
-	return ml_value_new(ml_value_box_e, (union ml_value_u){ .box = box });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_box_e, (union ml_value_u){ .box = box });
 }
 
 /**
@@ -193,7 +189,7 @@ struct ml_value_t *ml_value_box(struct ml_box_t box)
 
 struct ml_value_t *ml_value_impl(ml_impl_f impl)
 {
-	return ml_value_new(ml_value_impl_e, (union ml_value_u){ .impl = impl });
+	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_impl_e, (union ml_value_u){ .impl = impl });
 }
 
 

@@ -38,4 +38,6 @@ struct ml_value_t *ml_eval_fail(struct ml_value_t *value, struct ml_env_t *env, 
 struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
+struct ml_value_t *ml_eval_isdef(struct ml_value_t *value, struct ml_env_t *env, char **err);
+
 #endif
