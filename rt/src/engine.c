@@ -10,10 +10,12 @@ static void notify(const char *path, void *arg);
  * Create an engine.
  *   @list: Constant. Optional. The file list.
  *   @comm: Consumed. Optional. The communication structure.
+ *   @audio: The audio interface.
  *   &returns: The engine.
  */
-struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
+struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm, struct amp_audio_t audio)
 {
+	const char *iface;
 	struct amp_engine_t *engine;
 
 	engine = malloc(sizeof(struct amp_engine_t));
@@ -33,6 +35,20 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm)
 	engine->rt = (struct amp_rt_t){ engine, amp_engine_watch };
 
 	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt)));
+
+	iface = "unk";
+	
+#if ALSA
+	if(audio.iface == &alsa_audio_iface)
+		iface = "alsa";
+#endif
+	
+#if PULSE
+	if(audio.iface == &pulse_audio_iface)
+		iface = "pulse";
+#endif
+
+	ml_env_add(&engine->core->env, strdup("amp.audio"), ml_value_str(strdup(iface)));
 
 	return engine;
 }

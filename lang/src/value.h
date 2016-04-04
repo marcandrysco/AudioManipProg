@@ -17,10 +17,12 @@ struct ml_value_t *ml_value_list(struct ml_list_t list);
 struct ml_value_t *ml_value_closure(struct ml_closure_t closure);
 struct ml_value_t *ml_value_box(struct ml_box_t box);
 struct ml_value_t *ml_value_impl(ml_impl_f impl);
+struct ml_value_t *ml_value_eval(ml_eval_f eval, struct ml_tag_t tag);
 
 int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right);
 
-void ml_value_print(struct ml_value_t *value, FILE *file);
+void ml_value_print(struct ml_value_t *value, struct io_file_t file);
+struct io_chunk_t ml_value_chunk(struct ml_value_t *value);
 
 /**
  * Delete a value if non-null.

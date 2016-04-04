@@ -6,7 +6,6 @@
  *   @idx, bar: The index and bar.
  *   @beat: The beat.
  */
-
 struct amp_time_t {
 	int idx, bar;
 	double beat;
@@ -24,7 +23,6 @@ static inline struct amp_time_t amp_time(int bar, double beat)
  *   @len: The length.
  *   &returns: The repeated time.
  */
-
 static inline struct amp_time_t amp_time_repeat(struct amp_time_t time, int off, unsigned int len)
 {
 	time.bar = ((time.bar + off) % len + len) % len;
@@ -38,7 +36,6 @@ static inline struct amp_time_t amp_time_repeat(struct amp_time_t time, int off,
  *   @right: The right time.
  *   &returns: Their order.
  */
-
 static inline int amp_time_cmp(struct amp_time_t left, struct amp_time_t right)
 {
 	if(left.bar > right.bar)
@@ -60,7 +57,6 @@ static inline int amp_time_cmp(struct amp_time_t left, struct amp_time_t right)
  *   @right: The right time.
  *   &returns: True if between.
  */
-
 static inline bool amp_time_between(struct amp_time_t time, struct amp_time_t left, struct amp_time_t right)
 {
 	if(amp_time_cmp(left, right) < 0)
@@ -77,7 +73,6 @@ static inline bool amp_time_between(struct amp_time_t time, struct amp_time_t le
  *   @rate: The sample rate.
  *   &returns: The time.
  */
-
 static inline struct amp_time_t amp_time_calc(int idx, double bpm, double nbeats, unsigned int rate)
 {
 	double beat;
@@ -103,14 +98,12 @@ static inline struct amp_time_t amp_time_calc(int idx, double bpm, double nbeats
  *   @ref: The reference.
  *   &returns: The copy.
  */
-
 typedef void *(*amp_copy_f)(void *ref);
 
 /**
  * Deletion function.
  *   @ref: The reference.
  */
-
 typedef void (*amp_delete_f)(void *ref);
 
 
@@ -120,7 +113,6 @@ typedef void (*amp_delete_f)(void *ref);
  *   @val: The value.
  *   @arg: The argument.
  */
-
 typedef void (*amp_midi_f)(uint16_t key, uint16_t val, void *arg);
 
 
@@ -128,7 +120,6 @@ typedef void (*amp_midi_f)(uint16_t key, uint16_t val, void *arg);
  * Event structure.
  *   @dev, key, val: The device, key, and value.
  */
-
 struct amp_event_t {
 	uint16_t dev, key, val;
 };
@@ -139,7 +130,6 @@ struct amp_event_t {
  *   @event: The event.
  *   @delay: The delay.
  */
-
 typedef void (*amp_event_f)(void *ref, struct amp_event_t event, unsigned int delay);
 
 
@@ -172,7 +162,6 @@ struct amp_action_t {
  *   @idx: The index.
  *   @time: The time.
  */
-
 struct amp_seek_t {
 	int idx;
 	struct amp_time_t time;
@@ -186,7 +175,6 @@ struct amp_seek_t {
  *   @amp_info_start_e: Start the clock.
  *   @amp_info_stop_e: Stop the clock.
  */
-
 enum amp_info_e {
 	amp_info_action_e,
 	amp_info_note_e,
@@ -201,7 +189,6 @@ enum amp_info_e {
  *   @note: The note.
  *   @seek: The seek information.
  */
-
 union amp_info_u {
 	struct amp_action_t *action;
 	struct amp_note_t *note;
@@ -213,7 +200,6 @@ union amp_info_u {
  *   @type: The type.
  *   @data: The data.
  */
-
 struct amp_info_t {
 	enum amp_info_e type;
 	union amp_info_u data;

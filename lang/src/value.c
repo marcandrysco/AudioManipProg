@@ -1,5 +1,10 @@
 #include "common.h"
 
+/*
+ * local declarations
+ */
+static void value_proc(struct io_file_t file, void *arg);
+
 
 /**
  * Create a value.
@@ -53,6 +58,9 @@ struct ml_value_t *ml_value_copy(struct ml_value_t *value)
 
 	case ml_value_impl_e:
 		return ml_value_impl(value->data.impl);
+
+	case ml_value_eval_e:
+		return ml_value_eval(value->data.eval, ml_tag_copy(value->tag));
 	}
 
 	fprintf(stderr, "Invalid value.\n"), abort();
@@ -62,7 +70,6 @@ struct ml_value_t *ml_value_copy(struct ml_value_t *value)
  * Delete a value.
  *   @value: The value.
  */
-
 void ml_value_delete(struct ml_value_t *value)
 {
 	switch(value->type) {
@@ -70,6 +77,7 @@ void ml_value_delete(struct ml_value_t *value)
 	case ml_value_bool_e:
 	case ml_value_num_e:
 	case ml_value_impl_e:
+	case ml_value_eval_e:
 		break;
 
 	case ml_value_str_e:
@@ -142,7 +150,6 @@ struct ml_value_t *ml_value_str(char *str)
  *   @tuple: Consumed. The tuple.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_tuple(struct ml_tuple_t tuple)
 {
 	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_tuple_e, (union ml_value_u){ .tuple = tuple });
@@ -153,7 +160,6 @@ struct ml_value_t *ml_value_tuple(struct ml_tuple_t tuple)
  *   @list: Consumed. The list.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_list(struct ml_list_t list)
 {
 	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_list_e, (union ml_value_u){ .list = list });
@@ -164,7 +170,6 @@ struct ml_value_t *ml_value_list(struct ml_list_t list)
  *   @box: Consumed. The closure.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_closure(struct ml_closure_t closure)
 {
 	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_closure_e, (union ml_value_u){ .closure = closure });
@@ -175,7 +180,6 @@ struct ml_value_t *ml_value_closure(struct ml_closure_t closure)
  *   @box: Consumed. The boxed value.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_box(struct ml_box_t box)
 {
 	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_box_e, (union ml_value_u){ .box = box });
@@ -186,10 +190,20 @@ struct ml_value_t *ml_value_box(struct ml_box_t box)
  *   @impl: The native implementation.
  *   &returns: The value.
  */
-
 struct ml_value_t *ml_value_impl(ml_impl_f impl)
 {
 	return ml_value_new((struct ml_tag_t){ NULL, 0, 0 }, ml_value_impl_e, (union ml_value_u){ .impl = impl });
+}
+
+/**
+ * Create a native evaluator value.
+ *   @eval: The native evaluator.
+ *   @tag: Consumed. The tag.
+ *   &returns: The value.
+ */
+struct ml_value_t *ml_value_eval(ml_eval_f eval, struct ml_tag_t tag)
+{
+	return ml_value_new(tag, ml_value_eval_e, (union ml_value_u){ .eval = eval });
 }
 
 
@@ -199,7 +213,6 @@ struct ml_value_t *ml_value_impl(ml_impl_f impl)
  *   @right: The right value.
  *   &returns: Their order.
  */
-
 int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right)
 {
 	if(left->type > right->type)
@@ -244,6 +257,14 @@ int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right)
 
 	case ml_value_impl_e:
 		return 0;
+
+	case ml_value_eval_e:
+		if(left->data.eval > right->data.eval)
+			return 1;
+		else if(left->data.eval < right->data.eval)
+			return -1;
+		else
+			return 0;
 	}
 
 	fprintf(stderr, "Invalid value type.\n"), abort();
@@ -255,40 +276,39 @@ int ml_value_cmp(struct ml_value_t *left, struct ml_value_t *right)
  *   @value: The value.
  *   @file: The file.
  */
-
-void ml_value_print(struct ml_value_t *value, FILE *file)
+void ml_value_print(struct ml_value_t *value, struct io_file_t file)
 {
 	switch(value->type) {
 	case ml_value_nil_e:
-		fprintf(file, "nil");
+		hprintf(file, "nil");
 		break;
 
 	case ml_value_bool_e:
-		fprintf(file, "bool(%s)", value->data.flag ? "true" : "false");
+		hprintf(file, "bool(%s)", value->data.flag ? "true" : "false");
 		break;
 
 	case ml_value_num_e:
-		fprintf(file, "num(%g)", value->data.num);
+		hprintf(file, "num(%g)", value->data.num);
 		break;
 
 	case ml_value_str_e:
-		fprintf(file, "str(%s)", value->data.str);
+		hprintf(file, "str(%s)", value->data.str);
 		break;
 
 	case ml_value_tuple_e:
 		{
 			unsigned int i;
 
-			fprintf(file, "tuple(");
+			hprintf(file, "tuple(");
 
 			for(i = 0; i < value->data.tuple.len; i++) {
 				if(i > 0)
-					fprintf(file, ",");
+					hprintf(file, ",");
 
 				ml_value_print(value->data.tuple.value[i], file);
 			}
 
-			fprintf(file, ")");
+			hprintf(file, ")");
 		}
 		break;
 
@@ -296,31 +316,49 @@ void ml_value_print(struct ml_value_t *value, FILE *file)
 		{
 			struct ml_link_t *link;
 
-			fprintf(file, "list(");
+			hprintf(file, "list(");
 
 			for(link = value->data.list.head; link != NULL; link = link->next) {
 				if(link != value->data.list.head)
-					fprintf(file, ",");
+					hprintf(file, ",");
 
 				ml_value_print(link->value, file);
 			}
 
-			fprintf(file, ")");
+			hprintf(file, ")");
 		}
 		break;
 
 	case ml_value_closure_e:
-		fprintf(file, "closure()");
+		hprintf(file, "closure()");
 		break;
 
 	case ml_value_box_e:
-		fprintf(file, "box");
+		hprintf(file, "box");
 		break;
 
 	case ml_value_impl_e:
-		fprintf(file, "impl");
+		hprintf(file, "impl");
+		break;
+
+	case ml_value_eval_e:
+		hprintf(file, "eval");
 		break;
 	}
+}
+
+/**
+ * Create a chunk for the value.
+ *   @value: The value.
+ *   &returns: The chunk.
+ */
+struct io_chunk_t ml_value_chunk(struct ml_value_t *value)
+{
+	return (struct io_chunk_t){ value_proc, value };
+}
+static void value_proc(struct io_file_t file, void *arg)
+{
+	ml_value_print(arg, file);
 }
 
 

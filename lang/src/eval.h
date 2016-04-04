@@ -18,6 +18,7 @@ struct ml_value_t *ml_eval_sub(struct ml_value_t *value, struct ml_env_t *env, c
 struct ml_value_t *ml_eval_mul(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_div(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_mod(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_eq(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_gt(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_gte(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_lt(struct ml_value_t *value, struct ml_env_t *env, char **err);
@@ -36,6 +37,7 @@ struct ml_value_t *ml_eval_print(struct ml_value_t *value, struct ml_env_t *env,
 struct ml_value_t *ml_eval_fail(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *ml_eval_f2str(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 struct ml_value_t *ml_eval_isdef(struct ml_value_t *value, struct ml_env_t *env, char **err);

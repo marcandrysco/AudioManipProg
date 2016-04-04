@@ -40,7 +40,7 @@ void ml_vfprintf(FILE *file, const char *restrict format, va_list args)
 				else if(*format == 'p')
 					ml_pat_print(va_arg(args, struct ml_pat_t *), file);
 				else if(*format == 'v')
-					ml_value_print(va_arg(args, struct ml_value_t *), file);
+					fprintf(file, "%C", ml_value_chunk(va_arg(args, struct ml_value_t *)));
 				else
 					fprintf(stderr, "Unknown format 'M%c'.\n", *format), abort();
 			}

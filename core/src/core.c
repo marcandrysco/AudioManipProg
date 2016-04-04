@@ -32,6 +32,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 	core = malloc(sizeof(struct amp_core_t));
 	core->env = ml_env_new();
+	core->io = amp_io_new();
 	core->cache = amp_cache_new();
 	core->plugin = NULL;
 
@@ -46,12 +47,15 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	/* effects */
 	ml_env_add(&core->env, strdup("Bitcrush"), ml_value_impl(amp_bitcrush_make));
 	ml_env_add(&core->env, strdup("Chain"), ml_value_impl(amp_chain_make));
+	ml_env_add(&core->env, strdup("Chorus"), ml_value_impl(amp_chorus_make));
 	ml_env_add(&core->env, strdup("Clip"), ml_value_impl(amp_clip_make));
 	ml_env_add(&core->env, strdup("Comp"), ml_value_impl(amp_comp_make));
 	ml_env_add(&core->env, strdup("Expcrush"), ml_value_impl(amp_expcrush_make));
 	ml_env_add(&core->env, strdup("Gain"), ml_value_impl(amp_gain_make));
 	ml_env_add(&core->env, strdup("Gen"), ml_value_impl(amp_gen_make));
+	ml_env_add(&core->env, strdup("Mix"), ml_value_eval(amp_mix_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Sect"), ml_value_impl(amp_sect_make));
+	ml_env_add(&core->env, strdup("Scale"), ml_value_eval(amp_scale_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Synth"), ml_value_impl(amp_synth_make));
 
 	ml_env_add(&core->env, strdup("Ctrl"), ml_value_impl(amp_ctrl_make));
@@ -77,6 +81,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	/* sequencers */
 	ml_env_add(&core->env, strdup("Repeat"), ml_value_impl(amp_repeat_make));
 	ml_env_add(&core->env, strdup("Sched"), ml_value_impl(amp_sched_make));
+	ml_env_add(&core->env, strdup("Player"), ml_value_impl(amp_player_make0));
 
 	/* filters */
 	ml_env_add(&core->env, strdup("Lpf"), ml_value_impl(amp_lpf_make));
@@ -93,6 +98,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 	/* helper functions */
 	ml_env_add(&core->env, strdup("str2key"), ml_value_impl(amp_key_eval));
+	ml_env_add(&core->env, strdup("skyline"), ml_value_impl(amp_eval_skyline0));
 
 	err = ml_env_proc(SHAREDIR "/core.ml", &core->env);
 	if(err != NULL)
@@ -123,6 +129,7 @@ void amp_core_delete(struct amp_core_t *core)
 
 	ml_env_delete(core->env);
 	amp_cache_delete(core->cache);
+	amp_io_delete(core->io);
 	free(core);
 }
 
@@ -251,42 +258,3 @@ static void *ref_copy(void *ref)
 static void ref_delete(void *ref)
 {
 }
-
-#if 0
-/**
- * Create a boxed object.
- *   @ref: The reference.
- *   @copy: The copy function.
- *   @delete: The deletion function.
- *   &returns: The boxed object.
- */
-struct ml_box_t amp_box_ref(void *ref, amp_copy_f copy, amp_delete_f delete)
-{
-	struct obj_t *obj;
-
-	obj = malloc(sizeof(struct obj_t));
-	*obj = (struct obj_t){ ref, copy, delete };
-
-	return (struct ml_box_t){ obj, &obj_iface };
-}
-
-/**
- * Copy a reference.
- *   @ref: The reference.
- *   &returns: The copy.
- */
-
-static void *ref_copy(void *ref)
-{
-	return ref;
-}
-
-/**
- * Delete a reference.
- *   @ref: The reference.
- */
-
-static void ref_delete(void *ref)
-{
-}
-#endif

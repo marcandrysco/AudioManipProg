@@ -36,6 +36,8 @@ void avltree_root_destroy(struct avltree_root_t *root, ssize_t offset, delete_f 
 
 struct avltree_node_t *avltree_root_first(struct avltree_root_t *root);
 struct avltree_node_t *avltree_root_last(struct avltree_root_t *root);
+struct avltree_node_t *avltree_node_prev(struct avltree_node_t *node);
+struct avltree_node_t *avltree_node_next(struct avltree_node_t *node);
 
 struct avltree_node_t *avltree_root_lookup(struct avltree_root_t *root, const void *ref);
 struct avltree_node_t *avltree_root_atleast(struct avltree_root_t *root, const void *ref);

@@ -5,7 +5,6 @@
  * Schedule structure.
  *   @cur, head, tail: The current, head, and tail instances.
  */
-
 struct amp_sched_t {
 	struct inst_t *cur, *head, *tail;
 };
@@ -16,7 +15,6 @@ struct amp_sched_t {
  *   @event: The event
  *   @prev, next: The previous and next instances.
  */
-
 struct inst_t {
 	struct amp_time_t time;
 	struct amp_event_t event;
@@ -28,13 +26,11 @@ struct inst_t {
 /*
  * local declarations
  */
-
 static struct inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time);
 
 /*
  * global variables
  */
-
 const struct amp_seq_i amp_sched_iface = {
 	(amp_info_f)amp_sched_info,
 	(amp_seq_f)amp_sched_proc,
@@ -88,7 +84,6 @@ bool amp_scan_event(struct amp_event_t *event, struct ml_value_t *value)
  *   @err: The rror.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_sched_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail

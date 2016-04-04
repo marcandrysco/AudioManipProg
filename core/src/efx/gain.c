@@ -13,7 +13,7 @@ const struct amp_effect_i amp_gain_iface = {
 
 /**
  * Create a gain effect.
- *   @scale: The scale.
+ *   @scale: Consumed. The scale.
  *   &returns: The gain.
  */
 struct amp_gain_t *amp_gain_new(struct amp_param_t *scale)
@@ -59,8 +59,10 @@ struct ml_value_t *amp_gain_make(struct ml_value_t *value, struct ml_env_t *env,
 	struct amp_param_t *scale;
 
 	*err = amp_match_unpack(value, "P", &scale);
+	if(*err != NULL)
+		return NULL;
 
-	return (*err == NULL) ? amp_pack_effect((struct amp_effect_t){ amp_gain_new(scale), &amp_gain_iface }) : NULL;
+	return amp_pack_effect((struct amp_effect_t){ amp_gain_new(scale), &amp_gain_iface });
 }
 
 

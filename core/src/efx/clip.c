@@ -5,7 +5,6 @@
  * Clip structure.
  *   @maxlo, satlo, sathi, maxhi: Clip parameters.
  */
-
 struct amp_clip_t {
 	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
 };
@@ -14,7 +13,6 @@ struct amp_clip_t {
 /*
  * global variables
  */
-
 const struct amp_effect_i amp_clip_iface = {
 	(amp_info_f)amp_clip_info,
 	(amp_effect_f)amp_clip_proc,
@@ -31,7 +29,6 @@ const struct amp_effect_i amp_clip_iface = {
  *   @maxhi: Maximum high.
  *   &returns: The clip.
  */
-
 struct amp_clip_t *amp_clip_new(struct amp_param_t *maxlo, struct amp_param_t *satlo, struct amp_param_t *sathi, struct amp_param_t *maxhi)
 {
 	struct amp_clip_t *clip;
@@ -50,7 +47,6 @@ struct amp_clip_t *amp_clip_new(struct amp_param_t *maxlo, struct amp_param_t *s
  *   @clip: The original clip.
  *   &returns: The copied clip.
  */
-
 struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip)
 {
 	return amp_clip_new(amp_param_copy(clip->maxlo), amp_param_copy(clip->satlo), amp_param_copy(clip->sathi), amp_param_copy(clip->maxhi));
@@ -60,7 +56,6 @@ struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip)
  * Delete a clip effect.
  *   @clip: The clip.
  */
-
 void amp_clip_delete(struct amp_clip_t *clip)
 {
 	amp_param_delete(clip->maxlo);
@@ -78,7 +73,6 @@ void amp_clip_delete(struct amp_clip_t *clip)
  *   @err: The rror.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_clip_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
@@ -94,9 +88,12 @@ struct ml_value_t *amp_clip_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @clip: The clip.
  *   @info: The info.
  */
-
 void amp_clip_info(struct amp_clip_t *clip, struct amp_info_t info)
 {
+	amp_param_info(clip->maxlo, info);
+	amp_param_info(clip->satlo, info);
+	amp_param_info(clip->sathi, info);
+	amp_param_info(clip->maxhi, info);
 }
 
 /**
@@ -109,7 +106,6 @@ void amp_clip_info(struct amp_clip_t *clip, struct amp_info_t info)
  *   @maxhi: The high maximum level.
  *   &returns: The clipped output.
  */
-
 static inline double dsp_clip_d(double val, double maxlo, double satlo, double sathi, double maxhi)
 {
 	if(val >= satlo) {
@@ -134,7 +130,6 @@ static inline double dsp_clip_d(double val, double maxlo, double satlo, double s
  *   @time: The time.
  *   @len: The length.
  */
-
 void amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	unsigned int i;

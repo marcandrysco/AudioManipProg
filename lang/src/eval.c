@@ -16,7 +16,6 @@
  *   @left: The left pointer.
  *   @right: The right pointer.
  */
-
 static bool get_num2(struct ml_value_t *value, double *left, double *right)
 {
 	struct ml_tuple_t *tuple;
@@ -34,6 +33,56 @@ static bool get_num2(struct ml_value_t *value, double *left, double *right)
 	*right = tuple->value[1]->data.num;
 
 	ml_value_delete(value);
+
+	return true;
+}
+
+/**
+ * Retrieve a tuple of two numbers.
+ *   @value: Consumed. The value.
+ *   @left: The left pointer.
+ *   @right: The right pointer.
+ */
+static bool pair_num(struct ml_value_t *value, double *left, double *right)
+{
+	struct ml_tuple_t *tuple;
+
+	if(value->type != ml_value_tuple_e)
+		return false;
+
+	tuple = &value->data.tuple;
+	if(tuple->len != 2)
+		return false;
+	else if((tuple->value[0]->type != ml_value_num_e) || (tuple->value[1]->type != ml_value_num_e))
+		return false;
+
+	*left = tuple->value[0]->data.num;
+	*right = tuple->value[1]->data.num;
+
+	return true;
+}
+
+/**
+ * Retrieve a tuple of two strings.
+ *   @value: Consumed. The value.
+ *   @left: The left string.
+ *   @right: The right string.
+ */
+static bool pair_str(struct ml_value_t *value, const char **left, const char **right)
+{
+	struct ml_tuple_t *tuple;
+
+	if(value->type != ml_value_tuple_e)
+		return false;
+
+	tuple = &value->data.tuple;
+	if(tuple->len != 2)
+		return false;
+	else if((tuple->value[0]->type != ml_value_str_e) || (tuple->value[1]->type != ml_value_str_e))
+		return false;
+
+	*left = tuple->value[0]->data.str;
+	*right = tuple->value[1]->data.str;
 
 	return true;
 }
@@ -148,13 +197,39 @@ struct ml_value_t *ml_eval_mod(struct ml_value_t *value, struct ml_env_t *env, c
 }
 
 /**
+ * Compare two values for equality.
+ *   @value: Consumed. The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *ml_eval_eq(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	double left, right;
+	const char *lstr, *rstr;
+	struct ml_value_t *ret;
+
+	*err = NULL;
+
+	if(pair_num(value, &left, &right))
+		ret = ml_value_bool(left > right);
+	else if(pair_str(value, &lstr, &rstr))
+		ret = ml_value_bool(strcmp(lstr, rstr) == 0);
+	else
+		ret = NULL, *err = mprintf("Type error. Comparison requires type '(Num,Num)' or '(String,String).");
+
+	ml_value_delete(value);
+
+	return ret;
+}
+
+/**
  * Compare two values as with greater than.
  *   @value: Consumed. The value.
  *   @env: The environment.
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *ml_eval_gt(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double left, right;
@@ -226,7 +301,6 @@ struct ml_value_t *ml_eval_lte(struct ml_value_t *value, struct ml_env_t *env, c
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *ml_eval_list(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	unsigned int i;
@@ -444,6 +518,7 @@ struct ml_eval_t ml_eval_arr[] = {
 	{ "fail", ml_eval_fail },
 	{ "print", ml_eval_print },
 	{ "i2str", ml_eval_i2str },
+	{ "f2str", ml_eval_f2str },
 	{ "strlen", ml_eval_strlen },
 	{ "isdef", ml_eval_isdef },
 	{ NULL, NULL }
@@ -457,7 +532,6 @@ struct ml_eval_t ml_eval_arr[] = {
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *ml_eval_print(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	if(value->type != ml_value_str_e)
@@ -496,6 +570,19 @@ struct ml_value_t *ml_eval_i2str(struct ml_value_t *value, struct ml_env_t *env,
 		fail("Type error. Function 'i2str' requires type 'Num'.");
 
 	ret = ml_value_str(mprintf("%d", (int)value->data.num));
+	ml_value_delete(value);
+
+	return ret;
+}
+
+struct ml_value_t *ml_eval_f2str(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_value_t *ret;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Function 'f2str' requires type 'Num'.");
+
+	ret = ml_value_str(mprintf("%.4g", value->data.num));
 	ml_value_delete(value);
 
 	return ret;

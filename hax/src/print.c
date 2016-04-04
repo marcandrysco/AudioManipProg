@@ -65,15 +65,11 @@ char *hax_mprintf(const char *restrict format, ...)
 char *hax_vmprintf(const char *restrict format, va_list args)
 {
 	char *str;
-	size_t len;
-	va_list copy;
+	struct io_file_t file;
 
-	va_copy(copy, args);
-	len = vsnprintf(NULL, 0, format, copy);
-	va_end(copy);
-
-	str = malloc(len + 1);
-	vsprintf(str, format, args);
+	file = io_file_accum(&str);
+	hax_vhprintf(file, format, args);
+	io_file_close(file);
 
 	return str;
 }

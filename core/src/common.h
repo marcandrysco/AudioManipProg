@@ -47,6 +47,7 @@
 
 #include "efx/bitcrush.h"
 #include "efx/chain.h"
+#include "efx/chorus.h"
 #include "efx/clip.h"
 #include "efx/comp.h"
 #include "efx/effect.h"
@@ -54,9 +55,13 @@
 #include "efx/filt.h"
 #include "efx/gain.h"
 #include "efx/gen.h"
+#include "efx/mix.h"
 #include "efx/reverb.h"
+#include "efx/scale.h"
 #include "efx/sect.h"
 #include "efx/track.h"
+
+#include "eval/sched.h"
 
 #include "instr/mixer.h"
 #include "instr/pan.h"
@@ -76,6 +81,7 @@
 #include "mod/trig.h"
 
 #include "seq/merge.h"
+#include "seq/player.h"
 #include "seq/repeat.h"
 #include "seq/sched.h"
 

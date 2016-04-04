@@ -35,20 +35,26 @@ take `Param`s as input that can be manipulated at run time. Because every
 effects takes an input and produces an output, they can be chained together
 with the `Chain` instance.
 
-    Effect = Chain [Effect]
+    Effect = Allpass (float, Param)
+           | Chain [Effect]
            | Clip (Param, Param, Param, Param)
+           | Comb (float, Param)
            | Comp (Param, Param, Param, Param)
            | Gain (Param)
            | Gen (Module)
+           | Lpf (float, Param, Param)
            | Synth (int, Module)
 
 AmpCore provides the following set of `Effect` instances:
 
+  * [Allpass](efx/reverb.md#allpass) all-pass filter.
   * [Chain](efx/chain.md) processes a sequence of `Effects`.
   * [Clip](efx/clip.md) soft clips the input.
+  * [Comb](efx/reverb.md#comb) comb filter.
   * [Comp](efx/comp.md) performs dynamic range compression.
   * [Gain](efx/gain.md) performs linear scaling of the input.
   * [Gen](efx/gen.md) discards input and generates output from a `Module`.
+  * [Lpcf](efx/reverb.md#lpcf) low-pass comb filter.
   * [Synth](efx/synth.md) generates synthesized output.
 
 ## Instrument
@@ -59,13 +65,15 @@ instrument is the base class for processing audio in real time.
     Instr = Mixer [Instr]
           | Pan ((Value, Value), (Value, Value))
           | Series [Instr]
-          | Splice ((Param, Param), Effect)
+          | Single (int, Effect)
+          | Splice (Effect)
 
 AmpCore provides the following set of `Instr` instances:
 
   * [Mixer](instr/mixer.md) sums together a set of instruments.
   * [Pan](instr/pan.md) performs a delay and gain panning of an instrument.
   * [Series](instr/series.md) processes a set of instruments in series.
+  * [Single](instr/single.md) process an effect on a single channel.
   * [Splice](instr/splice.md) splices together a stereo instrument into an
       mono effect
 
@@ -101,7 +109,7 @@ modules. A parameter can be either a constant `number`, a time-varying `Midi`
 input from a MIDI controller, or a the output from another module.
 
     Param = number
-          | Midi
+          | Ctrl
           | Module
 
 For further details on the `Module` class, see the the [Module](#module)

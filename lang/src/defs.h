@@ -16,6 +16,10 @@ struct ml_tag_t {
 	const char *file;
 	unsigned int off, line, col;
 };
+static inline struct ml_tag_t ml_tag_copy(struct ml_tag_t tag)
+{
+	return tag;
+}
 
 
 /**
@@ -26,6 +30,15 @@ struct ml_tag_t {
  *   &returns: The processed value.
  */
 typedef struct ml_value_t *(*ml_impl_f)(struct ml_value_t *, struct ml_env_t *, char **);
+
+/**
+ * Native evaluator function.
+ *   @ret: Ref. Return value.
+ *   @value: The input value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+typedef char *(*ml_eval_f)(struct ml_value_t **, struct ml_value_t *, struct ml_env_t *);
 
 
 /**
@@ -104,8 +117,8 @@ struct ml_list_t {
  *   @ml_value_closure_e: Closure.
  *   @ml_value_box_e: Boxed type.
  *   @ml_value_impl_e: Native implementation.
+ *   @ml_value_eval_e: Native evaluator.
  */
-
 enum ml_value_e {
 	ml_value_nil_e,
 	ml_value_bool_e,
@@ -115,7 +128,8 @@ enum ml_value_e {
 	ml_value_list_e,
 	ml_value_closure_e,
 	ml_value_box_e,
-	ml_value_impl_e
+	ml_value_impl_e,
+	ml_value_eval_e
 };
 
 /**
@@ -138,6 +152,7 @@ union ml_value_u {
 	struct ml_closure_t closure;
 	struct ml_box_t box;
 	ml_impl_f impl;
+	ml_eval_f eval;
 };
 
 /**

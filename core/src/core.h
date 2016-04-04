@@ -4,12 +4,14 @@
 
 /**
  * Core structure.
- *   @env: The environemnt.
+ *   @env: The environment.
+ *   @io: The I/O manager.
  *   @cache: The file cache.
  *   @plugin: The plugin list.
  */
 struct amp_core_t {
 	struct ml_env_t *env;
+	struct amp_io_t *io;
 	struct amp_cache_t *cache;
 	struct amp_plugin_t *plugin;
 };

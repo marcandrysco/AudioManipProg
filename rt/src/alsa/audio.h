@@ -4,7 +4,6 @@
 /*
  * alsa declarations
  */
-
 extern const struct amp_audio_i alsa_audio_iface;
 
 struct alsa_audio_t *alsa_audio_open(const char *conf);

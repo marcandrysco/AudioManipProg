@@ -21,7 +21,6 @@ int DBG_memcnt = 0, DBG_rescnt = 0;
  *   @audio_alsa_e: ALSA.
  *   @audio_none_e: Nothing selected.
  */
-
 enum audio_e {
 	audio_alsa_e,
 	audio_none_e
@@ -32,7 +31,6 @@ enum audio_e {
  * Create a string list.
  *   &returns: The list.
  */
-
 char **strlist_new(void)
 {
 	char **list;
@@ -48,7 +46,6 @@ char **strlist_new(void)
  *   @list: Ref. The string list reference.
  *   @str: The new string.
  */
-
 void strlist_add(char ***list, char *str)
 {
 	unsigned int i;
@@ -66,7 +63,6 @@ void strlist_add(char ***list, char *str)
  * Delete a string list.
  *   @list: The string list.
  */
-
 void strlist_delete(char **list)
 {
 	unsigned int i;
@@ -77,14 +73,6 @@ void strlist_delete(char **list)
 	free(list);
 }
 
-bool handler(const char *path, struct http_args_t *args, void *arg)
-{
-	printf("req: %s\n", path);
-
-	hprintf(args->file, "Hello!\n");
-
-	return true;
-}
 
 /**
  * Main entry point.
@@ -92,13 +80,14 @@ bool handler(const char *path, struct http_args_t *args, void *arg)
  *   @argv: The argument array.
  *   &returns: Always zero.
  */
-
 int main(int argc, char **argv)
 {
 	struct amp_audio_t audio;
 	struct amp_comm_t *comm;
 	const struct amp_audio_i *iface = NULL;
 	char **arg, **file, **plugin, *val, *conf = NULL;
+
+	srand(sys_utime());
 
 	file = strlist_new();
 	plugin = strlist_new();

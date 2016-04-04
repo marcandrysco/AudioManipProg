@@ -45,5 +45,59 @@ let ASR ((l,h),(a,r)) = ADSR ((l,h),(a,0,1,r))
 
 
 (*** Alternate constructors ***)
+
+(**
+ * Mute the input.
+ *   &returns (Effect): Muted effect.
+ *)
 let Mute = Gain 0
-let Gen' (dev,key,mod) = Chain [ Mute , Gen(dev,key,mod) ]
+
+(**
+ * Pass through the input.
+ *   &returns (Effect): Unchanged output.
+ *)
+let Thru = Gain 1
+
+(**
+ * Perform standard scaling of with an input with unity gain.
+ *   @l (float): The low output.
+ *   @h (float): THe high output.
+ *   &returns (Effect): Standard scaling effect.
+ *)
+let Scale'(l,h) = Scale(-1,1,l,h)
+
+(**
+ * Scale a standard input from unity gain to (0,1).
+ *   &returns (Effect): Scaling to (0,1) effect.
+ *)
+let Scale1 = Scale'(0,1)
+
+let Sine(f,w) = Osc("sine",f,w)
+let Sine1(f,w) = Patch(Sine(f,w),Scale1)
+
+let Saw(f,w) = Osc("tri",f,w)
+let Saw1(f,w) = Patch(Saw(f,w),Scale1)
+
+let Pulse(f,w) = Osc("square",f,w)
+let Pulse1(f,w) = Patch(Pulse(f,w),Scale1)
+
+(**
+ * Created a muted generator.
+ *   @m (Module): The module.
+ *   &returns (Effect): The generator with muted input.
+ *)
+let Gen' m  = Chain[Mute,Gen(m)]
+
+(**
+ * Process an effect on the left channel.
+ *   @e (Effect): The effect.
+ *   &returns (Instr): The instrument.
+ *)
+let Left e = Single(0,e)
+
+(**
+ * Process an effect on the right channel.
+ *   @e (Effect): The effect.
+ *   &returns (Instr): The instrument.
+ *)
+let Right e = Single(1,e)

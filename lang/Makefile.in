@@ -18,6 +18,8 @@ OBJ = src/env.o \
       src/print.o \
       src/token.o \
       src/value.o \
+      \
+      src/eval/math.o \
 
 INC = src/defs.h \
       \
@@ -29,6 +31,8 @@ INC = src/defs.h \
       src/print.h \
       src/token.h \
       src/value.h \
+      \
+      src/eval/math.h \
      
 # build rules
 

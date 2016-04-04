@@ -25,6 +25,7 @@ OBJ = src/box.o \
       \
       src/efx/bitcrush.o \
       src/efx/chain.o \
+      src/efx/chorus.o \
       src/efx/clip.o \
       src/efx/comp.o \
       src/efx/effect.o \
@@ -32,9 +33,13 @@ OBJ = src/box.o \
       src/efx/filt.o \
       src/efx/gain.o \
       src/efx/gen.o \
+      src/efx/mix.o \
       src/efx/reverb.o \
+      src/efx/scale.o \
       src/efx/sect.o \
       src/efx/track.o \
+      \
+      src/eval/sched.o \
       \
       src/instr/mixer.o \
       src/instr/pan.o \
@@ -54,6 +59,7 @@ OBJ = src/box.o \
       src/mod/trig.o \
       \
       src/seq/merge.o \
+      src/seq/player.o \
       src/seq/repeat.o \
       src/seq/sched.o \
 
@@ -78,6 +84,7 @@ INC = src/defs.h \
       \
       src/efx/bitcrush.h \
       src/efx/chain.h \
+      src/efx/chorus.h \
       src/efx/clip.h \
       src/efx/comp.h \
       src/efx/effect.h \
@@ -85,9 +92,13 @@ INC = src/defs.h \
       src/efx/filt.h \
       src/efx/gain.h \
       src/efx/gen.h \
+      src/efx/mix.h \
       src/efx/reverb.h \
+      src/efx/scale.h \
       src/efx/sect.h \
       src/efx/track.h \
+      \
+      src/eval/sched.h \
       \
       src/instr/mixer.h \
       src/instr/pan.h \
@@ -107,6 +118,7 @@ INC = src/defs.h \
       src/mod/trig.h \
       \
       src/seq/merge.h \
+      src/seq/player.h \
       src/seq/repeat.h \
       src/seq/sched.h \
      

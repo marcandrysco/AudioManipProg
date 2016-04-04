@@ -23,6 +23,14 @@ struct sys_mutex_t {
 	pthread_mutex_t pthrd;
 };
 
+/**
+ * Condition variable structure.
+ *   @pthrd: The internal thread condition variable.
+ */
+struct sys_cond_t {
+	pthread_cond_t pthrd;
+};
+
 /*
  * thread declarations
  */
@@ -45,6 +53,18 @@ bool sys_mutex_trylock(struct sys_mutex_t *mutex);
 void sys_mutex_unlock(struct sys_mutex_t *mutex);
 
 #define SYS_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
+
+/*
+ * condition variable declarations
+ */
+typedef struct sys_cond_t sys_cond_t;
+
+sys_cond_t sys_cond_init(unsigned int flags);
+void sys_cond_destroy(sys_cond_t *cond);
+
+void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex);
+void sys_cond_signal(sys_cond_t *cond);
+void sys_cond_broadcast(sys_cond_t *cond);
 
 
 /**

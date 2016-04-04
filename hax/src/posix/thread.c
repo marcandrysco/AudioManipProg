@@ -118,6 +118,74 @@ void sys_mutex_unlock(struct sys_mutex_t *mutex)
 
 
 /**
+ * Initialize a conditional variable.
+ *   @flags: The flags.
+ *   &returns: The conditional variable.
+ */
+sys_cond_t sys_cond_init(unsigned int flags)
+{
+	int err;
+	struct sys_cond_t cond;
+
+	err = pthread_cond_init(&cond.pthrd, NULL);
+	if(err != 0)
+		fatal("Failed to create condition variable (%d). %s.", err, strerror(errno));
+
+	return cond;
+}
+
+/**
+ * Destroy a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_destroy(sys_cond_t *cond)
+{
+	pthread_cond_destroy(&cond->pthrd);
+}
+
+
+/**
+ * Wait on a conditional variable.
+ *   @cond: The conditional variable.
+ *   @mutex: The associated mutex.
+ */
+void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex)
+{
+	int err;
+
+	err = pthread_cond_wait(&cond->pthrd, &mutex->pthrd);
+	if(err != 0)
+		fatal("Failed to wait on a condition variable (%d). %s.", err, strerror(errno));
+}
+
+/**
+ * Signal a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_signal(sys_cond_t *cond)
+{
+	int err;
+
+	err = pthread_cond_signal(&cond->pthrd);
+	if(err != 0)
+		fatal("Failed to signal a condition variable (%d). %s.", err, strerror(errno));
+}
+
+/**
+ * Broadcast a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_broadcast(sys_cond_t *cond)
+{
+	int err;
+
+	err = pthread_cond_broadcast(&cond->pthrd);
+	if(err != 0)
+		fatal("Failed to broadcast a condition variable (%d). %s.", err, strerror(errno));
+}
+
+
+/**
  * Task structure.
  *   @pipe: The sychronization pipe.
  *   @thread: The thread.

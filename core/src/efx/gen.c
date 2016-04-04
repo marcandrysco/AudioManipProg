@@ -5,7 +5,6 @@
  * Generator structure.
  *   @module: The module.
  */
-
 struct amp_gen_t {
 	struct amp_module_t module;
 };
@@ -14,7 +13,6 @@ struct amp_gen_t {
 /*
  * global variables
  */
-
 const struct amp_effect_i amp_gen_iface = {
 	(amp_info_f)amp_gen_info,
 	(amp_effect_f)amp_gen_proc,
@@ -28,7 +26,6 @@ const struct amp_effect_i amp_gen_iface = {
  *   @module: Consumed. The module.
  *   &returns: The gen.
  */
-
 struct amp_gen_t *amp_gen_new(struct amp_module_t module)
 {
 	struct amp_gen_t *gen;
@@ -44,7 +41,6 @@ struct amp_gen_t *amp_gen_new(struct amp_module_t module)
  *   @gen: The original generator.
  *   &returns: The copied generator.
  */
-
 struct amp_gen_t *amp_gen_copy(struct amp_gen_t *gen)
 {
 	return amp_gen_new(amp_module_copy(gen->module));
@@ -54,7 +50,6 @@ struct amp_gen_t *amp_gen_copy(struct amp_gen_t *gen)
  * Delete a generator effect.
  *   @gen: The generator.
  */
-
 void amp_gen_delete(struct amp_gen_t *gen)
 {
 	amp_module_delete(gen->module);
@@ -69,7 +64,6 @@ void amp_gen_delete(struct amp_gen_t *gen)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_gen_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct amp_module_t module;
@@ -87,7 +81,6 @@ struct ml_value_t *amp_gen_make(struct ml_value_t *value, struct ml_env_t *env, 
  *   @gen: The generator.
  *   @info: The information.
  */
-
 void amp_gen_info(struct amp_gen_t *gen, struct amp_info_t info)
 {
 	amp_module_info(gen->module, info);
@@ -101,18 +94,13 @@ void amp_gen_info(struct amp_gen_t *gen, struct amp_info_t info)
  *   @len: The length.
  *   &returns: The continue flag.
  */
-
 bool amp_gen_proc(struct amp_gen_t *gen, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	bool cont;
-	unsigned int i;
 	double tmp[len];
 
-	dsp_zero_d(tmp, len);
 	cont = amp_module_proc(gen->module, tmp, time, len);
-
-	for(i = 0; i < len; i++)
-		buf[i] += tmp[i];
+	dsp_add_d(buf, tmp, len);
 
 	return cont;
 }

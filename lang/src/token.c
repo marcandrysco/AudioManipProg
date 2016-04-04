@@ -1,9 +1,30 @@
 #include "common.h"
 
+
+/*
+ * global variables
+ */
+struct ml_tag_t ml_tag_null = { NULL, 0, 0 };
+
+
 bool issym(char ch)
 {
 	return ((ch >= 33) && (ch <= 47)) || ((ch >= 58) && (ch <= 64)) || ((ch >= 91) && (ch <= 96)) || ((ch >= 123) && (ch <= 126));
 }
+
+
+/**
+ * Reader structure.
+ *   @path: The path.
+ *   @file: The file.
+ *   @tag: The tag.
+ */
+struct reader_t {
+	char *path;
+	FILE *file;
+
+	struct ml_tag_t tag;
+};
 
 
 /**
@@ -13,7 +34,6 @@ bool issym(char ch)
  *   @tag: The tag.
  *   &returns: The token or end.
  */
-
 enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 {
 	enum ml_token_e token;
@@ -32,7 +52,10 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 
 				while(true) {
 					if(*byte == '*') {
-						*byte = fgetc(file), tag->off++, tag->col++;
+						do
+							*byte = fgetc(file), tag->off++, tag->col++;
+						while(*byte == '*');
+
 						if(*byte == ')') {
 							if(--nest == 0)
 								break;
@@ -78,7 +101,14 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
 
 		break;
 
-	case '=': token = ml_token_equal_e; break;
+	case '=':
+		*byte = fgetc(file), tag->off++, tag->col++;
+		switch(*byte) {
+		case '=': token = ml_token_equal_e; break;
+		default: return ml_token_assign_e;
+		}
+
+		break;
 
 	case '>':
 		*byte = fgetc(file), tag->off++, tag->col++;
@@ -130,7 +160,6 @@ enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag)
  *   @str: The string.
  *   &returns: The token or negative.
  */
-
 enum ml_token_e ml_token_keyword(const char *str)
 {
 	if(strcmp(str, "let") == 0)
@@ -161,7 +190,6 @@ enum ml_token_e ml_token_keyword(const char *str)
  *   @id: The identifier string.
  *   &returns: The token.
  */
-
 struct ml_token_t *ml_token_new(enum ml_token_e type)
 {
 	struct ml_token_t *token;
@@ -194,7 +222,6 @@ struct ml_token_t *ml_token_id(const char *id)
  *   @str: The identifier string.
  *   &returns: The token.
  */
-
 struct ml_token_t *ml_token_str(const char *str)
 {
 	struct ml_token_t *token;
@@ -210,7 +237,6 @@ struct ml_token_t *ml_token_str(const char *str)
  *   @id: The identifier string.
  *   &returns: The token.
  */
-
 struct ml_token_t *ml_token_num(double flt)
 {
 	struct ml_token_t *token;
@@ -225,7 +251,6 @@ struct ml_token_t *ml_token_num(double flt)
  * Delete a token.
  *   @token: The token.
  */
-
 void ml_token_delete(struct ml_token_t *token)
 {
 	if((token->type == ml_token_id_e) || (token->type == ml_token_str_e))
@@ -241,7 +266,6 @@ void ml_token_delete(struct ml_token_t *token)
  *   @err: The error.
  *   &returns: The token list.
  */
-
 struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err)
 {
 #undef fail
@@ -365,7 +389,6 @@ struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err)
  *   @err: The error message pointer.
  *   &returns: The token list.
  */
-
 struct ml_token_t *ml_token_load(const char *path, char **err)
 {
 	FILE *file;
@@ -385,7 +408,6 @@ struct ml_token_t *ml_token_load(const char *path, char **err)
  * Clean up a list of tokens.
  *   @token: The token.
  */
-
 void ml_token_clean(struct ml_token_t *token)
 {
 	struct ml_token_t *next;
@@ -395,4 +417,84 @@ void ml_token_clean(struct ml_token_t *token)
 		ml_token_delete(token);
 		token = next;
 	}
+}
+
+
+/**
+ * Lexer sructure.
+ */
+struct lex_t {
+};
+
+/**
+ * Create a new path.
+ *   @str: Consumed. The string value.
+ *   &returns: The path.
+ */
+struct ml_path_t *ml_path_new(char *str)
+{
+	struct ml_path_t *path;
+
+	path = malloc(sizeof(struct ml_path_t));
+	path->str = str;
+	path->refcnt = 1;
+
+	return path;
+}
+
+/**
+ * Copy a path.
+ *   @path: The original path.
+ *   &returns: The copied path.
+ */
+struct ml_path_t *ml_path_copy(struct ml_path_t *path)
+{
+	path->refcnt++;
+
+	return path;
+}
+
+/**
+ * Delete a path.
+ *   @path: The path.
+ */
+void ml_path_delete(struct ml_path_t *path)
+{
+	if(--path->refcnt > 0)
+		return;
+
+	erase(path);
+	free(path);
+}
+
+
+/**
+ * Create a tag.
+ *   @path: Consumed. The path.
+ *   @line: The line.
+ *   @col: The column.
+ *   &returns: The tag.
+ */
+struct ml_tag0_t ml_tag0_new(struct ml_path_t *path, unsigned int line, unsigned int col)
+{
+	return (struct ml_tag0_t){ path, line, col };
+}
+
+/**
+ * Copy a tag.
+ *   @tag: The original tag.
+ *   &returns: The copied tag.
+ */
+struct ml_tag0_t ml_tag0_copy(struct ml_tag0_t tag)
+{
+	return ml_tag0_new(ml_path_copy(tag.path), tag.line, tag.col);
+}
+
+/**
+ * Delete a tag.
+ *   @tag: The tag.
+ */
+void ml_tag0_delete(struct ml_tag0_t tag)
+{
+	ml_path_delete(tag.path);
 }

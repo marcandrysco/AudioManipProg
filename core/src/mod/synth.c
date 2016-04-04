@@ -7,7 +7,6 @@
  *   @note: The note.
  *   @module: The module.
  */
-
 struct inst_t {
 	int delay;
 	struct amp_note_t note;
@@ -20,7 +19,6 @@ struct inst_t {
  *   @n: The width.
  *   @inst: The instance array.
  */
-
 struct amp_synth_t {
 	uint16_t dev, key;
 	unsigned int n;
@@ -32,7 +30,6 @@ struct amp_synth_t {
 /*
  * global variables
  */
-
 struct amp_module_i amp_synth_iface = {
 	(amp_info_f)amp_synth_info,
 	(amp_module_f)amp_synth_proc,
@@ -49,7 +46,6 @@ struct amp_module_i amp_synth_iface = {
  *   @module: Consumed. The module.
  *   &returns: The synthesizer.
  */
-
 struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, struct amp_module_t module)
 {
 	unsigned int i;
@@ -75,7 +71,6 @@ struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, st
  *   @synth: The original synthesizer.
  *   &returns: The copied synthesizer.
  */
-
 struct amp_synth_t *amp_synth_copy(struct amp_synth_t *synth)
 {
 	return amp_synth_new(synth->dev, synth->key, synth->n, amp_module_copy(synth->inst[0].module));
@@ -85,7 +80,6 @@ struct amp_synth_t *amp_synth_copy(struct amp_synth_t *synth)
  * Delete a synthesizer.
  *   @synth: The synthesizer.
  */
-
 void amp_synth_delete(struct amp_synth_t *synth)
 {
 	unsigned int i;
@@ -105,7 +99,6 @@ void amp_synth_delete(struct amp_synth_t *synth)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_synth_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	int dev, key, n;
@@ -124,7 +117,6 @@ struct ml_value_t *amp_synth_make(struct ml_value_t *value, struct ml_env_t *env
  *   @synth: The synthesizer.
  *   @info: The information.
  */
-
 void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 {
 	if(info.type == amp_info_action_e) {
@@ -135,6 +127,8 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 		if(action.event.dev != synth->dev)
 			return;
 
+		if(action.event.key > 128)
+			return;
 		if((synth->key != 0) && (action.event.key != synth->key))
 			return;
 
@@ -178,7 +172,6 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
  *   @time: The time.
  *   @len: The length.
  */
-
 void amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	int delay;

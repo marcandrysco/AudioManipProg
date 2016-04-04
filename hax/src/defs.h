@@ -43,11 +43,11 @@ struct sys_poll_t;
 /*
  * fail macros
  */
-#define fail(...) do { do { onexit } while(0); return mprintf(__VA_ARGS__); } while(0)
-#define chkfail(ptr) do { char *err = ptr; if(err != NULL) { do { onexit } while(0); return err; } } while(0)
-#define chkwarn(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); free(err); } } while(0)
-#define chkexit(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); exit(1); } } while(0)
-#define chkabort(ptr) do { char *err = ptr; if(err != NULL) { fprintf(stderr, "%s\n", err); abort(); } } while(0)
+#define fail(...) do { do { onexit } while(0); return hax_mprintf(__VA_ARGS__); } while(0)
+#define chkfail(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { do { onexit } while(0); return _fail_err; } } while(0)
+#define chkwarn(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); free(_fail_err); } } while(0)
+#define chkexit(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); exit(1); } } while(0)
+#define chkabort(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); abort(); } } while(0)
 
 /**
  * Create callback.

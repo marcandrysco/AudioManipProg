@@ -286,6 +286,16 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 				if(value != NULL)
 					value = func->data.impl(value, env, err);
 			}
+			else if(func->type == ml_value_eval_e) {
+				struct ml_value_t *ret;
+
+				*err = NULL;
+				value = ml_expr_eval(expr->data.app.value, env, err);
+				if(value != NULL) {
+					*err = func->data.eval(&ret, value, env);
+					value = ret;
+				}
+			}
 			else
 				fail("Cannot call non-function value.");
 

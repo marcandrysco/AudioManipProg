@@ -9,7 +9,6 @@
  *   @opt_freqhi_e: High frequency.
  *   @opt_n: The number of options.
  */
-
 enum opt_e {
 	opt_gain_e,
 	opt_freq_e,
@@ -26,7 +25,6 @@ enum opt_e {
  *   @s, rate: The state and sample rate.
  *   @ring: The ring buffer.
  */
-
 struct amp_reverb_t {
 	enum amp_reverb_e type;
 	struct amp_param_t *param[opt_n];
@@ -40,7 +38,6 @@ struct amp_reverb_t {
 /*
  * global variables
  */
-
 const struct amp_effect_i amp_reverb_iface = {
 	(amp_info_f)amp_reverb_info,
 	(amp_effect_f)amp_reverb_proc,
@@ -56,7 +53,6 @@ const struct amp_effect_i amp_reverb_iface = {
  *   @rate: The sample rate.
  *   &returns: The reverb.
  */
-
 struct amp_reverb_t *amp_reverb_new(enum amp_reverb_e type, double len, double rate)
 {
 	unsigned int i;
@@ -80,7 +76,6 @@ struct amp_reverb_t *amp_reverb_new(enum amp_reverb_e type, double len, double r
  *   @reverb: The original reverb.
  *   &returns: The copied reverb.
  */
-
 struct amp_reverb_t *amp_reverb_copy(struct amp_reverb_t *reverb)
 {
 	unsigned int i;
@@ -103,7 +98,6 @@ struct amp_reverb_t *amp_reverb_copy(struct amp_reverb_t *reverb)
  * Delete a reverb.
  *   @reverb: The reverb.
  */
-
 void amp_reverb_delete(struct amp_reverb_t *reverb)
 {
 	unsigned int i;
@@ -123,7 +117,6 @@ void amp_reverb_delete(struct amp_reverb_t *reverb)
  *   @rate: The sample rate.
  *   &returns: The reverb.
  */
-
 struct amp_reverb_t *amp_reverb_delay(double len, struct amp_param_t *gain, double rate)
 {
 	struct amp_reverb_t *reverb;
@@ -187,6 +180,7 @@ struct amp_reverb_t *amp_reverb_lpcf(double len, struct amp_param_t *gain, struc
 	struct amp_reverb_t *reverb;
 
 	reverb = amp_reverb_new(amp_reverb_lpcf_e, len, rate);
+	printf("len: %d\n", reverb->ring->len);
 	reverb->fast = amp_param_isfast(gain) | amp_param_isfast(freq);
 	amp_param_set(&reverb->param[opt_gain_e], gain);
 	amp_param_set(&reverb->param[opt_freq_e], freq);

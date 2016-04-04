@@ -2,6 +2,27 @@
 #define TOKEN_H
 
 /**
+ * Path structure.
+ *   @str: The string.
+ *   @refcnt: The reference count.
+ */
+struct ml_path_t {
+	char *str;
+	unsigned int refcnt;
+};
+
+/**
+ * Tag structure.
+ *   @path: The path.
+ *   @line, col: The line and column.
+ */
+struct ml_tag0_t {
+	struct ml_path_t *path;
+	unsigned int line, col;
+};
+
+
+/**
  * Token enumerator.
  *   @ml_token_equal_e: Equal.
  *   @ml_token_gt_e: Greater than.
@@ -40,8 +61,8 @@
  *   @ml_token_comment_e: Comment.
  *   @ml_token_end_e: End-of-input.
  */
-
 enum ml_token_e {
+	ml_token_assign_e,
 	ml_token_equal_e,
 	ml_token_gt_e,
 	ml_token_gte_e,
@@ -85,7 +106,6 @@ enum ml_token_e {
  *   @flt: Floating-point number.
  *   @str: The string.
  */
-
 union ml_token_u {
 	double flt;
 	char *str;
@@ -98,7 +118,6 @@ union ml_token_u {
  *   @tag: The tag.
  *   @next: The next.
  */
-
 struct ml_token_t {
 	enum ml_token_e type;
 	union ml_token_u data;
@@ -112,6 +131,7 @@ struct ml_token_t {
 /*
  * token declarations
  */
+extern struct ml_tag_t ml_tag_null;
 
 enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag);
 enum ml_token_e ml_token_keyword(const char *str);
@@ -125,5 +145,13 @@ void ml_token_delete(struct ml_token_t *token);
 struct ml_token_t *ml_token_load(const char *path, char **err);
 struct ml_token_t *ml_token_parse(FILE *file, const char *path, char **err);
 void ml_token_clean(struct ml_token_t *token);
+
+struct ml_path_t *ml_path_new(char *str);
+struct ml_path_t *ml_path_copy(struct ml_path_t *path);
+void ml_path_delete(struct ml_path_t *path);
+
+struct ml_tag0_t ml_tag0_new(struct ml_path_t *path, unsigned int line, unsigned int col);
+struct ml_tag0_t ml_tag0_copy(struct ml_tag0_t tag);
+void ml_tag0_delete(struct ml_tag0_t tag);
 
 #endif

@@ -4,7 +4,6 @@
 /*
  * local declarations
  */
-
 static void callback(double **buf, unsigned int len, void *arg);
 
 
@@ -13,7 +12,6 @@ static void callback(double **buf, unsigned int len, void *arg);
  *   @engine: The engine.
  *   @path: The path.
  */
-
 void amp_engine_update(struct amp_engine_t *engine, const char *path)
 {
 	char *err;
@@ -21,13 +19,13 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	struct amp_box_t *box;
 	struct ml_env_t *env;
 
-	sys_mutex_lock(&engine->sync);
-	sys_mutex_lock(&engine->lock);
-
 	env = amp_core_eval(engine->core, path, &err);
 	if(env == NULL) {
 		fprintf(stderr, "%s\n", err), free(err); return;
 	}
+
+	sys_mutex_lock(&engine->sync);
+	sys_mutex_lock(&engine->lock);
 
 	value = ml_env_lookup(env, "amp.clock");
 	if(value != NULL) {
@@ -81,9 +79,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 		if(iter->id[0] != '_')
 			continue;
 
-		printf("%s: ", iter->id);
-		ml_value_print(iter->value, stdout);
-		printf("\n");
+		printf("%s: %C\n", iter->id, ml_value_chunk(iter->value));
 	}
 #endif
 
@@ -114,7 +110,7 @@ void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_c
 	char **ml, **el;
 	struct amp_engine_t *engine;
 
-	engine = amp_engine_new(file, comm);
+	engine = amp_engine_new(file, comm, audio);
 
 	for(el = plugin; *el != NULL; el++) {
 		char *err;
@@ -164,7 +160,6 @@ void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_c
  *   @len: The length.
  *   @arg: The argument.
  */
-
 static void callback(double **buf, unsigned int len, void *arg)
 {
 	bool run;
@@ -177,8 +172,12 @@ static void callback(double **buf, unsigned int len, void *arg)
 		return;
 	}
 
-	if(!sys_mutex_trylock(&engine->lock))
+	if(!sys_mutex_trylock(&engine->lock)) {
+		dsp_zero_d(buf[0], len);
+		dsp_zero_d(buf[1], len);
+
 		return;
+	}
 
 	run = engine->toggle;
 	if(engine->run != run) {

@@ -2,6 +2,23 @@
 #define MEM_H
 
 /**
+ * Clamp a single double to a range.
+ *   @v: The value to clamp.
+ *   @low: The low end of the rnage.
+ *   @high: The high end of the range.
+ *   &returns: The value clamped to the range '[low,high]'.
+ */
+static inline double dsp_clamp(double v, double low, double high)
+{
+	if(v < low)
+		return low;
+	else if(v > high)
+		return high;
+	else
+		return v;
+}
+
+/**
  * Clamp a buffer of doubles.
  *   @buf: The buffer.
  *   @len: The length.

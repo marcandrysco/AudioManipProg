@@ -43,7 +43,7 @@ char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *
 			if(pat == NULL)
 				fatal("Missin pattern.");
 
-			if(token->type != ml_token_equal_e)
+			if(token->type != ml_token_assign_e)
 				fatal("Invalid let. Expected '='.");
 
 			token = token->next;
@@ -224,7 +224,7 @@ char *ml_parse_stmt(struct ml_expr_t **expr, struct ml_token_t **token)
 		if(pat == NULL)
 			fail("Missing function parameters.");
 
-		if((*token)->type != ml_token_equal_e)
+		if((*token)->type != ml_token_assign_e)
 			fail("Missing '='.");
 
 		*token = (*token)->next;
@@ -329,63 +329,41 @@ char *ml_parse_stmt(struct ml_expr_t **expr, struct ml_token_t **token)
 struct ml_expr_t *ml_parse_expr(struct ml_token_t **token, char **err)
 {
 	return ml_parse_concat(token, err);
-
-#undef fail
-#define fail(str, ...) do { ml_expr_erase(left); ml_expr_erase(value); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: " str, (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, ##__VA_ARGS__); return NULL; } while(0)
-	struct ml_expr_t *expr, *value;
-
-	expr = ml_parse_concat(token, err);
-	if(expr == NULL)
-		return expr;
-
-	while(true) {
-		value = ml_parse_concat(token, err);
-		if(value == NULL)
-			return expr;
-
-		expr = ml_expr_app(expr, value);
-	}
 }
 
 /**
  * Parse a set.
+ *   @expr: Ref. The expression.
  *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
+ *   &returns: Error.
  */
-
-struct ml_expr_t *ml_parse_set(struct ml_token_t **token, char **err)
+char *ml_parse_set(struct ml_expr_t **expr, struct ml_token_t **token)
 {
-#undef fail
-#define fail(str, ...) do { ml_set_delete(set); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: " str, (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, ##__VA_ARGS__); return NULL; } while(0)
+#define onexit if(set.expr != NULL) ml_set_delete(set);
+	struct ml_set_t set = { 0 };
 
-	struct ml_set_t set;
-	struct ml_expr_t *expr;
-
-	*err = ml_parse_stmt(&expr, token);
-	if(*err)
-		return NULL;
-	else if(expr == NULL)
+	chkfail(ml_parse_stmt(expr, token));
+	if(*expr == NULL)
 		fail("Missing expression in set.");
 
 	if((*token)->type != ml_token_comma_e)
-		return expr;
+		return NULL;
 
 	set = ml_set_new();
-	ml_set_add(&set, expr);
+	ml_set_add(&set, *expr);
 
 	do {
 		*token = (*token)->next;
-		*err = ml_parse_stmt(&expr, token);
-		if(*err)
-			return NULL;
-		else if(expr == NULL)
+		chkfail(ml_parse_stmt(expr, token));
+		if(*expr == NULL)
 			fail("Missing expression in set.");
 
-		ml_set_add(&set, expr);
+		ml_set_add(&set, *expr);
 	} while((*token)->type == ml_token_comma_e);
 
-	return ml_expr_set(set);
+	*expr = ml_expr_set(set);
+	return NULL;
+#undef onexit
 }
 
 /**
@@ -394,7 +372,6 @@ struct ml_expr_t *ml_parse_set(struct ml_token_t **token, char **err)
  *   @err: The error.
  *   &returns: The expression or null.
  */
-
 struct ml_expr_t *ml_parse_list(struct ml_token_t **token, char **err)
 {
 #undef fail
@@ -427,7 +404,6 @@ struct ml_expr_t *ml_parse_list(struct ml_token_t **token, char **err)
  *   @err: The error.
  *   &returns: The expression or null.
  */
-
 struct ml_expr_t *ml_parse_concat(struct ml_token_t **token, char **err)
 {
 #undef fail
@@ -497,7 +473,6 @@ struct ml_expr_t *ml_parse_cons(struct ml_token_t **token, char **err)
  *   @err: The error.
  *   &returns: The expression or null.
  */
-
 struct ml_expr_t *ml_parse_cmp(struct ml_token_t **token, char **err)
 {
 #undef fail
@@ -510,7 +485,9 @@ struct ml_expr_t *ml_parse_cmp(struct ml_token_t **token, char **err)
 		return NULL;
 
 	while(true) {
-		if((*token)->type == ml_token_gt_e)
+		if((*token)->type == ml_token_equal_e)
+			impl = ml_eval_eq;
+		else if((*token)->type == ml_token_gt_e)
 			impl = ml_eval_gt;
 		else if((*token)->type == ml_token_gte_e)
 			impl = ml_eval_gte;
@@ -703,8 +680,19 @@ struct ml_expr_t *ml_parse_value(struct ml_token_t **token, char **err)
 
 			if(eval->id != NULL)
 				expr = ml_expr_value(ml_value_impl(eval->func));
-			else
-				expr = ml_expr_id(strdup((*token)->data.str), (*token)->tag);
+			else {
+				struct ml_eval0_t *eval;
+
+				for(eval = ml_eval_table; eval->id != NULL; eval++) {
+					if(strcmp(eval->id, (*token)->data.str) == 0)
+						break;
+				}
+
+				if(eval->id != NULL)
+					expr = ml_expr_value(ml_value_eval(eval->func, (*token)->tag));
+				else
+					expr = ml_expr_id(strdup((*token)->data.str), (*token)->tag);
+			}
 		}
 	}
 	else if((*token)->type == ml_token_lbrace_e) {
@@ -718,7 +706,9 @@ struct ml_expr_t *ml_parse_value(struct ml_token_t **token, char **err)
 	else if((*token)->type == ml_token_lparen_e) {
 		*token = (*token)->next;
 
-		expr = ml_parse_set(token, err);
+		*err = ml_parse_set(&expr, token);
+		if(*err != NULL)
+			return NULL;
 		if(expr == NULL)
 			fail("Missing expresion.");
 

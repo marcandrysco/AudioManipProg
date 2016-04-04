@@ -56,7 +56,6 @@ void amp_param_delete(struct amp_param_t *param)
  *   @flt: The floating-point value.
  *   &returns: The parameter.
  */
-
 struct amp_param_t *amp_param_flt(double flt)
 {
 	return amp_param_new(flt, amp_param_flt_e, (union amp_param_u){ });
@@ -67,7 +66,6 @@ struct amp_param_t *amp_param_flt(double flt)
  *   @ctrl: Consumed. The control.
  *   &returns: The parameter.
  */
-
 struct amp_param_t *amp_param_ctrl(struct amp_ctrl_t *ctrl)
 {
 	return amp_param_new(ctrl->val, amp_param_ctrl_e, (union amp_param_u){ .ctrl = ctrl });
@@ -78,7 +76,6 @@ struct amp_param_t *amp_param_ctrl(struct amp_ctrl_t *ctrl)
  *   @module: Consumed. The module.
  *   &returns: The parameter.
  */
-
 struct amp_param_t *amp_param_module(struct amp_module_t module)
 {
 	return amp_param_new(0.0, amp_param_module_e, (union amp_param_u){ .module = module });
@@ -90,7 +87,6 @@ struct amp_param_t *amp_param_module(struct amp_module_t module)
  *   @param: The parameter.
  *   @info: The information.
  */
-
 void amp_param_info(struct amp_param_t *param, struct amp_info_t info)
 {
 	switch(param->type) {
@@ -117,7 +113,6 @@ void amp_param_info(struct amp_param_t *param, struct amp_info_t info)
  *   @len: The length.
  *   &returns: The continuation flag.
  */
-
 bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *time, unsigned int len)
 {
 	switch(param->type) {

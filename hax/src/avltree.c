@@ -79,6 +79,60 @@ static struct avltree_node_t *node_last(struct avltree_node_t *node)
 	return node;
 }
 
+/**
+ * Retrieve the previous node.
+ *   @node: The current node.
+ *   &returns: The previous node or null.
+ */
+struct avltree_node_t *avltree_node_prev(struct avltree_node_t *node)
+{
+	if(node->left != NULL) {
+		node = node->left;
+
+		while(node->right != NULL)
+			node = node->right;
+
+		return node;
+	}
+	else {
+		while(node->parent != NULL) {
+			if(node->parent->right == node)
+				break;
+
+			node = node->parent;
+		}
+
+		return node->parent;
+	}
+}
+
+/**
+ * Retrieve the next node.
+ *   @node: The current node.
+ *   &returns: The next node or null.
+ */
+struct avltree_node_t *avltree_node_next(struct avltree_node_t *node)
+{
+	if(node->right != NULL) {
+		node = node->right;
+
+		while(node->left != NULL)
+			node = node->left;
+
+		return node;
+	}
+	else {
+		while(node->parent != NULL) {
+			if(node->parent->left == node)
+				break;
+
+			node = node->parent;
+		}
+
+		return node->parent;
+	}
+}
+
 
 /**
  * Lookup a node by reference.
@@ -104,6 +158,65 @@ struct avltree_node_t *avltree_root_lookup(struct avltree_root_t *root, const vo
 
 	return NULL;
 }
+
+/**
+ * Look up an AVL tree node from the root of at least a given value.
+ *   @root: The root.
+ *   @key: The sought reference.
+ *   &returns: The node if found, null otherwise.
+ */
+struct avltree_node_t *avltree_root_atleast(struct avltree_root_t *root, const void *ref)
+{
+	int cmp = 0;
+	struct avltree_node_t *node = root->node, *prev = NULL;
+
+	while(node != NULL) {
+		prev = node;
+
+		cmp = root->compare(ref, node->ref);
+		if(cmp < 0)
+			node = node->right;
+		else if(cmp > 0)
+			node = node->left;
+		else
+			return node;
+	}
+
+	if(cmp > 0)
+		return avltree_node_next(prev);
+	else
+		return prev;
+}
+
+/**
+ * Look up an AVL tree node from the root of at most a given value.
+ *   @root: The root.
+ *   @key: The sought reference.
+ *   &returns: The node if found, null otherwise.
+ */
+struct avltree_node_t *avltree_root_atmost(struct avltree_root_t *root, const void *ref)
+{
+	int cmp = 0;
+	struct avltree_node_t *node = root->node, *prev = NULL;
+
+	while(node != NULL) {
+		prev = node;
+
+		cmp = root->compare(ref, node->ref);
+		if(cmp < 0)
+			node = node->right;
+		else if(cmp > 0)
+			node = node->left;
+		else
+			return node;
+	}
+
+	if(cmp < 0)
+		return avltree_node_prev(prev);
+	else
+		return prev;
+}
+
 
 /**
  * Insert a node onto the root.
@@ -153,60 +266,6 @@ void avltree_root_insert(struct avltree_root_t *root, struct avltree_node_t *ins
 			break;
 	}
 }
-/*
-static bool node_insert(struct avltree_node_t **cur, struct avltree_node_t *ins, compare_f compare)
-{
-	if(*cur == NULL) {
-		*cur = ins;
-		ins->bal = 0;
-		ins->left = ins->right = ins->parent = NULL;
-
-		return true;
-	}
-	else {
-		int cmp;
-		bool adj;
-
-		cmp = compare((*cur)->ref, ins->ref);
-		if(cmp <= 0) {
-			adj = node_insert(&(*cur)->right, ins, compare);
-			(*cur)->right->parent = *cur;
-			if(adj) {
-				(*cur)->bal++;
-				if((*cur)->bal > 1) {
-					if((*cur)->right->bal == -1)
-						(*cur)->right = rotate_right((*cur)->right);
-
-					*cur = rotate_left(*cur);
-					return false;
-				}
-				else
-					return (*cur)->bal != 0;
-			}
-			else
-				 return false;
-		}
-		else {
-			adj = node_insert(&(*cur)->left, ins, compare);
-			(*cur)->left->parent = *cur;
-			if(adj) {
-				(*cur)->bal--;
-				if((*cur)->bal < -1) {
-					if((*cur)->left->bal == 1)
-						(*cur)->left = rotate_left((*cur)->left);
-
-					*cur = rotate_right(*cur);
-					return false;
-				}
-				else
-					return (*cur)->bal != 0;
-			}
-			else
-				 return false;
-		}
-	}
-}
-*/
 
 /**
  * Remove a node from the root.

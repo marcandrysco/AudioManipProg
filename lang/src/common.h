@@ -19,6 +19,8 @@
 #include "token.h"
 #include "value.h"
 
+#include "eval/math.h"
+
 
 static inline void *ml_eprintf(char **err, const char *format, ...)
 {
