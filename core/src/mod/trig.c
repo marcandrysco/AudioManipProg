@@ -101,10 +101,10 @@ void amp_trig_info(struct amp_trig_t *trig, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_trig_proc(struct amp_trig_t *trig, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_trig_proc(struct amp_trig_t *trig, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 

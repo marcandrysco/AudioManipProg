@@ -85,8 +85,8 @@ void amp_single_info(struct amp_single_t *single, struct amp_info_t info)
  *   @time: The time.
  *   @len: The length.
  */
-void amp_single_proc(struct amp_single_t *single, double **buf, struct amp_time_t *time, unsigned int len)
+void amp_single_proc(struct amp_single_t *single, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	if(single->idx < 2)
-		amp_effect_proc(single->effect, buf[single->idx], time, len);
+		amp_effect_proc(single->effect, buf[single->idx], time, len, queue);
 }

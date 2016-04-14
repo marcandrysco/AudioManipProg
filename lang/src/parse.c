@@ -180,6 +180,10 @@ char *ml_parse_pat_value(struct ml_pat_t **pat, struct ml_token_t **token)
 		*token = (*token)->next;
 		*pat = ml_pat_tuple(sub);
 	}
+	else if((*token)->type == ml_token_nil_e) {
+		*token = (*token)->next;
+		*pat = ml_pat_nil();
+	}
 	else
 		return NULL;
 

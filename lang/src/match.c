@@ -35,6 +35,9 @@ struct ml_pat_t *ml_pat_copy(struct ml_pat_t *pat)
 		(*copy)->type = pat->type;
 
 		switch(pat->type) {
+		case ml_pat_nil_e:
+			break;
+
 		case ml_pat_id_e:
 			(*copy)->data.id = strdup(pat->data.id);
 			break;
@@ -75,6 +78,9 @@ void ml_pat_delete(struct ml_pat_t *pat)
 		next = pat->next;
 
 		switch(pat->type) {
+		case ml_pat_nil_e:
+			break;
+			
 		case ml_pat_id_e:
 			free(pat->data.id);
 			break;
@@ -98,6 +104,16 @@ void ml_pat_delete(struct ml_pat_t *pat)
 	}
 }
 
+
+/**
+ * Create an nil pattern.
+ *   &returns: The pattern.
+ */
+
+struct ml_pat_t *ml_pat_nil(void)
+{
+	return ml_pat_new(ml_pat_nil_e, (union ml_pat_u){});
+}
 
 /**
  * Create an identifier pattern.
@@ -155,6 +171,10 @@ void ml_pat_print(struct ml_pat_t *pat, FILE *file)
 {
 	while(pat != NULL) {
 		switch(pat->type) {
+		case ml_pat_nil_e:
+			fprintf(file, "nil()");
+			break;
+
 		case ml_pat_id_e:
 			fprintf(file, "id(%s)", pat->data.id);
 			break;
@@ -191,6 +211,9 @@ void ml_pat_print(struct ml_pat_t *pat, FILE *file)
 bool ml_pat_match(struct ml_env_t **env, struct ml_pat_t *pat, struct ml_value_t *value)
 {
 	switch(pat->type) {
+	case ml_pat_nil_e:
+		return value->type == ml_value_nil_e;
+
 	case ml_pat_id_e:
 		ml_env_add(env, strdup(pat->data.id), ml_value_copy(value));
 		return true;

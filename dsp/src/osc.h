@@ -7,7 +7,6 @@
  *   @rate: The sample rate.
  *   &returns: The step size.
  */
-
 static inline double dsp_osc_step(double freq, unsigned int rate)
 {
 	return rate ? (freq / rate) : 0.0;
@@ -18,7 +17,6 @@ static inline double dsp_osc_step(double freq, unsigned int rate)
  *   @t: The time.
  *   @step: The step.
  */
-
 static inline double dsp_osc_inc(double t, double step)
 {
 	return fmod(t + step, 1.0);
@@ -29,7 +27,6 @@ static inline double dsp_osc_inc(double t, double step)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline float dsp_osc_sine_f(double t)
 {
 	return sinf(2.0f * M_PI * t);
@@ -40,7 +37,6 @@ static inline float dsp_osc_sine_f(double t)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline double dsp_osc_sine_d(double t)
 {
 	return sin(2.0 * M_PI * t);
@@ -51,7 +47,6 @@ static inline double dsp_osc_sine_d(double t)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline double dsp_osc_square(double t)
 {
 	return (t < 0.5) ? 1.0 : -1.0;
@@ -62,7 +57,6 @@ static inline double dsp_osc_square(double t)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline double dsp_osc_saw(double t)
 {
 	return fmod(1.0 + 2.0 * t, 2.0) - 1.0;
@@ -73,7 +67,6 @@ static inline double dsp_osc_saw(double t)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline double dsp_osc_rsaw(double t)
 {
 	return fmod(3.0 - 2.0 * t, 2.0) - 1.0;
@@ -84,10 +77,10 @@ static inline double dsp_osc_rsaw(double t)
  *   @t: The time.
  *   &returns: The wave value.
  */
-
 static inline double dsp_osc_tri(double t)
 {
-	return 2.0 * fabs(2.0 * t - 1.0) - 1.0;
+	//return 2.0 * fabs(2.0 * t - 1.0) - 1.0;
+	return 4.0 * (t + fabs(t - 0.75) - fabs(t - 0.25)) - 2.0;
 }
 
 /**

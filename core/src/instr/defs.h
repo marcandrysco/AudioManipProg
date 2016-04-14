@@ -7,9 +7,9 @@
  *   @buf: The stereo buffers.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: Action queue.
  */
-
-typedef void (*amp_instr_f)(void *ref, double **buf, struct amp_time_t *time, unsigned int len);
+typedef void (*amp_instr_f)(void *ref, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 /**
  * Instrument interface.
@@ -18,7 +18,6 @@ typedef void (*amp_instr_f)(void *ref, double **buf, struct amp_time_t *time, un
  *   @copy: Copy.
  *   @delete: Delete.
  */
-
 struct amp_instr_i {
 	amp_info_f info;
 	amp_instr_f proc;
@@ -31,7 +30,6 @@ struct amp_instr_i {
  *   @ref: The reference.
  *   @iface: The interface.
  */
-
 struct amp_instr_t {
 	void *ref;
 	const struct amp_instr_i *iface;
@@ -42,7 +40,6 @@ struct amp_instr_t {
  *   @instr: The instrument.
  *   @info: The information.
  */
-
 static inline void amp_instr_info(struct amp_instr_t instr, struct amp_info_t info)
 {
 	instr.iface->info(instr.ref, info);
@@ -54,11 +51,11 @@ static inline void amp_instr_info(struct amp_instr_t instr, struct amp_info_t in
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: Action queue.
  */
-
-static inline void amp_instr_proc(struct amp_instr_t instr, double **buf, struct amp_time_t *time, unsigned int len)
+static inline void amp_instr_proc(struct amp_instr_t instr, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	instr.iface->proc(instr.ref, buf, time, len);
+	instr.iface->proc(instr.ref, buf, time, len, queue);
 }
 
 /**
@@ -66,7 +63,6 @@ static inline void amp_instr_proc(struct amp_instr_t instr, double **buf, struct
  *   @instr: The instrument.
  *   &returns: The copy.
  */
-
 static inline struct amp_instr_t amp_instr_copy(struct amp_instr_t instr)
 {
 	return (struct amp_instr_t){ instr.iface->copy(instr.ref), instr.iface };
@@ -76,7 +72,6 @@ static inline struct amp_instr_t amp_instr_copy(struct amp_instr_t instr)
  * Delete an instrument.
  *   @instr: The instrument.
  */
-
 static inline void amp_instr_delete(struct amp_instr_t instr)
 {
 	instr.iface->delete(instr.ref);
@@ -86,7 +81,6 @@ static inline void amp_instr_delete(struct amp_instr_t instr)
  * Delete an instrument if non-null.
  *   @instr: The instrument.
  */
-
 static inline void amp_instr_erase(struct amp_instr_t instr)
 {
 	if(instr.iface != NULL)
@@ -98,7 +92,6 @@ static inline void amp_instr_erase(struct amp_instr_t instr)
  *   @dest: The destination, deleted if not null.
  *   @src: Consumed. The source instrument.
  */
-
 static inline void amp_instr_set(struct amp_instr_t *dest, struct amp_instr_t src)
 {
 	amp_instr_erase(*dest);

@@ -7,7 +7,6 @@
  *   @module: The module.
  *   @inst: The instance array.
  */
-
 struct amp_shot_t {
 	uint16_t dev, key;
 	struct amp_module_t module;
@@ -17,7 +16,6 @@ struct amp_shot_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_shot_iface = {
 	(amp_info_f)amp_shot_info,
 	(amp_module_f)amp_shot_proc,
@@ -82,8 +80,7 @@ struct ml_value_t *amp_shot_make(struct ml_value_t *value, struct ml_env_t *env,
 	int dev, key;
 	struct amp_module_t module;
 
-	dev =1;
-	*err = amp_match_unpack(value, "(d,M)", &key, &module);
+	*err = amp_match_unpack(value, "((d,d),M)", &dev, &key, &module);
 	if(*err != NULL)
 		return NULL;
 
@@ -96,12 +93,12 @@ struct ml_value_t *amp_shot_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @shot: The one shot.
  *   @info: The information.
  */
-
 void amp_shot_info(struct amp_shot_t *shot, struct amp_info_t info)
 {
-	if(info.type == amp_info_note_e) {
-		if(info.data.note->key != shot->key)
+	if(info.type == amp_info_action_e) {
+		if((info.data.action->event.dev != shot->dev) || (info.data.action->event.key != shot->key))
 			return;
+		printf("go!\n");
 	}
 
 	amp_module_info(shot->module, info);
@@ -113,10 +110,10 @@ void amp_shot_info(struct amp_shot_t *shot, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_shot_proc(struct amp_shot_t *shot, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_shot_proc(struct amp_shot_t *shot, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	return amp_module_proc(shot->module, buf, time, len);
+	return amp_module_proc(shot->module, buf, time, len, queue);
 }

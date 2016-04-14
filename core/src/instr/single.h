@@ -26,6 +26,6 @@ void amp_single_prepend(struct amp_single_t *single, struct amp_instr_t instr);
 void amp_single_append(struct amp_single_t *single, struct amp_instr_t instr);
 
 void amp_single_info(struct amp_single_t *single, struct amp_info_t info);
-void amp_single_proc(struct amp_single_t *single, double **buf, struct amp_time_t *time, unsigned int len);
+void amp_single_proc(struct amp_single_t *single, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

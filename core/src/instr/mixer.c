@@ -151,8 +151,9 @@ void amp_mixer_info(struct amp_mixer_t *mixer, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  */
-void amp_mixer_proc(struct amp_mixer_t *mixer, double **buf, struct amp_time_t *time, unsigned int len)
+void amp_mixer_proc(struct amp_mixer_t *mixer, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	double in[2][len], out[2][len];
 	struct amp_mixer_inst_t *inst;
@@ -167,7 +168,7 @@ void amp_mixer_proc(struct amp_mixer_t *mixer, double **buf, struct amp_time_t *
 		dsp_copy_d(buf[0], in[0], len);
 		dsp_copy_d(buf[1], in[1], len);
 
-		amp_instr_proc(inst->instr, buf, time, len);
+		amp_instr_proc(inst->instr, buf, time, len, queue);
 
 		dsp_add_d(out[0], buf[0], len);
 		dsp_add_d(out[1], buf[1], len);

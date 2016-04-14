@@ -49,20 +49,21 @@ void amp_gain_delete(struct amp_gain_t *gain)
 
 /**
  * Create a gain from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_gain_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_gain_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *scale;
 
-	*err = amp_match_unpack(value, "P", &scale);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &scale));
 
-	return amp_pack_effect((struct amp_effect_t){ amp_gain_new(scale), &amp_gain_iface });
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_gain_new(scale), &amp_gain_iface });
+	return NULL;
+#undef onexit
 }
 
 
@@ -82,14 +83,15 @@ void amp_gain_info(struct amp_gain_t *gain, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	double scale[len];
 
-	amp_param_proc(gain->scale, scale, time, len);
+	amp_param_proc(gain->scale, scale, time, len, queue);
 
 	for(i = 0; i < len; i++)
 		buf[i] *= scale[i];

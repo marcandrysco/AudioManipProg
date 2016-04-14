@@ -7,7 +7,6 @@
  *   @vol, ctrl, rate: The volume, control, and sample rate.
  *   @atk, rel, thres, ratio: The compressor parameters.
  */
-
 struct amp_comp_t {
 	bool fast;
 
@@ -19,7 +18,6 @@ struct amp_comp_t {
 /*
  * global variables
  */
-
 const struct amp_effect_i amp_comp_iface = {
 	(amp_info_f)amp_comp_info,
 	(amp_effect_f)amp_comp_proc,
@@ -37,7 +35,6 @@ const struct amp_effect_i amp_comp_iface = {
  *   @rate; The sample rate.
  *   &returns: The comp.
  */
-
 struct amp_comp_t *amp_comp_new(struct amp_param_t *atk, struct amp_param_t *rel, struct amp_param_t *thresh, struct amp_param_t *ratio, double rate)
 {
 	struct amp_comp_t *comp;
@@ -60,7 +57,6 @@ struct amp_comp_t *amp_comp_new(struct amp_param_t *atk, struct amp_param_t *rel
  *   @comp: The original compressor.
  *   &returns: The copied compressor.
  */
-
 struct amp_comp_t *amp_comp_copy(struct amp_comp_t *comp)
 {
 	return amp_comp_new(amp_param_copy(comp->atk), amp_param_copy(comp->rel), amp_param_copy(comp->thresh), amp_param_copy(comp->ratio), comp->rate);
@@ -70,7 +66,6 @@ struct amp_comp_t *amp_comp_copy(struct amp_comp_t *comp)
  * Delete a compressor effect.
  *   @comp: The compressor.
  */
-
 void amp_comp_delete(struct amp_comp_t *comp)
 {
 	amp_param_delete(comp->atk);
@@ -88,7 +83,6 @@ void amp_comp_delete(struct amp_comp_t *comp)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_comp_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct amp_param_t *atk, *rel, *thresh, *ratio;
@@ -106,7 +100,6 @@ struct ml_value_t *amp_comp_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @comp: The compressor.
  *   @info: The information.
  */
-
 void amp_comp_info(struct amp_comp_t *comp, struct amp_info_t info)
 {
 	amp_param_info(comp->atk, info);
@@ -121,9 +114,10 @@ void amp_comp_info(struct amp_comp_t *comp, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
+ *   &returns: The continuation flag.
  */
-
-void amp_comp_proc(struct amp_comp_t *comp, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_comp_proc(struct amp_comp_t *comp, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	double vol, ctrl;
 	unsigned int i;
@@ -144,4 +138,6 @@ void amp_comp_proc(struct amp_comp_t *comp, double *buf, struct amp_time_t *time
 
 	comp->vol = vol;
 	comp->ctrl = ctrl;
+
+	return false;
 }

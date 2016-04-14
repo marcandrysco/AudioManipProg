@@ -212,7 +212,7 @@ struct ml_value_t *ml_eval_eq(struct ml_value_t *value, struct ml_env_t *env, ch
 	*err = NULL;
 
 	if(pair_num(value, &left, &right))
-		ret = ml_value_bool(left > right);
+		ret = ml_value_bool(left == right);
 	else if(pair_str(value, &lstr, &rstr))
 		ret = ml_value_bool(strcmp(lstr, rstr) == 0);
 	else
@@ -520,6 +520,10 @@ struct ml_eval_t ml_eval_arr[] = {
 	{ "i2str", ml_eval_i2str },
 	{ "f2str", ml_eval_f2str },
 	{ "strlen", ml_eval_strlen },
+	{ "length", ml_eval_length },
+	{ "seq", ml_eval_seq },
+	{ "get", ml_eval_get },
+	{ "mapl", ml_eval_map },
 	{ "isdef", ml_eval_isdef },
 	{ NULL, NULL }
 };
@@ -606,6 +610,116 @@ struct ml_value_t *ml_eval_strlen(struct ml_value_t *value, struct ml_env_t *env
 	ml_value_delete(value);
 
 	return ret;
+}
+
+struct ml_value_t *ml_eval_length(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_value_t *ret;
+
+	if(value->type != ml_value_list_e)
+		fail("Type error. Function 'length' requires type 'list'.");
+
+	struct ml_link_t *link;
+	unsigned int len;
+	for(link = value->data.list.head; link != NULL; link = link->next)
+		len++;
+	ret = ml_value_num(len);
+	ml_value_delete(value);
+
+	return ret;
+}
+
+struct ml_value_t *ml_eval_seq(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	unsigned int i, len;
+	struct ml_list_t list;
+
+	if(value->type != ml_value_num_e)
+		fail("Type error. Function 'seq' requires type 'int'.");
+
+	list = ml_list_new();
+
+	len = value->data.num;
+	for(i = 0; i < len; i++)
+		ml_list_append(&list, ml_value_num(i));
+
+	ml_value_delete(value);
+
+	return ml_value_list(list);
+}
+
+struct ml_value_t *ml_eval_get(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_tuple_t tuple;
+	unsigned int idx;
+	struct ml_link_t *link;
+
+	if(value->type != ml_value_tuple_e)
+		fail("Type error. Function 'get' requires type '(int,list)'.");
+
+	tuple = value->data.tuple;
+	if(tuple.len != 2)
+		fail("Type error. Function 'get' requires type '(int,list)'.");
+
+	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_list_e))
+		fail("Type error. Function 'get' requires type '(int,list)'.");
+
+	idx = tuple.value[0]->data.num;
+
+	for(link = tuple.value[1]->data.list.head; link != NULL; link = link->next) {
+		if(idx-- == 0)
+			break;
+	}
+
+	struct ml_value_t *ret = link ? ml_value_copy(link->value) : ml_value_nil(ml_tag_null);
+	ml_value_delete(value);
+
+	return ret;
+}
+
+struct ml_value_t *ml_eval_map(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct ml_tuple_t tuple;
+	struct ml_link_t *link;
+	struct ml_list_t list;
+
+	if(value->type != ml_value_tuple_e)
+		fail("Type error. Function 'map' requires type '(fun,list)'.");
+
+	tuple = value->data.tuple;
+	if(tuple.len != 2)
+		fail("Type error. Function 'map' requires type '(fun,list)'.");
+
+	if((tuple.value[0]->type != ml_value_closure_e) || (tuple.value[1]->type != ml_value_list_e))
+		fail("Type error. Function 'map' requires type '(fun,list)'.");
+
+	list = ml_list_new();
+
+	for(link = tuple.value[1]->data.list.head; link != NULL; link = link->next) {
+		struct ml_pat_t *pat;
+		struct ml_env_t *sub;
+		struct ml_value_t *value;
+		struct ml_closure_t clos = tuple.value[0]->data.closure;
+
+		pat = clos.pat;
+		sub = ml_env_copy(clos.env);
+
+		if(!ml_pat_match(&sub, pat, link->value))
+			fail("Cannot match pattern.");
+
+		if(pat->next)
+			value = ml_value_closure(ml_closure(ml_env_copy(sub), ml_pat_copy(pat->next), NULL, ml_expr_copy(clos.expr)));
+		else
+			value = ml_expr_eval(clos.expr, sub, err);
+
+		ml_env_delete(sub);
+
+		ml_list_append(&list, value);
+	}
+
+	ml_value_delete(value);
+
+	return ml_value_list(list);
 }
 
 

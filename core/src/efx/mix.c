@@ -88,16 +88,17 @@ void amp_mix_info(struct amp_mix_t *mix, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	double tmp[len];
 	bool cont = false;
 
 	dsp_copy_d(tmp, buf, len);
-	cont |= amp_effect_proc(mix->effect, tmp, time, len);
+	cont |= amp_effect_proc(mix->effect, tmp, time, len, queue);
 
 	if(amp_param_isfast(mix->ratio)) {
 		double ratio = dsp_clamp(mix->ratio->flt, 0.0, 1.0);
@@ -108,7 +109,7 @@ bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, u
 	else {
 		double t, ratio[len];
 
-		cont |= amp_param_proc(mix->ratio, ratio, time, len);
+		cont |= amp_param_proc(mix->ratio, ratio, time, len, queue);
 
 		for(i = 0; i < len; i++) {
 			t = dsp_clamp(ratio[i], 0.0, 1.0);

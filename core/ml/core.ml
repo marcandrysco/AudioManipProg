@@ -1,3 +1,12 @@
+let map f l = mapl (f,l)
+
+(*
+  match l with
+    | h::t -> (f h) :: (map f t)
+    | _    -> []
+*)
+let println s = print (s ++ "\n")
+
 (**
  * Compute a mathematical power 'a^b'.
  *   @a (num): The base.
@@ -38,6 +47,8 @@ let nat' start len = seq start (start+len-1)
  *   &ret (Module): The ADSR module.
  *)
 let AtkRel ((l,h),(a,r)) = ADSR ((l,h),(a,r,0,r))
+let AtkRel' (a,r) = AtkRel ((0,1),(a,r))
+let AtkRel1 (a,r) = AtkRel ((1,1),(a,r))
 
 (* ASR (attack:Num, release:Num)
  *   ASDR without any decay, sustained at 1 *)

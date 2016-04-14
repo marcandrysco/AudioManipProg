@@ -97,19 +97,20 @@ void amp_chorus_info(struct amp_chorus_t *chorus, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_chorus_proc(struct amp_chorus_t *chorus, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_chorus_proc(struct amp_chorus_t *chorus, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	double delay[len], depth[len], fb[2][len];
 	bool cont = false;
 	struct dsp_ring_t *ring = chorus->ring;
 
-	cont |= amp_param_proc(chorus->osc, delay, time, len);
-	cont |= amp_param_proc(chorus->depth, depth, time, len);
-	cont |= amp_param_proc(chorus->feedback[0], fb[0], time, len);
-	cont |= amp_param_proc(chorus->feedback[1], fb[1], time, len);
+	cont |= amp_param_proc(chorus->osc, delay, time, len, queue);
+	cont |= amp_param_proc(chorus->depth, depth, time, len, queue);
+	cont |= amp_param_proc(chorus->feedback[0], fb[0], time, len, queue);
+	cont |= amp_param_proc(chorus->feedback[1], fb[1], time, len, queue);
 
 	for(i = 0; i < len; i++) {
 		double x, v;

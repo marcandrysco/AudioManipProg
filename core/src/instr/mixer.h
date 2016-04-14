@@ -35,7 +35,7 @@ void amp_mixer_prepend(struct amp_mixer_t *mixer, struct amp_instr_t instr);
 void amp_mixer_append(struct amp_mixer_t *mixer, struct amp_instr_t instr);
 
 void amp_mixer_info(struct amp_mixer_t *mixer, struct amp_info_t info);
-void amp_mixer_proc(struct amp_mixer_t *mixer, double **buf, struct amp_time_t *time, unsigned int len);
+void amp_mixer_proc(struct amp_mixer_t *mixer, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 struct amp_mixer_inst_t *amp_mixer_first(struct amp_mixer_t *mixer);
 struct amp_mixer_inst_t *amp_mixer_last(struct amp_mixer_t *mixer);

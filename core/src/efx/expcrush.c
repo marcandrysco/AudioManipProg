@@ -108,8 +108,10 @@ static inline float expcrush(float x, float bits)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
+ *   &returns: The contuation flag.
  */
-bool amp_expcrush_proc(struct amp_expcrush_t *crush, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_expcrush_proc(struct amp_expcrush_t *crush, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	bool cont = false;
 	unsigned int i;
@@ -117,7 +119,7 @@ bool amp_expcrush_proc(struct amp_expcrush_t *crush, double *buf, struct amp_tim
 	if(!amp_param_isfast(crush->bits)) {
 		double bits[len];
 
-		cont = amp_param_proc(crush->bits, bits, time, len);
+		cont = amp_param_proc(crush->bits, bits, time, len, queue);
 
 		for(i = 0; i < len; i++)
 			buf[i] = expcrush(buf[i], bits[i]);

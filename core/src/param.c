@@ -111,9 +111,10 @@ void amp_param_info(struct amp_param_t *param, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	switch(param->type) {
 	case amp_param_flt_e:
@@ -128,7 +129,7 @@ bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *t
 		return false;
 
 	case amp_param_module_e:
-		return amp_module_proc(param->data.module, buf, time, len);
+		return amp_module_proc(param->data.module, buf, time, len, queue);
 	}
 
 	fprintf(stderr, "Invalid parameter type.\n"), abort();

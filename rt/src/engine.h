@@ -29,7 +29,6 @@ struct amp_watch_t {
  *   @clock: The clock.
  *   @seq: The sequencer.
  *   @instr: The instrument.
- *   @effect: The effect.
  *   @rt: The AmpRT structure.
  *   @comm: MIDI device communcation.
  *   @watch: The watch list.
@@ -44,7 +43,6 @@ struct amp_engine_t {
 	struct amp_clock_t clock;
 	struct amp_seq_t seq;
 	struct amp_instr_t instr;
-	struct amp_effect_t effect[2];
 
 	struct amp_rt_t rt;
 	struct amp_comm_t *comm;

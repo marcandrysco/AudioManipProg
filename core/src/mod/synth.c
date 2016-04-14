@@ -155,11 +155,11 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 			return;
 
 		synth->inst[i].delay = init ? action.delay : 0;
+		synth->inst[i].note.delay = init ? 0 : action.delay;
 		synth->inst[i].note.init = init;
 		synth->inst[i].note.key = action.event.key;
 		synth->inst[i].note.vel = (double)action.event.val / (double)UINT16_MAX;
 		synth->inst[i].note.freq = amp_key_freq_f(action.event.key);
-		printf("freq: %.1f\n", amp_key_freq_f(action.event.key));
 
 		amp_module_info(synth->inst[i].module, amp_info_note(&synth->inst[i].note));
 	}
@@ -171,9 +171,58 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
+ *   &returns: The contuation flag.
  */
-void amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
+	unsigned int n = 0;
+	struct amp_action_t *action;
+
+	while((action = amp_queue_action(queue, &n, len)) != NULL) {
+		bool init;
+		unsigned int i;
+
+		if(action->event.dev != synth->dev)
+			continue;
+
+		if(action->event.key > 128)
+			continue;
+		if((synth->key != 0) && (action->event.key != synth->key))
+			continue;
+
+		for(i = 0; i < synth->n; i++) {
+			if(synth->inst[i].note.key == action->event.key)
+				break;
+		}
+
+		if(i == synth->n) {
+			init = true;
+
+			for(i = 0; i < synth->n; i++) {
+				if(synth->inst[i].delay < 0)
+					break;
+			}
+
+			if(i == synth->n)
+				continue;
+		}
+		else
+			init = false;
+
+		if(i == synth->n)
+			continue;
+
+		synth->inst[i].delay = init ? action->delay : 0;
+		synth->inst[i].note.delay = init ? 0 : action->delay;
+		synth->inst[i].note.init = init;
+		synth->inst[i].note.key = action->event.key;
+		synth->inst[i].note.vel = (double)action->event.val / (double)UINT16_MAX;
+		synth->inst[i].note.freq = amp_key_freq_f(action->event.key);
+
+		amp_module_info(synth->inst[i].module, amp_info_note(&synth->inst[i].note));
+	}
+
 	int delay;
 	bool cont;
 	unsigned int i;
@@ -187,7 +236,7 @@ void amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *t
 
 		delay = synth->inst[i].delay;
 		if(delay < len) {
-			cont = amp_module_proc(synth->inst[i].module, tmp, time + delay, len - delay);
+			cont = amp_module_proc(synth->inst[i].module, tmp, time + delay, len - delay, queue);
 			synth->inst[i].delay = cont ? 0 : -1;
 
 			dsp_add_d(buf + delay, tmp, len - delay);
@@ -195,4 +244,6 @@ void amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *t
 		else
 			synth->inst[i].delay -= len;
 	}
+
+	return false;
 }

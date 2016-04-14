@@ -12,6 +12,13 @@ struct accum_t {
 };
 
 
+/*
+ * local declarations
+ */
+static size_t str_write(void *ref, const void *buf, size_t nbytes);
+static size_t str_read(void *ref, void *buf, size_t nbytes);
+
+
 /**
  * Write to a length.
  *   @ref: The length reference.
@@ -205,3 +212,37 @@ struct io_file_t io_file_fd(int fd)
 }
 
 
+/**
+ * Create an input file from a string.
+ *   @str: The string.
+ *   &returns: The file.
+ */
+struct io_file_t io_file_str(const char *str)
+{
+	const char **ptr;
+	static const struct io_file_i iface = { str_read, str_write, free };
+
+	ptr = malloc(sizeof(const char *));
+	*ptr = str;
+
+	return (struct io_file_t){ (void *)ptr, &iface };
+}
+static size_t str_write(void *ref, const void *buf, size_t nbytes)
+{
+	return 0;
+}
+static size_t str_read(void *ref, void *buf, size_t nbytes)
+{
+	size_t i;
+	char **ptr = ref, *dest = buf;
+
+	for(i = 0; i < nbytes; i++) {
+		if(**ptr == '\0')
+			break;
+
+		*dest = **ptr;
+		(*ptr)++;
+	}
+
+	return i;
+}

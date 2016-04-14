@@ -6,7 +6,6 @@
  *   @len: The length.
  *   &returns: The buffer.
  */
-
 struct dsp_buf_t *dsp_buf_new(unsigned int len)
 {
 	struct dsp_buf_t *buf;
@@ -24,7 +23,6 @@ struct dsp_buf_t *dsp_buf_new(unsigned int len)
  *   @chan: The requested channel.
  *   &returns: The buffer.
  */
-
 struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int rate)
 {
 	unsigned int i, len;
@@ -39,8 +37,10 @@ struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int
 	if(file == NULL)
 		return NULL;
 
-	if(chan >= info.channels)
+	if(chan >= info.channels) {
+		sf_close(file);
 		return NULL;
+	}
 
 	len = dsp_rerate(info.frames, rate, info.samplerate);
 
@@ -73,10 +73,21 @@ struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int
  * Delete a buffer.
  *   @buf: The buffer.
  */
-
 void dsp_buf_delete(struct dsp_buf_t *buf)
 {
 	free(buf);
+}
+
+
+/**
+ * Save a buffer to a path.
+ *   @buf: The buffer.
+ *   @path: The path.
+ *   &returns: Error.
+ */
+char *dsp_buf_save(struct dsp_buf_t *buf, const char *path)
+{
+	return NULL;
 }
 
 
@@ -85,7 +96,6 @@ void dsp_buf_delete(struct dsp_buf_t *buf)
  *   @len: The length.
  *   &returns: The ring buffer.
  */
-
 struct dsp_ring_t *dsp_ring_new(unsigned int len)
 {
 	struct dsp_ring_t *ring;
@@ -102,7 +112,6 @@ struct dsp_ring_t *dsp_ring_new(unsigned int len)
  * Delete a ring buffer.
  *   @ring: The ring buffer.
  */
-
 void dsp_ring_delete(struct dsp_ring_t *ring)
 {
 	free(ring);
@@ -116,7 +125,6 @@ void dsp_ring_delete(struct dsp_ring_t *ring)
  *   @inrate: The input sample rate.
  *   &returns: The output length.
  */
-	
 unsigned int dsp_rerate(unsigned int len, unsigned int outrate, unsigned int inrate)
 {
 	return ceil((double)len * (double)outrate / (double)inrate);
@@ -131,7 +139,6 @@ unsigned int dsp_rerate(unsigned int len, unsigned int outrate, unsigned int inr
  *   @inlen: The input length.
  *   @inrate: The input rate.
  */
-
 void dsp_rerate_f(float *out, unsigned int outlen, unsigned int outrate, float *in, unsigned int inlen, unsigned int inrate)
 {
 	float idx, ratio;

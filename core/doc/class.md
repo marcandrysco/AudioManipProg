@@ -42,7 +42,8 @@ with the `Chain` instance.
            | Comp (Param, Param, Param, Param)
            | Gain (Param)
            | Gen (Module)
-           | Lpf (float, Param, Param)
+           | Lpcf (float, Param, Param)
+           | Mix (Param, Module)
            | Synth (int, Module)
 
 AmpCore provides the following set of `Effect` instances:
@@ -55,6 +56,7 @@ AmpCore provides the following set of `Effect` instances:
   * [Gain](efx/gain.md) performs linear scaling of the input.
   * [Gen](efx/gen.md) discards input and generates output from a `Module`.
   * [Lpcf](efx/reverb.md#lpcf) low-pass comb filter.
+  * [Mix](efx/mix.md) mixes an effect with the dry input.
   * [Synth](efx/synth.md) generates synthesized output.
 
 ## Instrument

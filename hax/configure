@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 ## begin configuration options ##
 setconf()
 {
@@ -43,8 +42,15 @@ setconf()
 }
 ## end configuration options ##
 
+## begin custom options ##
+opt()
+{
+  return 0
+}
+## end custom options ##
 
-##### marc_andrysco configure script, rev 2 #####
+
+##### marc_andrysco configure script, rev 3 #####
 
 # special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
@@ -70,6 +76,7 @@ bin_target()
   chk_space "$1" || fail "bin_target parameter '$1' has spaces"
 
   target="$1"
+  install="${install}${nl}${tab}install --mode 0755 -D $1 \$(BINDIR)/$1"
 }
 
 # Set the library target
@@ -193,7 +200,7 @@ for opt in "$@" ; do
 done
 
 # append config.args file
-test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
+test -f config.args && eval set -- "${args}`cat config.args | tr '\n\t' '  '`"
 
 #initialize options
 toolchain="" #toolchain
@@ -203,6 +210,7 @@ rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
 noinc=""     #disable automated include
+pkgcfg=""    #pkgconfig dependencies
 
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
@@ -223,10 +231,17 @@ while [ "$#" -gt 0 ] ; do
       eval "$name=`quote "$val"`"
       ;;
     *)
-      printf "unknown option '%s'\n" "$1" >&2 ; exit 1
+      opt "$@" && { printf "unknown option '%s'\n" "$1" >&2 ; exit 1 ; }
+      shift $?
       ;;
   esac
 done
+
+# pkgconfig args
+if [ "$pkgcfg" ] ; then
+      cflags="${cflags} \`pkg-config --cflags ${pkgcfg% }\`"
+      ldflags="${ldflags} \`pkg-config --libs ${pkgcfg% }\`"
+fi
 
 # sanity check
 test "$release" && test "$debug" && fail "cannot use both --debug and --release"

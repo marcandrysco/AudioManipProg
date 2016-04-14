@@ -29,7 +29,7 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 {
 	switch(expr->type) {
 	case ml_expr_id_e:
-		return ml_expr_id(strdup(expr->data.id), expr->tag);
+		return ml_expr_id(strdup(expr->data.id), ml_tag_copy(expr->tag));
 
 	case ml_expr_set_e:
 		return ml_expr_set(ml_set_copy(expr->data.set));
@@ -109,7 +109,7 @@ void ml_expr_delete(struct ml_expr_t *expr)
 /**
  * Create an identifier expression.
  *   @id: Consumed. The identifier.
- *   @tag: The tag.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
 struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
@@ -124,7 +124,7 @@ struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
  */
 struct ml_expr_t *ml_expr_set(struct ml_set_t set)
 {
-	return ml_expr_new(ml_expr_set_e, (union ml_expr_u){ .set = set }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_set_e, (union ml_expr_u){ .set = set }, set.len ? ml_tag_copy(set.expr[0]->tag) : ml_tag_null);
 }
 
 /**
@@ -293,7 +293,7 @@ struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, ch
 				value = ml_expr_eval(expr->data.app.value, env, err);
 				if(value != NULL) {
 					*err = func->data.eval(&ret, value, env);
-					value = ret;
+					value = *err?NULL:ret;
 				}
 			}
 			else

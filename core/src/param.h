@@ -61,7 +61,7 @@ struct amp_param_t *amp_param_ctrl(struct amp_ctrl_t *ctrl);
 struct amp_param_t *amp_param_module(struct amp_module_t module);
 
 void amp_param_info(struct amp_param_t *param, struct amp_info_t info);
-bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 
 /**

@@ -133,6 +133,8 @@ struct ml_token_t {
  */
 extern struct ml_tag_t ml_tag_null;
 
+struct io_chunk_t ml_tag_chunk(const struct ml_tag_t *tag);
+
 enum ml_token_e ml_token_symbol(FILE *file, int *byte, struct ml_tag_t *tag);
 enum ml_token_e ml_token_keyword(const char *str);
 

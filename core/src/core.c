@@ -45,24 +45,29 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
 
 	/* effects */
+	ml_env_add(&core->env, strdup("Bias"), ml_value_eval(amp_bias_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Bitcrush"), ml_value_impl(amp_bitcrush_make));
 	ml_env_add(&core->env, strdup("Chain"), ml_value_impl(amp_chain_make));
 	ml_env_add(&core->env, strdup("Chorus"), ml_value_impl(amp_chorus_make));
 	ml_env_add(&core->env, strdup("Clip"), ml_value_impl(amp_clip_make));
 	ml_env_add(&core->env, strdup("Comp"), ml_value_impl(amp_comp_make));
 	ml_env_add(&core->env, strdup("Expcrush"), ml_value_impl(amp_expcrush_make));
-	ml_env_add(&core->env, strdup("Gain"), ml_value_impl(amp_gain_make));
+	ml_env_add(&core->env, strdup("Gain"), ml_value_eval(amp_gain_make, ml_tag_null));
+	ml_env_add(&core->env, strdup("Gate"), ml_value_eval(amp_gate_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Gen"), ml_value_impl(amp_gen_make));
+	ml_env_add(&core->env, strdup("Loop"), ml_value_eval(amp_loop_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Mix"), ml_value_eval(amp_mix_make, ml_tag_null));
+	ml_env_add(&core->env, strdup("Octave"), ml_value_eval(amp_octave_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Sect"), ml_value_impl(amp_sect_make));
 	ml_env_add(&core->env, strdup("Scale"), ml_value_eval(amp_scale_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Synth"), ml_value_impl(amp_synth_make));
+	ml_env_add(&core->env, strdup("Vol"), ml_value_eval(amp_vol_make, ml_tag_null));
 
 	ml_env_add(&core->env, strdup("Ctrl"), ml_value_impl(amp_ctrl_make));
 
 	/* instruments */
+	ml_env_add(&core->env, strdup("Inject"), ml_value_eval(amp_inject_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Mixer"), ml_value_impl(amp_mixer_make));
-	ml_env_add(&core->env, strdup("Pan"), ml_value_impl(amp_pan_make));
 	ml_env_add(&core->env, strdup("Series"), ml_value_impl(amp_series_make));
 	ml_env_add(&core->env, strdup("Single"), ml_value_impl(amp_single_make));
 	ml_env_add(&core->env, strdup("Splice"), ml_value_impl(amp_splice_make));
@@ -73,15 +78,18 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Noise"), ml_value_impl(amp_noise_make));
 	ml_env_add(&core->env, strdup("Osc"), ml_value_impl(amp_osc_make));
 	ml_env_add(&core->env, strdup("Patch"), ml_value_impl(amp_patch_make));
-	ml_env_add(&core->env, strdup("Sample"), ml_value_impl(amp_sample_make));
+	ml_env_add(&core->env, strdup("Sample"), ml_value_eval(amp_sample_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Shot"), ml_value_impl(amp_shot_make));
 	ml_env_add(&core->env, strdup("Sum"), ml_value_impl(amp_sum_make));
 	ml_env_add(&core->env, strdup("Trig"), ml_value_impl(amp_trig_make));
 
 	/* sequencers */
 	ml_env_add(&core->env, strdup("Repeat"), ml_value_impl(amp_repeat_make));
+	ml_env_add(&core->env, strdup("Merge"), ml_value_eval(amp_merge_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Sched"), ml_value_impl(amp_sched_make));
 	ml_env_add(&core->env, strdup("Player"), ml_value_impl(amp_player_make0));
+	ml_env_add(&core->env, strdup("Snap"), ml_value_eval(amp_snap_make, ml_tag_null));
+	ml_env_add(&core->env, strdup("Toggle"), ml_value_eval(amp_toggle_make, ml_tag_null));
 
 	/* filters */
 	ml_env_add(&core->env, strdup("Lpf"), ml_value_impl(amp_lpf_make));
@@ -100,7 +108,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("str2key"), ml_value_impl(amp_key_eval));
 	ml_env_add(&core->env, strdup("skyline"), ml_value_impl(amp_eval_skyline0));
 
-	err = ml_env_proc(SHAREDIR "/core.ml", &core->env);
+	err = ml_env_proc(SHAREDIR "/amp/core.ml", &core->env);
 	if(err != NULL)
 		fprintf(stderr, "Failed to parse 'core.ml'. %s\n", err);
 

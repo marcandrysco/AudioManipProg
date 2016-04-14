@@ -38,11 +38,7 @@ void list_root_prepend(struct list_root_t *root, struct list_node_t *node)
 {
 	node->next = root->head;
 	node->prev = NULL;
-
-	if(root->head != NULL)
-		root->head->prev = node;
-	else
-		root->tail = node;
+	*(root->head ? &root->head->prev : &root->tail) = node;
 
 	root->len++;
 	root->head = node;

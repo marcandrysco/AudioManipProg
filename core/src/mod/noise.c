@@ -5,7 +5,6 @@
  * Random storage structure.
  *   @x, y, z, w: Storage data.
  */
-
 struct m_rand_t {
 	uint32_t x, y, z, w;
 };
@@ -15,7 +14,6 @@ struct m_rand_t {
  *   @seed: The seed.
  *   &returns; The random generator.
  */
-
 struct m_rand_t m_rand_init(uint32_t seed)
 {
 	return (struct m_rand_t){ 123456789, 362436069, 521288629, seed * 1049141 };
@@ -26,7 +24,6 @@ struct m_rand_t m_rand_init(uint32_t seed)
  *   @rand: The number generator.
  *   &returns: The next number.
  */
-
 uint32_t m_rand_next(struct m_rand_t *rand)
 {
 	  uint32_t t;
@@ -45,7 +42,6 @@ uint32_t m_rand_next(struct m_rand_t *rand)
  *   @rand: The number generator.
  *   &returns: The next number.
  */
-
 double m_rand_d(struct m_rand_t *rand)
 {
 	return m_rand_next(rand) / (double)UINT32_MAX;
@@ -56,7 +52,6 @@ double m_rand_d(struct m_rand_t *rand)
  * Noise structure.
  *   @rand: The random number generator.
  */
-
 struct amp_noise_t {
 	struct m_rand_t rand;
 };
@@ -65,7 +60,6 @@ struct amp_noise_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_noise_iface = {
 	(amp_info_f)amp_noise_info,
 	(amp_module_f)amp_noise_proc,
@@ -78,7 +72,6 @@ const struct amp_module_i amp_noise_iface = {
  * Create a noise.
  *   &returns: The noise.
  */
-
 struct amp_noise_t *amp_noise_new(void)
 {
 	struct amp_noise_t *noise;
@@ -94,7 +87,6 @@ struct amp_noise_t *amp_noise_new(void)
  *   @noise: The original noise.
  *   &returns: The copied noise.
  */
-
 struct amp_noise_t *amp_noise_copy(struct amp_noise_t *noise)
 {
 	return amp_noise_new();
@@ -104,7 +96,6 @@ struct amp_noise_t *amp_noise_copy(struct amp_noise_t *noise)
  * Delete a noise.
  *   @noise: The noise.
  */
-
 void amp_noise_delete(struct amp_noise_t *noise)
 {
 	free(noise);
@@ -118,7 +109,6 @@ void amp_noise_delete(struct amp_noise_t *noise)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_noise_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	enum ml_value_e type = value->type;
@@ -139,7 +129,6 @@ struct ml_value_t *amp_noise_make(struct ml_value_t *value, struct ml_env_t *env
  *   @noise: The noise.
  *   @info: The information.
  */
-
 void amp_noise_info(struct amp_noise_t *noise, struct amp_info_t info)
 {
 }
@@ -150,10 +139,10 @@ void amp_noise_info(struct amp_noise_t *noise, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_noise_proc(struct amp_noise_t *noise, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_noise_proc(struct amp_noise_t *noise, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	

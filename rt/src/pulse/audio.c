@@ -12,7 +12,6 @@
  *   @func: The audio function.
  *   @arg: The function argument.
  */
-
 struct pulse_audio_t {
 	struct pulse_conn_t *conn;
 	struct pulse_conf_t conf;
@@ -25,13 +24,11 @@ struct pulse_audio_t {
 /*
  * local declarations
  */
-
 static void onaudio(double **buf, unsigned int len, void *arg);
 
 /*
  * global declarations
  */
-
 const struct amp_audio_i pulse_audio_iface = {
 	(amp_audio_open_f)pulse_audio_open,
 	(amp_audio_close_f)pulse_audio_close,
@@ -46,7 +43,6 @@ const struct amp_audio_i pulse_audio_iface = {
  *   @conf: The configuration.
  *   &returns: The device or null on error.
  */
-
 struct pulse_audio_t *pulse_audio_open(const char *conf)
 {
 	struct pulse_audio_t *audio;
@@ -62,7 +58,6 @@ struct pulse_audio_t *pulse_audio_open(const char *conf)
  * Close a pulse audio device.
  *   @audio: The audio device.
  */
-
 void pulse_audio_close(struct pulse_audio_t *audio)
 {
 	free(audio);
@@ -75,7 +70,6 @@ void pulse_audio_close(struct pulse_audio_t *audio)
  *   @func: The audio function.
  *   @arg: The argument.
  */
-
 void pulse_audio_exec(struct pulse_audio_t *audio, amp_audio_f func, void *arg)
 {
 	audio->func = func;
@@ -87,7 +81,6 @@ void pulse_audio_exec(struct pulse_audio_t *audio, amp_audio_f func, void *arg)
  * Hlat execution a pulse audio device.
  *   @audio: The audio device.
  */
-
 void pulse_audio_halt(struct pulse_audio_t *audio)
 {
 	pulse_conn_close(audio->conn);
@@ -100,7 +93,6 @@ void pulse_audio_halt(struct pulse_audio_t *audio)
  *   @len: The length.
  *   @arg: The argument.
  */
-
 static void onaudio(double **buf, unsigned int len, void *arg)
 {
 	struct pulse_audio_t *audio = arg;

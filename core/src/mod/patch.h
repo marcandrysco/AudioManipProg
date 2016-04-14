@@ -16,6 +16,6 @@ void amp_patch_delete(struct amp_patch_t *patch);
 struct ml_value_t *amp_patch_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 void amp_patch_info(struct amp_patch_t *patch, struct amp_info_t info);
-bool amp_patch_proc(struct amp_patch_t *patch, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_patch_proc(struct amp_patch_t *patch, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

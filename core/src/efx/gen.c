@@ -92,14 +92,15 @@ void amp_gen_info(struct amp_gen_t *gen, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continue flag.
  */
-bool amp_gen_proc(struct amp_gen_t *gen, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_gen_proc(struct amp_gen_t *gen, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	bool cont;
 	double tmp[len];
 
-	cont = amp_module_proc(gen->module, tmp, time, len);
+	cont = amp_module_proc(gen->module, tmp, time, len, queue);
 	dsp_add_d(buf, tmp, len);
 
 	return cont;

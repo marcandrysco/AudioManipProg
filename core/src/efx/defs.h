@@ -7,10 +7,10 @@
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
- *   @cont: The continuation flag.
+ *   @queue: The action queue.
+ *   &returns: The continuation flag.
  */
-
-typedef bool (*amp_effect_f)(void *ref, double *buf, struct amp_time_t *time, unsigned int len);
+typedef bool (*amp_effect_f)(void *ref, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 /**
  * Effect interface.
@@ -56,12 +56,12 @@ static inline void amp_effect_info(struct amp_effect_t effect, struct amp_info_t
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-static inline bool amp_effect_proc(struct amp_effect_t effect, double *buf, struct amp_time_t *time, unsigned int len)
+static inline bool amp_effect_proc(struct amp_effect_t effect, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	return effect.iface->proc(effect.ref, buf, time, len);
+	return effect.iface->proc(effect.ref, buf, time, len, queue);
 }
 
 /**
@@ -69,7 +69,6 @@ static inline bool amp_effect_proc(struct amp_effect_t effect, double *buf, stru
  *   @effect: The original effect.
  *   &returns: The copied effect.
  */
-
 static inline struct amp_effect_t amp_effect_copy(struct amp_effect_t effect)
 {
 	return (struct amp_effect_t){ effect.iface->copy(effect.ref), effect.iface };
@@ -79,7 +78,6 @@ static inline struct amp_effect_t amp_effect_copy(struct amp_effect_t effect)
  * Delete an effect.
  *   @effect: The effect.
  */
-
 static inline void amp_effect_delete(struct amp_effect_t effect)
 {
 	effect.iface->delete(effect.ref);
@@ -89,7 +87,6 @@ static inline void amp_effect_delete(struct amp_effect_t effect)
  * Delete an effect if not null.
  *   @effect: The effect.
  */
-
 static inline void amp_effect_erase(struct amp_effect_t effect)
 {
 	if(effect.iface != NULL)
@@ -101,7 +98,6 @@ static inline void amp_effect_erase(struct amp_effect_t effect)
  *   @dest: The destination, deleted if not null.
  *   @src: Consumed. The source effect.
  */
-
 static inline void amp_effect_set(struct amp_effect_t *dest, struct amp_effect_t src)
 {
 	amp_effect_erase(*dest);

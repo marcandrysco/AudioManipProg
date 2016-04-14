@@ -135,7 +135,6 @@ struct amp_reverb_t *amp_reverb_delay(double len, struct amp_param_t *gain, doub
  *   @rate: The sample rate.
  *   &returns: The reverb.
  */
-
 struct amp_reverb_t *amp_reverb_allpass(double len, struct amp_param_t *gain, double rate)
 {
 	struct amp_reverb_t *reverb;
@@ -154,7 +153,6 @@ struct amp_reverb_t *amp_reverb_allpass(double len, struct amp_param_t *gain, do
  *   @rate: The sample rate.
  *   &returns: The reverb.
  */
-
 struct amp_reverb_t *amp_reverb_comb(double len, struct amp_param_t *gain, double rate)
 {
 	struct amp_reverb_t *reverb;
@@ -180,7 +178,6 @@ struct amp_reverb_t *amp_reverb_lpcf(double len, struct amp_param_t *gain, struc
 	struct amp_reverb_t *reverb;
 
 	reverb = amp_reverb_new(amp_reverb_lpcf_e, len, rate);
-	printf("len: %d\n", reverb->ring->len);
 	reverb->fast = amp_param_isfast(gain) | amp_param_isfast(freq);
 	amp_param_set(&reverb->param[opt_gain_e], gain);
 	amp_param_set(&reverb->param[opt_freq_e], freq);
@@ -194,7 +191,6 @@ struct amp_reverb_t *amp_reverb_lpcf(double len, struct amp_param_t *gain, struc
  *   @reverb: The reverb.
  *   @info: The information.
  */
-
 void amp_reverb_info(struct amp_reverb_t *reverb, struct amp_info_t info)
 {
 	unsigned int i;
@@ -209,10 +205,10 @@ void amp_reverb_info(struct amp_reverb_t *reverb, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	bool cont = false;
@@ -223,7 +219,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 		if(!reverb->fast) {
 			double gain[len];
 
-			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len);
+			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = gain[i] * dsp_ring_proc(ring, buf[i]);
@@ -241,7 +237,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 		if(!reverb->fast) {
 			double gain[len];
 
-			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len);
+			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_reverb_allpass(buf[i], ring, gain[i]);
@@ -259,7 +255,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 		if(!reverb->fast) {
 			double gain[len];
 
-			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len);
+			cont |= amp_param_proc(reverb->param[opt_gain_e], buf, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_reverb_comb(buf[i], ring, gain[i]);
@@ -277,6 +273,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 		if(!reverb->fast) {
 			double *s = reverb->s, gain[len], freq[len], rate = reverb->rate;
 
+			fatal("stub");
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_reverb_lpcf(buf[i], ring, gain[i], dsp_lpf_init(freq[i], rate), s);
 		}
@@ -302,7 +299,6 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_delay_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double len;
@@ -322,7 +318,6 @@ struct ml_value_t *amp_delay_make(struct ml_value_t *value, struct ml_env_t *env
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_allpass_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double len;
@@ -342,7 +337,6 @@ struct ml_value_t *amp_allpass_make(struct ml_value_t *value, struct ml_env_t *e
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_comb_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double len;
@@ -362,7 +356,6 @@ struct ml_value_t *amp_comb_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_lpcf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double len;

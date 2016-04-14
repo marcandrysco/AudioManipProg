@@ -151,11 +151,12 @@ void amp_series_info(struct amp_series_t *series, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  */
-void amp_series_proc(struct amp_series_t *series, double **buf, struct amp_time_t *time, unsigned int len)
+void amp_series_proc(struct amp_series_t *series, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	struct amp_series_inst_t *inst;
 
 	for(inst = series->head; inst != NULL; inst = inst->next)
-		amp_instr_proc(inst->instr, buf, time, len);
+		amp_instr_proc(inst->instr, buf, time, len, queue);
 }

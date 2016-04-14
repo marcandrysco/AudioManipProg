@@ -6,7 +6,7 @@
  *   @cur, head, tail: The current, head, and tail instances.
  */
 struct amp_sched_t {
-	struct inst_t *cur, *head, *tail;
+	struct amp_sched_inst_t *cur, *head, *tail;
 };
 
 /**
@@ -15,18 +15,18 @@ struct amp_sched_t {
  *   @event: The event
  *   @prev, next: The previous and next instances.
  */
-struct inst_t {
+struct amp_sched_inst_t {
 	struct amp_time_t time;
 	struct amp_event_t event;
 
-	struct inst_t *prev, *next;
+	struct amp_sched_inst_t *prev, *next;
 };
 
 
 /*
  * local declarations
  */
-static struct inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time);
+static struct amp_sched_inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time);
 
 /*
  * global variables
@@ -124,7 +124,6 @@ struct ml_value_t *amp_sched_make(struct ml_value_t *value, struct ml_env_t *env
  * Create a new schedule.
  *   &returns: The schedule.
  */
-
 struct amp_sched_t *amp_sched_new(void)
 {
 	struct amp_sched_t *sched;
@@ -140,10 +139,9 @@ struct amp_sched_t *amp_sched_new(void)
  *   @schedule: The original schedule.
  *   &returns: The copied schedule.
  */
-
 struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched)
 {
-	struct inst_t *inst;
+	struct amp_sched_inst_t *inst;
 	struct amp_sched_t *copy;
 
 	copy = amp_sched_new();
@@ -158,10 +156,9 @@ struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched)
  * Delete a schedule.
  *   @sched: The schedule.
  */
-
 void amp_sched_delete(struct amp_sched_t *sched)
 {
-	struct inst_t *cur, *next;
+	struct amp_sched_inst_t *cur, *next;
 
 	for(cur = sched->head; cur != NULL; cur = next) {
 		next = cur->next;
@@ -178,12 +175,11 @@ void amp_sched_delete(struct amp_sched_t *sched)
  *   @time: The time.
  *   @event: The event.
  */
-
 void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp_event_t event)
 {
-	struct inst_t *inst, *cur;
+	struct amp_sched_inst_t *inst, *cur;
 
-	inst = malloc(sizeof(struct inst_t));
+	inst = malloc(sizeof(struct amp_sched_inst_t));
 	inst->time = time;
 	inst->event = event;
 
@@ -215,7 +211,6 @@ void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp
  *   @time: The time.
  *   @len: The length.
  */
-
 void amp_sched_info(struct amp_sched_t *sched, struct amp_info_t info)
 {
 }
@@ -223,15 +218,14 @@ void amp_sched_info(struct amp_sched_t *sched, struct amp_info_t info)
 /**
  * Process a schedule.
  *   @sched: The schedule.
- *   @queue: The queue.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  */
-
-void amp_sched_proc(struct amp_sched_t *sched, struct amp_queue_t *queue, struct amp_time_t *time, unsigned int len)
+void amp_sched_proc(struct amp_sched_t *sched, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
-	struct inst_t *cur;
+	struct amp_sched_inst_t *cur;
 
 	if(sched->cur == NULL)
 		return;
@@ -246,7 +240,7 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_queue_t *queue, struct
 			if(!amp_time_between(cur->time, time[i], time[i+1]))
 				break;
 
-			amp_queue_add(queue, (struct amp_action_t){ i, cur->event });
+			amp_queue_add(queue, (struct amp_action_t){ i, cur->event, queue });
 
 			cur = cur->next ?: sched->head;
 		} while(cur != sched->cur);
@@ -263,10 +257,9 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_queue_t *queue, struct
  *   @time: The time.
  *   &returns: The instance or null.
  */
-
-static struct inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time)
+static struct amp_sched_inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time)
 {
-	struct inst_t *inst;
+	struct amp_sched_inst_t *inst;
 
 	for(inst = sched->tail; inst != NULL; inst = inst->prev) {
 		if(amp_time_cmp(inst->time, time) < 0)

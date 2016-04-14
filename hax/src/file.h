@@ -88,6 +88,6 @@ struct io_file_t io_file_len(size_t *len);
 struct io_file_t io_file_accum(char **str);
 struct io_file_t io_file_wrap(FILE *file);
 struct io_file_t io_file_fd(int fd);
-
+struct io_file_t io_file_str(const char *str);
 
 #endif

@@ -245,6 +245,7 @@ void match_str(char **str, size_t *len, const char **format)
 	case 'E': snprintf(*str, *len, "Effect"); break;
 	case 'M': snprintf(*str, *len, "Module"); break;
 	case 'P': snprintf(*str, *len, "Param"); break;
+	case 'S': snprintf(*str, *len, "Seq"); break;
 		
 	case '(':
 		(*len)--, (*format)++, *(*str)++ = '(';

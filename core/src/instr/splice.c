@@ -71,8 +71,7 @@ struct ml_value_t *amp_splice_make(struct ml_value_t *value, struct ml_env_t *en
  */
 void amp_splice_info(struct amp_splice_t *splice, struct amp_info_t info)
 {
-	if(info.type == amp_info_action_e)
-		amp_effect_info(splice->effect, info);
+	amp_effect_info(splice->effect, info);
 }
 
 /**
@@ -82,7 +81,7 @@ void amp_splice_info(struct amp_splice_t *splice, struct amp_info_t info)
  *   @time: The time.
  *   @len: The length.
  */
-void amp_splice_proc(struct amp_splice_t *splice, double **buf, struct amp_time_t *time, unsigned int len)
+void amp_splice_proc(struct amp_splice_t *splice, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	double tmp[len];
@@ -90,7 +89,7 @@ void amp_splice_proc(struct amp_splice_t *splice, double **buf, struct amp_time_
 	for(i = 0; i < len; i++)
 		tmp[i] = buf[0][i] + buf[1][i];
 
-	amp_effect_proc(splice->effect, tmp, time, len);
+	amp_effect_proc(splice->effect, tmp, time, len, queue);
 
 	dsp_copy_d(buf[0], tmp, len);
 	dsp_copy_d(buf[1], tmp, len);

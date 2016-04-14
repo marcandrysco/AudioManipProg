@@ -23,6 +23,6 @@ void amp_mix_delete(struct amp_mix_t *mix);
 char *amp_mix_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_mix_info(struct amp_mix_t *mix, struct amp_info_t info);
-bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

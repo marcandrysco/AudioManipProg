@@ -30,8 +30,10 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	value = ml_env_lookup(env, "amp.clock");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_clock_e);
-		if(box != NULL)
+		if(box != NULL) {
 			amp_clock_set(&engine->clock, amp_clock_copy(box->data.clock));
+			amp_clock_info(engine->clock, amp_info_init());
+		}
 		else
 			fprintf(stderr, "Type for 'seq' is not valid.\n");
 	}
@@ -39,8 +41,10 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	value = ml_env_lookup(env, "amp.seq");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_seq_e);
-		if(box != NULL)
+		if(box != NULL) {
 			amp_seq_set(&engine->seq, amp_seq_copy(box->data.seq));
+			amp_seq_info(engine->seq, amp_info_init());
+		}
 		else
 			fprintf(stderr, "Type for 'seq' is not valid.\n");
 	}
@@ -48,21 +52,12 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	value = ml_env_lookup(env, "amp.instr");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_instr_e);
-		if(box != NULL)
-			amp_instr_set(&engine->instr, amp_instr_copy(box->data.instr));
-		else
-			fprintf(stderr, "Type for 'instr' is not valid.\n");
-	}
-
-	value = ml_env_lookup(env, "amp.effect");
-	if(value != NULL) {
-		box = amp_unbox_value(value, amp_box_effect_e);
 		if(box != NULL) {
-			amp_effect_set(&engine->effect[0], amp_effect_copy(box->data.effect));
-			amp_effect_set(&engine->effect[1], amp_effect_copy(box->data.effect));
+			amp_instr_set(&engine->instr, amp_instr_copy(box->data.instr));
+			amp_instr_info(engine->instr, amp_info_init());
 		}
 		else
-			fprintf(stderr, "Type for 'effect' is not valid.\n");
+			fprintf(stderr, "Type for 'instr' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.run");
@@ -189,27 +184,16 @@ static void callback(double **buf, unsigned int len, void *arg)
 
 	amp_clock_proc(engine->clock, time, len);
 
-	if(engine->seq.iface != NULL) {
-		unsigned int i;
-		struct amp_queue_t queue;
+	struct amp_queue_t queue;
 
-		amp_queue_init(&queue);
-		amp_seq_proc(engine->seq, &queue, time, len);
+	amp_queue_init(&queue);
 
-		for(i = 0; i < queue.idx; i++) {
-			if(engine->instr.iface != NULL)
-				amp_instr_info(engine->instr, amp_info_action(&queue.arr[i]));
+	while(amp_comm_read(engine->comm, &event))
+		amp_queue_add(&queue, (struct amp_action_t){ 0, event });
 
-			if(engine->effect[0].iface != NULL)
-				amp_effect_info(engine->effect[0], amp_info_action(&queue.arr[i]));
-
-			if(engine->effect[1].iface != NULL)
-				amp_effect_info(engine->effect[1], amp_info_action(&queue.arr[i]));
-		}
-	}
-
-	while(amp_comm_read(engine->comm, &event)) {
-		struct amp_action_t action = { 0, event };
+		/*
+		if(engine->seq.iface != NULL)
+			amp_seq_info(engine->seq, amp_info_action(&action));
 
 		if(engine->instr.iface != NULL)
 			amp_instr_info(engine->instr, amp_info_action(&action));
@@ -219,20 +203,15 @@ static void callback(double **buf, unsigned int len, void *arg)
 
 		if(engine->effect[1].iface != NULL)
 			amp_effect_info(engine->effect[1], amp_info_action(&action));
-	}
+			*/
+
+	if(engine->seq.iface != NULL)
+		amp_seq_proc(engine->seq, time, len, &queue);
 
 	if(engine->instr.iface != NULL)
-		amp_instr_proc(engine->instr, buf, time, len);
-	else {
-		dsp_zero_d(buf[0], len);
-		dsp_zero_d(buf[1], len);
-	}
-
-	if(engine->effect[0].iface != NULL)
-		amp_effect_proc(engine->effect[0], buf[0], time, len);
-
-	if(engine->effect[1].iface != NULL)
-		amp_effect_proc(engine->effect[1], buf[1], time, len);
+		amp_instr_proc(engine->instr, buf, time, len, &queue);
+	else
+		dsp_zero_d(buf[0], len), dsp_zero_d(buf[1], len);
 
 	sys_mutex_unlock(&engine->lock);
 }

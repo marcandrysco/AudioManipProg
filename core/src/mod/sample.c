@@ -3,39 +3,58 @@
 
 /**
  * Play structure.
- *   @vol: The volume;
+ *   @buf: The buffer.
+ *   @vol: The volume.
  *   @idx: The index.
  */
-
 struct play_t {
+	struct dsp_buf_t *buf;
 	double vol;
 	int idx;
 };
 
 /**
  * Sample structure.
- *   @file: The file.
- *   @buf: The buffer.
- *   @key: The key.
  *   @decay: The decay rate.
+ *   @len: The velocity array length.
+ *   @vel: The velocity array.
  *   @n: The number of players.
  *   @play: The player array.
  */
-
 struct amp_sample_t {
-	struct amp_file_t *file;
-	struct dsp_buf_t *buf;
 	double decay;
+
+	unsigned int len;
+	struct amp_sample_vel_t *vel;
 
 	unsigned int n;
 	struct play_t play[];
+};
+
+/**
+ * Sample velocity.
+ *   @rr, len: The current round-robin and length.
+ *   @inst: The instance.
+ */
+struct amp_sample_vel_t {
+	unsigned int rr, len;
+	struct amp_sample_inst_t *inst;
+};
+
+/**
+ * Sample instance structure.
+ *   @file: The file.
+ *   @buf: The buffer.
+ */
+struct amp_sample_inst_t {
+	struct amp_file_t *file;
+	struct dsp_buf_t *buf;
 };
 
 
 /*
  * global variables
  */
-
 const struct amp_module_i amp_sample_iface = {
 	(amp_info_f)amp_sample_info,
 	(amp_module_f)amp_sample_proc,
@@ -46,20 +65,18 @@ const struct amp_module_i amp_sample_iface = {
 
 /**
  * Create a sample.
- *   @file: The file.
  *   @n: The number of simultaneous samples.
  *   @decay: The decay rate.
  *   &returns: The sample.
  */
-
-struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, double decay)
+struct amp_sample_t *amp_sample_new(unsigned int n, double decay)
 {
 	unsigned int i;
 	struct amp_sample_t *sample;
 
 	sample = malloc(sizeof(struct amp_sample_t) + n * sizeof(struct play_t));
-	sample->file = file;
-	sample->buf = amp_file_buf(file);
+	sample->len = 0;
+	sample->vel = malloc(0);
 	sample->n = n;
 	sample->decay = decay;
 
@@ -74,32 +91,102 @@ struct amp_sample_t *amp_sample_new(struct amp_file_t *file, unsigned int n, dou
  *   @sample: The original sample.
  *   &returns: The copied sample.
  */
-
 struct amp_sample_t *amp_sample_copy(struct amp_sample_t *sample)
 {
-	return amp_sample_new(amp_file_copy(sample->file), sample->n, sample->decay);
+	struct amp_sample_t *copy;
+	unsigned int i, j;
+	
+	copy = amp_sample_new(sample->n, sample->decay);
+
+	for(i = 0; i < sample->len; i++) {
+		struct amp_sample_vel_t *vel = amp_sample_vel(copy);
+
+		for(j = 0; j < sample->vel[i].len; j++)
+			amp_sample_inst(vel, amp_file_copy(sample->vel[i].inst[j].file));
+	}
+
+	return copy;
 }
 
 /**
  * Delete a sample.
  *   @sample: The sample.
  */
-
 void amp_sample_delete(struct amp_sample_t *sample)
 {
-	amp_file_unref(sample->file);
+	unsigned int i, j;
+
+	for(i = 0; i < sample->len; i++) {
+		struct amp_sample_vel_t *vel = &sample->vel[i];
+
+		for(j = 0; j < vel->len; j++)
+			amp_file_unref(vel->inst[j].file);
+
+		free(vel->inst);
+	}
+
+	free(sample->vel);
 	free(sample);
 }
 
 
 /**
  * Create a sample from a value.
+ *   @ret: Ref. The return value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error
  */
+char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit ml_value_delete(value); if(sample != NULL) amp_sample_delete(sample);
+#define error() fail("%C: Type error. Expected (int,float,[[string]]).", ml_tag_chunk(&value->tag))
+	struct ml_tuple_t tuple;
+	struct ml_link_t *link, *inst;
+	struct amp_sample_t *sample = NULL;
+	struct amp_cache_t *cache = amp_core_cache(env);
 
+	if(value->type != ml_value_tuple_e)
+		error();
+
+	tuple = value->data.tuple;
+	if(tuple.len != 3)
+		error();
+
+	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_list_e))
+		error();
+
+	sample = amp_sample_new(tuple.value[0]->data.num, tuple.value[1]->data.num);
+
+	for(link = tuple.value[2]->data.list.head; link != NULL; link = link->next) {
+		struct amp_file_t *file;
+		struct amp_sample_vel_t *vel;
+
+		if(link->value->type != ml_value_list_e)
+			error();
+
+		vel = amp_sample_vel(sample);
+
+		for(inst = link->value->data.list.head; inst != NULL; inst = inst->next) {
+			if(inst->value->type != ml_value_str_e)
+				error();
+
+			file = amp_cache_open(cache, inst->value->data.str, 0, amp_core_rate(env));
+			if(file == NULL)
+				fail("Cannot open '%s'.", inst->value->data.str);
+
+			amp_sample_inst(vel, file);
+		}
+	}
+
+	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
+	ml_value_delete(value);
+
+	return NULL;
+#undef error
+#undef onexit
+}
+/*
 struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 #undef fail
@@ -124,11 +211,12 @@ struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *en
 	if(file == NULL)
 		fail("Cannot open sample '%s'.", tuple.value[1]->data.str);
 
-	sample = amp_sample_new(file, tuple.value[1]->data.num, tuple.value[1]->data.num);
+	sample = amp_sample_new(file, tuple.value[1]->data.num, tuple.value[2]->data.num);
 	ml_value_delete(value);
 
 	return amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
 }
+*/
 
 
 /**
@@ -136,11 +224,11 @@ struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *en
  *   @sample: The sample.
  *   @info: The information.
  */
-
 void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 {
 	if(info.type == amp_info_note_e) {
-		unsigned int i;
+		unsigned int i, n;
+		struct amp_sample_vel_t *vel;
 
 		if(info.data.note->vel == 0.0)
 			return;
@@ -153,9 +241,14 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 		if(i == sample->n)
 			return;
 
+		n = info.data.note->vel * sample->len;
+		vel = &sample->vel[(n >= sample->len) ? (sample->len - 1) : n];
+
+		sample->play[i].buf = vel->inst[vel->rr].buf;
 		sample->play[i].vol = 1.0;
-		//sample->play[i].idx = -info.data.action->delay;
-		sample->play[i].idx = 0;
+		sample->play[i].idx = -info.data.note->delay;
+
+		vel->rr = (vel->rr + 1) % vel->len;
 	}
 }
 
@@ -165,10 +258,10 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	int idx;
 	unsigned int i, j;
@@ -186,16 +279,50 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 		idx = play->idx;
 
 		for(i = 0; i < len; i++, idx++) {
-			if(idx >= (int)sample->buf->len)
+			if(idx >= (int)play->buf->len)
 				break;
 			else if(idx < 0)
 				continue;
 
-			buf[i] += sample->buf->arr[idx];
+			buf[i] += play->buf->arr[idx];
 		}
 
-		play->idx = (idx < (int)sample->buf->len) ? idx : INT_MAX;
+		play->idx = (idx < (int)play->buf->len) ? idx : INT_MAX;
 	}
 
 	return cont;
+}
+
+
+/**
+ * Add a velocity to the sample.
+ *   @sample: The sample.
+ *   &returns: The velocity.
+ */
+struct amp_sample_vel_t *amp_sample_vel(struct amp_sample_t *sample)
+{
+	struct amp_sample_vel_t *vel;
+
+	sample->vel = realloc(sample->vel, (sample->len + 1) * sizeof(struct amp_sample_vel_t));
+	vel = &sample->vel[sample->len++];
+	vel->rr = 0;
+	vel->len = 0;
+	vel->inst = malloc(0);
+
+	return vel;
+}
+
+/**
+ * Add an instance to the velocity.
+ *   @vel: The velocity.
+ *   @file: The file.
+ */
+void amp_sample_inst(struct amp_sample_vel_t *vel, struct amp_file_t *file)
+{
+	struct amp_sample_inst_t *inst;
+
+	vel->inst = realloc(vel->inst, (vel->len + 1) * sizeof(struct amp_sample_inst_t));
+	inst = &vel->inst[vel->len++];
+	inst->file = file;
+	inst->buf = amp_file_buf(file);
 }

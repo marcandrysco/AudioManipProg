@@ -96,9 +96,10 @@ void amp_scale_info(struct amp_scale_t *scale, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_scale_proc(struct amp_scale_t *scale, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_scale_proc(struct amp_scale_t *scale, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 

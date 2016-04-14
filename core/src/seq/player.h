@@ -19,7 +19,7 @@ struct ml_value_t *amp_player_make0(struct ml_value_t *value, struct ml_env_t *e
 void amp_player_add(struct amp_player_t *player, struct amp_time_t time, double len, struct amp_event_t event);
 
 void amp_player_info(struct amp_player_t *player, struct amp_info_t info);
-void amp_player_proc(struct amp_player_t *player, struct amp_queue_t *queue, struct amp_time_t *time, unsigned int len);
+void amp_player_proc(struct amp_player_t *player, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 struct amp_player_inst_t *amp_player_first(struct amp_player_t *player);
 struct amp_player_inst_t *amp_player_next(struct amp_player_inst_t *inst);

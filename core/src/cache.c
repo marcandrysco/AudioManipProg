@@ -5,7 +5,6 @@
  * File cache.
  *   @file: The file.
  */
-
 struct amp_cache_t {
 	struct amp_file_t *file;
 };
@@ -19,7 +18,6 @@ struct amp_cache_t {
  *   @cache: The cache.
  *   @next: The next file.
  */
-
 struct amp_file_t {
 	char *path;
 	unsigned int chan;
@@ -36,7 +34,6 @@ struct amp_file_t {
  * Create a new cache.
  *   @cache: The cache.
  */
-
 struct amp_cache_t *amp_cache_new(void)
 {
 	struct amp_cache_t *cache;
@@ -51,7 +48,6 @@ struct amp_cache_t *amp_cache_new(void)
  * Delete a cache.
  *   @cache: The cache.
  */
-
 void amp_cache_delete(struct amp_cache_t *cache)
 {
 	struct amp_file_t *cur, *next;
@@ -75,7 +71,6 @@ void amp_cache_delete(struct amp_cache_t *cache)
  *   @chan: The channel.
  *   &returns: The file if successful, false otherwise.
  */
-
 struct amp_file_t *amp_cache_lookup(struct amp_cache_t *cache, const char *path, unsigned int chan)
 {
 	struct amp_file_t *file;
@@ -94,10 +89,10 @@ struct amp_file_t *amp_cache_lookup(struct amp_cache_t *cache, const char *path,
  *   @cache: The cache.
  *   @path: The path.
  *   @chan: The channel.
+ *   @rate: The sample rate.
  *   &returns: The file if successful, false otherwise.
  */
-
-struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, unsigned int chan)
+struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, unsigned int chan, unsigned int rate)
 {
 	struct amp_file_t *file;
 
@@ -105,7 +100,7 @@ struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, u
 	if(file == NULL) {
 		struct dsp_buf_t *buf;
 
-		buf = dsp_buf_load(path, chan, 48000);
+		buf = dsp_buf_load(path, chan, rate);
 		if(buf == NULL)
 			return NULL;
 
@@ -129,7 +124,6 @@ struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, u
  *   @cache: The cache.
  *   @file: The file.
  */
-
 void amp_cache_close(struct amp_cache_t *cache, struct amp_file_t *file)
 {
 	struct amp_file_t **ptr;
@@ -153,7 +147,6 @@ void amp_cache_close(struct amp_cache_t *cache, struct amp_file_t *file)
  *   @file: The file.
  *   &returns: The copy.
  */
-
 struct amp_file_t *amp_file_copy(struct amp_file_t *file)
 {
 	amp_file_ref(file);
@@ -166,7 +159,6 @@ struct amp_file_t *amp_file_copy(struct amp_file_t *file)
  * Add a reference to a file.
  *   @file: The file.
  */
-
 void amp_file_ref(struct amp_file_t *file)
 {
 	file->refcnt++;
@@ -176,7 +168,6 @@ void amp_file_ref(struct amp_file_t *file)
  * Remove a reference from a file.
  *   @file: The file.
  */
-
 void amp_file_unref(struct amp_file_t *file)
 {
 	if(--file->refcnt == 0)
@@ -189,7 +180,6 @@ void amp_file_unref(struct amp_file_t *file)
  *   @file: The file.
  *   &returns: The buffer.
  */
-
 struct dsp_buf_t *amp_file_buf(struct amp_file_t *file)
 {
 	return file->buf;

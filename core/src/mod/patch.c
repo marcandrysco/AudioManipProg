@@ -6,7 +6,6 @@
  *   @input: The input module.
  *   @effect: The effect.
  */
-
 struct amp_patch_t {
 	struct amp_module_t input;
 	struct amp_effect_t effect;
@@ -16,7 +15,6 @@ struct amp_patch_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_patch_iface = {
 	(amp_info_f)amp_patch_info,
 	(amp_module_f)amp_patch_proc,
@@ -31,7 +29,6 @@ const struct amp_module_i amp_patch_iface = {
  *   @effect: Consumed. The applied effect.
  *   &returns: The patch.
  */
-
 struct amp_patch_t *amp_patch_new(struct amp_module_t input, struct amp_effect_t effect)
 {
 	struct amp_patch_t *patch;
@@ -48,7 +45,6 @@ struct amp_patch_t *amp_patch_new(struct amp_module_t input, struct amp_effect_t
  *   @patch: The original patch.
  *   &returns: The copied patch.
  */
-
 struct amp_patch_t *amp_patch_copy(struct amp_patch_t *patch)
 {
 	return amp_patch_new(amp_module_copy(patch->input), amp_effect_copy(patch->effect));
@@ -58,7 +54,6 @@ struct amp_patch_t *amp_patch_copy(struct amp_patch_t *patch)
  * Delete a patch.
  *   @patch: The patch.
  */
-
 void amp_patch_delete(struct amp_patch_t *patch)
 {
 	amp_module_delete(patch->input);
@@ -74,7 +69,6 @@ void amp_patch_delete(struct amp_patch_t *patch)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_patch_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct amp_module_t input;
@@ -93,7 +87,6 @@ struct ml_value_t *amp_patch_make(struct ml_value_t *value, struct ml_env_t *env
  *   @patch: The patch.
  *   @info: The information.
  */
-
 void amp_patch_info(struct amp_patch_t *patch, struct amp_info_t info)
 {
 	amp_module_info(patch->input, info);
@@ -106,15 +99,15 @@ void amp_patch_info(struct amp_patch_t *patch, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_patch_proc(struct amp_patch_t *patch, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_patch_proc(struct amp_patch_t *patch, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	bool cont = false;
 
-	cont |= amp_module_proc(patch->input, buf, time, len);
-	cont |= amp_effect_proc(patch->effect, buf, time, len);
+	cont |= amp_module_proc(patch->input, buf, time, len, queue);
+	cont |= amp_effect_proc(patch->effect, buf, time, len, queue);
 
 	return cont;
 }

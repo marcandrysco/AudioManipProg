@@ -189,11 +189,11 @@ void amp_player_info(struct amp_player_t *player, struct amp_info_t info)
 /**
  * Process a player.
  *   @player: The player.
- *   @queue: The queue.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  */
-void amp_player_proc(struct amp_player_t *player, struct amp_queue_t *queue, struct amp_time_t *time, unsigned int len)
+void amp_player_proc(struct amp_player_t *player, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 }
 

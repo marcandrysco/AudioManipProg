@@ -9,6 +9,7 @@
  *   @ml_pat_value_e: Constant value.
  */
 enum ml_pat_e {
+	ml_pat_nil_e,
 	ml_pat_id_e,
 	ml_pat_tuple_e,
 	ml_pat_list_e,
@@ -49,6 +50,7 @@ struct ml_pat_t *ml_pat_new(enum ml_pat_e type, union ml_pat_u data);
 struct ml_pat_t *ml_pat_copy(struct ml_pat_t *pat);
 void ml_pat_delete(struct ml_pat_t *pat);
 
+struct ml_pat_t *ml_pat_nil(void);
 struct ml_pat_t *ml_pat_id(char *id);
 struct ml_pat_t *ml_pat_tuple(struct ml_pat_t *tuple);
 struct ml_pat_t *ml_pat_list(struct ml_pat_t *head, struct ml_pat_t *tail);

@@ -129,8 +129,10 @@ static inline double dsp_clip_d(double val, double maxlo, double satlo, double s
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
+ *   &returns: The continuation flag.
  */
-void amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	double maxlo, satlo, sathi, maxhi;
@@ -142,4 +144,6 @@ void amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time
 
 	for(i = 0; i < len; i++)
 		buf[i] = dsp_clip_d(buf[i], maxlo, satlo, sathi, maxhi);
+
+	return false;
 }

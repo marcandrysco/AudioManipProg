@@ -5,7 +5,6 @@
  * Multiply structure.
  *   @left, right: The left and right parameter.
  */
-
 struct amp_mul_t {
 	struct amp_param_t *left, *right;
 };
@@ -14,7 +13,6 @@ struct amp_mul_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_mul_iface = {
 	(amp_info_f)amp_mul_info,
 	(amp_module_f)amp_mul_proc,
@@ -29,7 +27,6 @@ const struct amp_module_i amp_mul_iface = {
  *   @right: Consumed. The right parameter.
  *   &returns: The multiply.
  */
-
 struct amp_mul_t *amp_mul_new(struct amp_param_t *left, struct amp_param_t *right)
 {
 	struct amp_mul_t *mul;
@@ -46,7 +43,6 @@ struct amp_mul_t *amp_mul_new(struct amp_param_t *left, struct amp_param_t *righ
  *   @mul: The original multiply.
  *   &returns: The copied multiply.
  */
-
 struct amp_mul_t *amp_mul_copy(struct amp_mul_t *mul)
 {
 	return amp_mul_new(amp_param_copy(mul->left), amp_param_copy(mul->right));
@@ -56,7 +52,6 @@ struct amp_mul_t *amp_mul_copy(struct amp_mul_t *mul)
  * Delete a multiply.
  *   @mul: The multiply.
  */
-
 void amp_mul_delete(struct amp_mul_t *mul)
 {
 	amp_param_delete(mul->left);
@@ -72,7 +67,6 @@ void amp_mul_delete(struct amp_mul_t *mul)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_mul_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	struct amp_param_t *left, *right;
@@ -90,7 +84,6 @@ struct ml_value_t *amp_mul_make(struct ml_value_t *value, struct ml_env_t *env, 
  *   @mul: The multiply.
  *   @info: The information.
  */
-
 void amp_mul_info(struct amp_mul_t *mul, struct amp_info_t info)
 {
 	amp_param_info(mul->left, info);
@@ -103,17 +96,17 @@ void amp_mul_info(struct amp_mul_t *mul, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_mul_proc(struct amp_mul_t *mul, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_mul_proc(struct amp_mul_t *mul, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	bool cont = false;
 	double left[len], right[len];
 
-	cont |= amp_param_proc(mul->left, left, time, len);
-	cont |= amp_param_proc(mul->right, right, time, len);
+	cont |= amp_param_proc(mul->left, left, time, len, queue);
+	cont |= amp_param_proc(mul->right, right, time, len, queue);
 
 	for(i = 0; i < len; i++)
 		buf[i] = left[i] * right[i];

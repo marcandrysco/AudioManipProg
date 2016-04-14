@@ -12,7 +12,7 @@ void amp_cache_delete(struct amp_cache_t *cache);
 
 struct amp_file_t *amp_cache_lookup(struct amp_cache_t *cache, const char *path, unsigned int chan);
 
-struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, unsigned int chan);
+struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, unsigned int chan, unsigned int rate);
 void amp_cache_close(struct amp_cache_t *cache, struct amp_file_t *file);
 
 /*

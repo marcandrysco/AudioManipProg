@@ -4,7 +4,6 @@
 /*
  * sum declarations
  */
-
 struct amp_sum_t;
 
 extern const struct amp_module_i amp_sum_iface;
@@ -19,6 +18,6 @@ void amp_sum_prepend(struct amp_sum_t *sum, struct amp_param_t *param);
 void amp_sum_append(struct amp_sum_t *sum, struct amp_param_t *param);
 
 void amp_sum_info(struct amp_sum_t *sum, struct amp_info_t info);
-bool amp_sum_proc(struct amp_sum_t *sum, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_sum_proc(struct amp_sum_t *sum, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

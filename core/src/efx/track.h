@@ -43,6 +43,6 @@ void amp_track_read(struct amp_track_t *track, double *buf, int idx, unsigned in
 void amp_track_write(struct amp_track_t *track, const double *buf, int idx, unsigned int len);
 
 void amp_track_info(struct amp_track_t *track, struct amp_info_t info);
-bool amp_track_proc(struct amp_track_t *track, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_track_proc(struct amp_track_t *track, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

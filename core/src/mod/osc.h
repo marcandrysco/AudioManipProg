@@ -30,7 +30,7 @@ void amp_osc_delete(struct amp_osc_t *osc);
 struct ml_value_t *amp_osc_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info);
-bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 int amp_osc_type(const char *str);
 

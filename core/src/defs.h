@@ -31,6 +31,25 @@ static inline struct amp_time_t amp_time_repeat(struct amp_time_t time, int off,
 }
 
 /**
+ * Modulus a time.
+ *   @time: The time.
+ *   @mod: The modulus.
+ */
+static inline struct amp_time_t amp_time_mod(struct amp_time_t time, struct amp_time_t mod)
+{
+	if(mod.idx > 0)
+		time.idx %= mod.idx;
+
+	if(mod.bar > 0)
+		time.bar %= mod.bar;
+
+	if(mod.beat > 0)
+		time.beat = fmod(time.beat, mod.beat);
+
+	return time;
+}
+
+/**
  * Compare two times.
  *   @left: The left time.
  *   @right: The right time.
@@ -65,6 +84,14 @@ static inline bool amp_time_between(struct amp_time_t time, struct amp_time_t le
 		return (amp_time_cmp(left, time) <= 0) || (amp_time_cmp(time, right) < 0);
 }
 
+static inline bool amp_time_chkbeat(struct amp_time_t time, struct amp_time_t left, struct amp_time_t right)
+{
+	if(amp_time_cmp(left, right) < 0)
+		return (amp_time_cmp(left, time) <= 0) && (amp_time_cmp(time, right) < 0);
+	else
+		return (amp_time_cmp(left, time) <= 0) || (amp_time_cmp(time, right) < 0);
+}
+
 /**
  * Calculate a time given an index and beat parameters.
  *   @idx: The index.
@@ -92,6 +119,11 @@ static inline struct amp_time_t amp_time_calc(int idx, double bpm, double nbeats
 	return time;
 }
 
+static inline bool amp_time_isequal(struct amp_time_t left, struct amp_time_t right)
+{
+	return (left.bar == right.bar) && (left.beat == right.beat);
+}
+
 
 /**
  * Copy function.
@@ -117,6 +149,14 @@ typedef void (*amp_midi_f)(uint16_t key, uint16_t val, void *arg);
 
 
 /**
+ * Identifier structure.
+ *   @dev, key: The device and key identifier.
+ */
+struct amp_id_t {
+	uint16_t dev, key;
+};
+
+/**
  * Event structure.
  *   @dev, key, val: The device, key, and value.
  */
@@ -136,12 +176,14 @@ typedef void (*amp_event_f)(void *ref, struct amp_event_t event, unsigned int de
 /**
  * Note structure.
  *   @init; The init flag.
+ *   @delay: The deley.
  *   @key: The key.
  *   @freq, vel: The frequency and velocity.
  */
 
 struct amp_note_t {
 	bool init;
+	unsigned int delay;
 	uint16_t key;
 	double freq, vel;
 };
@@ -150,11 +192,13 @@ struct amp_note_t {
  * Action structure.
  *   @delay: The delay.
  *   @event: The event.
+ *   @queue: The queue.
  */
 
 struct amp_action_t {
 	unsigned int delay;
 	struct amp_event_t event;
+	struct amp_queue_t *queue;
 };
 
 /**
@@ -169,6 +213,8 @@ struct amp_seek_t {
 
 /**
  * Information enumeration.
+ *   @amp_info_init_e: Initialize components.
+ *   @amp_info_commit_e: Commit data.
  *   @amp_info_action_e: Event action.
  *   @amp_info_note_e: Note setup.
  *   @amp_info_seek_e: Seek.
@@ -176,6 +222,8 @@ struct amp_seek_t {
  *   @amp_info_stop_e: Stop the clock.
  */
 enum amp_info_e {
+	amp_info_init_e,
+	amp_info_commit_e,
 	amp_info_action_e,
 	amp_info_note_e,
 	amp_info_seek_e,
@@ -210,15 +258,32 @@ struct amp_info_t {
  *   @ref: The reference.
  *   @info: The information structure.
  */
-
 typedef void (*amp_info_f)(void *ref, struct amp_info_t info);
+
+
+/**
+ * Create an init information strucure.
+ *   &returns: The information structure.
+ */
+static inline struct amp_info_t amp_info_init(void)
+{
+	return (struct amp_info_t){ amp_info_init_e, (union amp_info_u){ } };
+}
+
+/**
+ * Create a commit information strucure.
+ *   &returns: The information structure.
+ */
+static inline struct amp_info_t amp_info_commit(void)
+{
+	return (struct amp_info_t){ amp_info_commit_e, (union amp_info_u){ } };
+}
 
 /**
  * Create an action information structure.
  *   @action: The action.
  *   &returns: The information structure.
  */
-
 static inline struct amp_info_t amp_info_action(struct amp_action_t *action)
 {
 	return (struct amp_info_t){ amp_info_action_e, (union amp_info_u){ .action = action } };

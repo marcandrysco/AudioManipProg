@@ -31,5 +31,6 @@
 #include "filt.h"
 #include "osc.h"
 #include "reverb.h"
+#include "vol.h"
 
 #endif

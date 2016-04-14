@@ -73,7 +73,7 @@ struct amp_filt_t *amp_filt_res(struct amp_param_t *freq, struct amp_param_t *qu
 struct amp_filt_t *amp_filt_moog(struct amp_param_t *freq, struct amp_param_t *res, double rate);
 
 void amp_filt_info(struct amp_filt_t *filt, struct amp_info_t info);
-bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 struct ml_value_t *amp_lpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);

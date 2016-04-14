@@ -2,10 +2,34 @@
 
 
 /*
+ * local declarations
+ */
+static void tag_proc(struct io_file_t file, void *arg);
+
+/*
  * global variables
  */
 struct ml_tag_t ml_tag_null = { NULL, 0, 0 };
 
+
+/**
+ * Create a chunk for a tag.
+ *   @tag: The tag.
+ *   &returns: The chunk.
+ */
+struct io_chunk_t ml_tag_chunk(const struct ml_tag_t *tag)
+{
+	return (struct io_chunk_t){ tag_proc, (void *)tag };
+}
+static void tag_proc(struct io_file_t file, void *arg)
+{
+	const struct ml_tag_t *tag = arg;
+
+	if(memcmp(&ml_tag_null, tag, sizeof(struct ml_tag_t)) == 0)
+		hprintf(file, "(unk)");
+	else
+		hprintf(file, "%s:%u:%u", tag->file ?: "-", tag->line, tag->col);
+}
 
 bool issym(char ch)
 {

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ## begin configuration options ##
 setconf()
 {
@@ -9,8 +8,8 @@ setconf()
   bin_target "amprt"
   hdr_target "amprt.h"
 
-  lib_dep "muselang"
   lib_dep "ampcore"
+  lib_dep "muselang"
   lib_dep "dsp"
   lib_dep "hax"
   lib_dep "pthread"
@@ -39,7 +38,31 @@ setconf()
 }
 ## end configuration options ##
 
+## begin custom options ##
+opt()
+{
+  case "$1" in
+    --alsa)
+      alsa=1
+      pkgcfg="${pkgcfg} alsa"
+      cflags="${cflags} -DALSA"
+      return 1
+      ;;
+    --pulse)
+      pulse=1
+      pkgcfg="${pkgcfg} libpulse"
+      cflags="${cflags} -DPULSE"
+      return 1
+      ;;
+  esac
+  return 0
+}
+## end custom options ##
 
+
+##### marc_andrysco configure script, rev 3 #####
+
+# special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
 tab="`printf '\tX'`" ; tab="${tab%X}"
 
@@ -187,7 +210,7 @@ for opt in "$@" ; do
 done
 
 # append config.args file
-test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
+test -f config.args && eval set -- "${args}`cat config.args | tr '\n\t' '  '`"
 
 #initialize options
 toolchain="" #toolchain
@@ -196,10 +219,8 @@ debug=""     #debug flag
 rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
-alsa=""      #use alsa
-pulse=""     #use pulse
-pkgcfg=""
 noinc=""     #disable automated include
+pkgcfg=""    #pkgconfig dependencies
 
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
@@ -219,24 +240,14 @@ while [ "$#" -gt 0 ] ; do
       name="${1#--}" ; name="${name%%=*}" ; val="${1#*=}" ; shift
       eval "$name=`quote "$val"`"
       ;;
-    --alsa)
-      alsa=1
-      pkgcfg="${pkgcfg} alsa"
-      cflags="${cflags} -DALSA"
-      shift
-      ;;
-    --pulse)
-      pulse=1
-      pkgcfg="${pkgcfg} libpulse"
-      cflags="${cflags} -DPULSE"
-      shift
-      ;;
     *)
-      printf "unknown option '%s'\n" "$1" >&2 ; exit 1
+      opt "$@" && { printf "unknown option '%s'\n" "$1" >&2 ; exit 1 ; }
+      shift $?
       ;;
   esac
 done
 
+# pkgconfig args
 if [ "$pkgcfg" ] ; then
       cflags="${cflags} \`pkg-config --cflags ${pkgcfg% }\`"
       ldflags="${ldflags} \`pkg-config --libs ${pkgcfg% }\`"
@@ -323,7 +334,6 @@ rm -f "$cfg"
 echo "#ifndef CONFIG_H" >> "$cfg"
 echo "#define CONFIG_H" >> "$cfg"
 test "$debug" && echo "#define DEBUG 1" >> "$cfg"
-test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
 test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
 echo "#define SHAREDIR \"${prefix}/share"\" >> "$cfg"
 echo "#endif" >> "$cfg"

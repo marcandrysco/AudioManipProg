@@ -24,6 +24,6 @@ void amp_splice_prepend(struct amp_splice_t *splice, struct amp_instr_t instr);
 void amp_splice_append(struct amp_splice_t *splice, struct amp_instr_t instr);
 
 void amp_splice_info(struct amp_splice_t *splice, struct amp_info_t info);
-void amp_splice_proc(struct amp_splice_t *splice, double **buf, struct amp_time_t *time, unsigned int len);
+void amp_splice_proc(struct amp_splice_t *splice, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

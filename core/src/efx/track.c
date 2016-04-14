@@ -168,9 +168,10 @@ void amp_track_info(struct amp_track_t *track, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_track_proc(struct amp_track_t *track, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_track_proc(struct amp_track_t *track, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	return false;
 }

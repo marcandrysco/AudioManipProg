@@ -40,11 +40,11 @@
 #include "key.h"
 #include "io.h"
 #include "math.h"
-#include "midi.h"
 #include "param.h"
 
 #include "clk/basic.h"
 
+#include "efx/bias.h"
 #include "efx/bitcrush.h"
 #include "efx/chain.h"
 #include "efx/chorus.h"
@@ -54,17 +54,21 @@
 #include "efx/expcrush.h"
 #include "efx/filt.h"
 #include "efx/gain.h"
+#include "efx/gate.h"
 #include "efx/gen.h"
+#include "efx/loop.h"
 #include "efx/mix.h"
+#include "efx/octave.h"
 #include "efx/reverb.h"
 #include "efx/scale.h"
 #include "efx/sect.h"
 #include "efx/track.h"
+#include "efx/vol.h"
 
 #include "eval/sched.h"
 
+#include "instr/inject.h"
 #include "instr/mixer.h"
-#include "instr/pan.h"
 #include "instr/series.h"
 #include "instr/single.h"
 #include "instr/splice.h"
@@ -84,6 +88,8 @@
 #include "seq/player.h"
 #include "seq/repeat.h"
 #include "seq/sched.h"
+#include "seq/snap.h"
+#include "seq/toggle.h"
 
 
 static inline char *amp_printf(const char *format, ...)

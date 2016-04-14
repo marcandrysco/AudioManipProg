@@ -186,9 +186,10 @@ void amp_filt_info(struct amp_filt_t *filt, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	bool cont = false;
 	unsigned int i;
@@ -198,7 +199,7 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len];
 
-			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_lpf_proc(buf[i], dsp_lpf_init(freq[i], filt->rate), filt->s);
@@ -216,7 +217,7 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len];
 
-			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_hpf_proc(buf[i], dsp_hpf_init(freq[i], filt->rate), filt->s);
@@ -234,9 +235,9 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len], gain[len], qual[len], rate = filt->rate;
 
-			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len);
-			cont |= amp_param_proc(filt->param[amp_filt_opt_gain_e], gain, time, len);
-			cont |= amp_param_proc(filt->param[amp_filt_opt_gain_e], qual, time, len);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_gain_e], gain, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_gain_e], qual, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_peak_proc(buf[i], dsp_peak_init(freq[i], gain[i], qual[i], rate), filt->s);
@@ -254,8 +255,8 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len], qual[len], rate = filt->rate;
 
-			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len);
-			cont |= amp_param_proc(filt->param[amp_filt_opt_qual_e], qual, time, len);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_qual_e], qual, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_res_proc(buf[i], dsp_res_init(freq[i], qual[i], rate), filt->s);
@@ -273,8 +274,8 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		if(!filt->fast) {
 			double freq[len], res[len];
 
-			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len);
-			cont |= amp_param_proc(filt->param[amp_filt_opt_res_e], res, time, len);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_res_e], res, time, len, queue);
 
 			for(i = 0; i < len; i++)
 				buf[i] = dsp_moog_proc(buf[i], dsp_moog_init(freq[i], res[i], filt->rate), filt->s);

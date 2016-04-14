@@ -35,6 +35,6 @@ void amp_series_prepend(struct amp_series_t *series, struct amp_instr_t instr);
 void amp_series_append(struct amp_series_t *series, struct amp_instr_t instr);
 
 void amp_series_info(struct amp_series_t *series, struct amp_info_t info);
-void amp_series_proc(struct amp_series_t *series, double **buf, struct amp_time_t *time, unsigned int len);
+void amp_series_proc(struct amp_series_t *series, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

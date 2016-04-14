@@ -6,7 +6,6 @@
  *   @min: The minimum and maximum.
  *   @v, atk, decay, sus, rel, target: The paramaters.
  */
-
 struct amp_adsr_t {
 	double min, max;
 	double v, atk, decay, sus, rel, target[2];
@@ -16,7 +15,6 @@ struct amp_adsr_t {
 /*
  * global variables
  */
-
 const struct amp_module_i amp_adsr_iface = {
 	(amp_info_f)amp_adsr_info,
 	(amp_module_f)amp_adsr_proc,
@@ -29,7 +27,6 @@ const struct amp_module_i amp_adsr_iface = {
  * Create an ADSR.
  *   &returns: The ADSR.
  */
-
 struct amp_adsr_t *amp_adsr_new(double min, double max, double atk, double decay, double sus, double rel, unsigned int rate)
 {
 	struct amp_adsr_t *adsr;
@@ -55,7 +52,6 @@ struct amp_adsr_t *amp_adsr_new(double min, double max, double atk, double decay
  *   @adsr: The original ADSR.
  *   &returns: The copied ADSR.
  */
-
 struct amp_adsr_t *amp_adsr_copy(struct amp_adsr_t *adsr)
 {
 	struct amp_adsr_t *copy;
@@ -70,7 +66,6 @@ struct amp_adsr_t *amp_adsr_copy(struct amp_adsr_t *adsr)
  * Delete an ADSR.
  *   @adsr: The ADSR.
  */
-
 void amp_adsr_delete(struct amp_adsr_t *adsr)
 {
 	free(adsr);
@@ -84,7 +79,6 @@ void amp_adsr_delete(struct amp_adsr_t *adsr)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_adsr_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	double min, max, atk, decay, sus, rel;
@@ -102,7 +96,6 @@ struct ml_value_t *amp_adsr_make(struct ml_value_t *value, struct ml_env_t *env,
  *   @adsr: The ADSR.
  *   @info: The information.
  */
-
 void amp_adsr_info(struct amp_adsr_t *adsr, struct amp_info_t info)
 {
 	if(info.type == amp_info_note_e) {
@@ -124,10 +117,10 @@ void amp_adsr_info(struct amp_adsr_t *adsr, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-
-bool amp_adsr_proc(struct amp_adsr_t *adsr, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_adsr_proc(struct amp_adsr_t *adsr, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	double v;
 	unsigned int i;

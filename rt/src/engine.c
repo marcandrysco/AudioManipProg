@@ -27,8 +27,6 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm, struct
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
 	engine->seq = amp_seq_null;
 	engine->instr = amp_instr_null;
-	engine->effect[0] = amp_effect_null;
-	engine->effect[1] = amp_effect_null;
 	engine->comm = comm ?: amp_comm_new();
 	engine->notify = amp_notify_new(list, notify, engine);
 	engine->watch = NULL;
@@ -73,8 +71,6 @@ void amp_engine_delete(struct amp_engine_t *engine)
 	amp_clock_delete(engine->clock);
 	amp_seq_erase(engine->seq);
 	amp_instr_erase(engine->instr);
-	amp_effect_erase(engine->effect[0]);
-	amp_effect_erase(engine->effect[1]);
 	amp_core_delete(engine->core);
 	sys_mutex_destroy(&engine->lock);
 	sys_mutex_destroy(&engine->sync);

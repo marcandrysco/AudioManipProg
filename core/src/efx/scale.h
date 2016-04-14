@@ -23,6 +23,6 @@ void amp_scale_delete(struct amp_scale_t *scale);
 char *amp_scale_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_scale_info(struct amp_scale_t *scale, struct amp_info_t info);
-bool amp_scale_proc(struct amp_scale_t *scale, double *buf, struct amp_time_t *time, unsigned int len);
+bool amp_scale_proc(struct amp_scale_t *scale, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 #endif

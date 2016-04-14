@@ -5,7 +5,7 @@
  * local declarations
  */
 
-static struct amp_sect_inst_t *inst_new(double mix, struct amp_effect_t effect);
+static struct amp_sect_inst_t *inst_new(struct amp_effect_t effect);
 static void inst_delete(struct amp_sect_inst_t *inst);
 
 /*
@@ -46,7 +46,7 @@ struct amp_sect_t *amp_sect_copy(struct amp_sect_t *sect)
 	copy = amp_sect_new();
 
 	for(inst = sect->head; inst != NULL; inst = inst->next)
-		amp_sect_append(copy, inst->mix, amp_effect_copy(inst->effect));
+		amp_sect_append(copy, amp_effect_copy(inst->effect));
 
 	return copy;
 }
@@ -71,14 +71,13 @@ void amp_sect_delete(struct amp_sect_t *sect)
 /**
  * Prepend an effect to a section.
  *   @sect: The section.
- *   @mix: The mix.
  *   @effect: The effect.
  */
-void amp_sect_prepend(struct amp_sect_t *sect, double mix, struct amp_effect_t effect)
+void amp_sect_prepend(struct amp_sect_t *sect, struct amp_effect_t effect)
 {
 	struct amp_sect_inst_t *inst;
 
-	inst = inst_new(mix, effect);
+	inst = inst_new(effect);
 	inst->next = sect->head;
 	inst->prev = NULL;
 	*(sect->head ? &sect->head->prev : &sect->tail) = inst;
@@ -88,14 +87,13 @@ void amp_sect_prepend(struct amp_sect_t *sect, double mix, struct amp_effect_t e
 /**
  * Append an effect to a section.
  *   @sect: The section.
- *   @mix: The mix.
  *   @effect: The effect.
  */
-void amp_sect_append(struct amp_sect_t *sect, double mix, struct amp_effect_t effect)
+void amp_sect_append(struct amp_sect_t *sect, struct amp_effect_t effect)
 {
 	struct amp_sect_inst_t *inst;
 
-	inst = inst_new(mix, effect);
+	inst = inst_new(effect);
 	inst->prev = sect->tail;
 	inst->next = NULL;
 	*(sect->tail ? &sect->tail->next : &sect->head) = inst;
@@ -125,25 +123,11 @@ struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env,
 		fail("Type error. Chain requires a list of effects as input.");
 
 	for(link = value->data.list.head; link != NULL; link = link->next) {
-		if(link->value->type == ml_value_tuple_e) {
-			struct ml_tuple_t tuple = link->value->data.tuple;
+		box = amp_unbox_value(link->value, amp_box_effect_e);
+		if(box == NULL)
+			fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
 
-			if(tuple.len != 2)
-				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
-
-			box = amp_unbox_value(tuple.value[1], amp_box_effect_e);
-			if((tuple.value[0]->type != ml_value_num_e) || (box == NULL))
-				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
-
-			amp_sect_append(sect, tuple.value[0]->data.num, amp_effect_copy(box->data.effect));
-		}
-		else {
-			box = amp_unbox_value(link->value, amp_box_effect_e);
-			if(box == NULL)
-				fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
-
-			amp_sect_append(sect, 1.0, amp_effect_copy(box->data.effect));
-		}
+		amp_sect_append(sect, amp_effect_copy(box->data.effect));
 	}
 
 	ml_value_delete(value);
@@ -171,9 +155,10 @@ void amp_sect_info(struct amp_sect_t *sect, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	bool cont = false;
 	struct amp_sect_inst_t *inst;
@@ -184,20 +169,7 @@ bool amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time
 
 	for(inst = sect->head; inst != NULL; inst = inst->next) {
 		dsp_copy_d(buf, in, len);
-
-		if(inst->mix == 1.0)
-			cont |= amp_effect_proc(inst->effect, buf, time, len);
-		else {
-			unsigned int i;
-			double mix = inst->mix, tmp[len];
-
-			dsp_copy_d(tmp, buf, len);
-			cont |= amp_effect_proc(inst->effect, tmp, time, len);
-
-			for(i = 0; i < len; i++)
-				buf[i] = mix * tmp[i] + (1.0 - mix) * buf[i];
-		}
-
+		cont |= amp_effect_proc(inst->effect, buf, time, len, queue);
 		dsp_add_d(out, buf, len);
 	}
 
@@ -209,16 +181,14 @@ bool amp_sect_proc(struct amp_sect_t *sect, double *buf, struct amp_time_t *time
 
 /**
  * Create an instance.
- *   @mix: The mix.
  *   @effect: The effect.
  *   &returns: The instance.
  */
-static struct amp_sect_inst_t *inst_new(double mix, struct amp_effect_t effect)
+static struct amp_sect_inst_t *inst_new(struct amp_effect_t effect)
 {
 	struct amp_sect_inst_t *inst;
 
 	inst = malloc(sizeof(struct amp_sect_inst_t));
-	inst->mix = mix;
 	inst->effect = effect;
 
 	return inst;

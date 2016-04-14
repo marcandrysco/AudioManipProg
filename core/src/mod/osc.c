@@ -117,9 +117,10 @@ void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info)
  *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
+ *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len)
+bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	double t, freq[len];
 	unsigned int i, rate;
@@ -131,7 +132,7 @@ bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, u
 		warp = osc->warp->flt;
 		t = dsp_osc_unwarp(dsp_osc_warp(osc->t, osc->prev), warp);
 
-		amp_param_proc(osc->freq, freq, time, len);
+		amp_param_proc(osc->freq, freq, time, len, queue);
 
 		switch(osc->type) {
 		case amp_osc_sine_e:
