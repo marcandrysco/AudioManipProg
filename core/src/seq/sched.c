@@ -3,30 +3,31 @@
 
 /**
  * Schedule structure.
- *   @cur, head, tail: The current, head, and tail instances.
+ *   @root: Instance root.
+ *   @head, tail: The head and tail instances.
  */
 struct amp_sched_t {
-	struct amp_sched_inst_t *cur, *head, *tail;
+	struct avltree_root_t root;
+	struct amp_sched_inst_t *head, *tail;
 };
 
 /**
  * Instance structure.
  *   @time: The time.
- *   @event: The event
+ *   @len: The event list length.
+ *   @event: The event array.
+ *   @node: Tree node.
  *   @prev, next: The previous and next instances.
  */
 struct amp_sched_inst_t {
 	struct amp_time_t time;
-	struct amp_event_t event;
 
+	unsigned int len;
+	struct amp_event_t *event;
+
+	struct avltree_node_t node;
 	struct amp_sched_inst_t *prev, *next;
 };
-
-
-/*
- * local declarations
- */
-static struct amp_sched_inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time);
 
 /*
  * global variables
@@ -37,6 +38,14 @@ const struct amp_seq_i amp_sched_iface = {
 	(amp_copy_f)amp_sched_copy,
 	(amp_delete_f)amp_sched_delete
 };
+
+
+/*
+ * local declarations
+ */
+static struct amp_sched_inst_t *inst_get(struct avltree_node_t *node);
+static struct amp_sched_inst_t *inst_copy(struct amp_sched_inst_t *inst);
+static void inst_delete(struct amp_sched_inst_t *inst);
 
 
 bool amp_scan_time(struct amp_time_t *time, struct ml_value_t *value)
@@ -129,7 +138,8 @@ struct amp_sched_t *amp_sched_new(void)
 	struct amp_sched_t *sched;
 
 	sched = malloc(sizeof(struct amp_sched_t));
-	sched->cur = sched->head = sched->tail = NULL;
+	sched->head = sched->tail = NULL;
+	sched->root = avltree_root_init(amp_time_compare);
 
 	return sched;
 }
@@ -141,13 +151,13 @@ struct amp_sched_t *amp_sched_new(void)
  */
 struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched)
 {
-	struct amp_sched_inst_t *inst;
 	struct amp_sched_t *copy;
+	struct avltree_node_t *node;
 
 	copy = amp_sched_new();
 
-	for(inst = sched->head; inst != NULL; inst = inst->next)
-		amp_sched_add(copy, inst->time, inst->event);
+	for(node = avltree_root_first(&sched->root); node != NULL; node = avltree_node_next(node))
+		avltree_root_insert(&copy->root, &inst_copy(inst_get(node))->node);
 
 	return copy;
 }
@@ -158,13 +168,7 @@ struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched)
  */
 void amp_sched_delete(struct amp_sched_t *sched)
 {
-	struct amp_sched_inst_t *cur, *next;
-
-	for(cur = sched->head; cur != NULL; cur = next) {
-		next = cur->next;
-		free(cur);
-	}
-
+	avltree_root_destroy(&sched->root, offsetof(struct amp_sched_inst_t, node), (delete_f)inst_delete);
 	free(sched);
 }
 
@@ -177,31 +181,24 @@ void amp_sched_delete(struct amp_sched_t *sched)
  */
 void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp_event_t event)
 {
-	struct amp_sched_inst_t *inst, *cur;
+	struct avltree_node_t *node;
+	struct amp_sched_inst_t *inst;
 
-	inst = malloc(sizeof(struct amp_sched_inst_t));
-	inst->time = time;
-	inst->event = event;
+	node = avltree_root_lookup(&sched->root, &time);
+	if(node == NULL) {
+		inst = malloc(sizeof(struct amp_sched_inst_t));
+		inst->time = time;
+		inst->event = malloc(0);
+		inst->len = 0;
+		inst->node.ref = &inst->time;
 
-	if(sched->tail != NULL) {
-		cur = inst_before(sched, time);
-		if(cur == NULL) {
-			inst->next = sched->head;
-			inst->prev = NULL;
-			*(sched->head ? &sched->head->prev : &sched->tail) = inst;
-			sched->head = sched->cur = inst;
-		}
-		else {
-			*(cur->next ? &cur->next->prev : &sched->tail) = inst;
-			inst->prev = cur;
-			inst->next = cur->next;
-			cur->next = inst;
-		}
+		avltree_root_insert(&sched->root, &inst->node);
 	}
-	else {
-		inst->prev = inst->next = NULL;
-		sched->head = sched->tail = sched->cur = inst;
-	}
+	else
+		inst = getparent(node, struct amp_sched_inst_t, node);
+
+	inst->event = realloc(inst->event, (inst->len + 1) * sizeof(struct amp_event_t));
+	inst->event[inst->len++] = event;
 }
 
 /**
@@ -213,6 +210,14 @@ void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp
  */
 void amp_sched_info(struct amp_sched_t *sched, struct amp_info_t info)
 {
+	if(info.type == amp_info_init_e) {
+		struct avltree_node_t *node;
+
+		for(node = avltree_root_first(&sched->root); node != NULL; node = avltree_node_next(node)) {
+			inst_get(node)->prev = inst_get(avltree_node_prev(node) ?: avltree_root_last(&sched->root));
+			inst_get(node)->next = inst_get(avltree_node_next(node) ?: avltree_root_first(&sched->root));
+		}
+	}
 }
 
 /**
@@ -224,47 +229,61 @@ void amp_sched_info(struct amp_sched_t *sched, struct amp_info_t info)
  */
 void amp_sched_proc(struct amp_sched_t *sched, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	unsigned int i;
-	struct amp_sched_inst_t *cur;
-
-	if(sched->cur == NULL)
-		return;
+	unsigned int i, j;
+	struct amp_sched_inst_t *cur, *iter;
 
 	if(amp_time_cmp(time[0], time[len]) == 0)
 		return;
 
+	cur = inst_get(avltree_root_atleast(&sched->root, &time[0]) ?: avltree_root_first(&sched->root));
+	if(cur == NULL)
+		return;
+
 	for(i = 0; i < len; i++) {
-		cur = sched->cur;
+		iter = cur;
 
 		do {
-			if(!amp_time_between(cur->time, time[i], time[i+1]))
+			//if(i == 0)
+				//printf("hi? %d:%.2f %d:%.2f\n", time[0].bar, time[0].beat, iter->time.bar, iter->time.beat);
+			if(!amp_time_between(iter->time, time[i], time[i+1]))
 				break;
 
-			amp_queue_add(queue, (struct amp_action_t){ i, cur->event, queue });
+			for(j = 0; j < iter->len; j++)
+				amp_queue_add(queue, (struct amp_action_t){ i, iter->event[j], queue });
+		} while((iter = iter->next) != cur);
 
-			cur = cur->next ?: sched->head;
-		} while(cur != sched->cur);
-
-		sched->cur = cur;
+		cur = iter;
 	}
 
 }
 
-
+	
 /**
- * Fine the last instance before the given time.
- *   @sched: The schedule.
- *   @time: The time.
+ * Retrieve an instance from a node.
+ *   @node: The node, may be null.
  *   &returns: The instance or null.
  */
-static struct amp_sched_inst_t *inst_before(struct amp_sched_t *sched, struct amp_time_t time)
+static struct amp_sched_inst_t *inst_get(struct avltree_node_t *node)
 {
-	struct amp_sched_inst_t *inst;
+	return node ? getparent(node, struct amp_sched_inst_t, node) : NULL;
+}
 
-	for(inst = sched->tail; inst != NULL; inst = inst->prev) {
-		if(amp_time_cmp(inst->time, time) < 0)
-			return inst;
-	}
+static struct amp_sched_inst_t *inst_copy(struct amp_sched_inst_t *inst)
+{
+	struct amp_sched_inst_t *copy;
 
-	return NULL;
+	copy = malloc(sizeof(struct amp_sched_inst_t));
+	copy->time = inst->time;
+	copy->len = inst->len;
+	copy->node.ref = &copy->time;
+	copy->event = malloc(inst->len * sizeof(struct amp_event_t));
+	memcpy(copy->event, inst->event, inst->len * sizeof(struct amp_event_t));
+
+	return copy;
+}
+
+static void inst_delete(struct amp_sched_inst_t *inst)
+{
+	free(inst->event);
+	free(inst);
 }

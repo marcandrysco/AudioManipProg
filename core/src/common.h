@@ -62,6 +62,7 @@
 #include "efx/reverb.h"
 #include "efx/scale.h"
 #include "efx/sect.h"
+#include "efx/shaper.h"
 #include "efx/track.h"
 #include "efx/vol.h"
 
@@ -84,6 +85,7 @@
 #include "mod/synth.h"
 #include "mod/trig.h"
 
+#include "seq/enable.h"
 #include "seq/merge.h"
 #include "seq/player.h"
 #include "seq/repeat.h"

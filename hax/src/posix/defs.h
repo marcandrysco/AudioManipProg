@@ -2,6 +2,12 @@
 #define POSIX_DEFS_H
 
 /*
+ * common headers
+ */
+
+#include <poll.h>
+
+/*
  * common definitions 
  */
 typedef int sys_fd_t;

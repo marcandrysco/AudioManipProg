@@ -11,6 +11,10 @@ void *hax_malloc(size_t nbytes);
 void hax_free(void *ptr);
 char *hax_strdup(const char *str);
 
+void hax_inc(void);
+void hax_dec(void);
+
+
 static inline void erase(void *ptr)
 {
 	if(ptr != NULL)
@@ -41,5 +45,6 @@ static inline void _free(void *ptr) { free(ptr); }
 #define malloc hax_malloc
 #define free hax_free
 #define strdup hax_strdup
+
 
 #endif

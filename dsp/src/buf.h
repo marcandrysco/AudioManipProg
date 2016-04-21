@@ -20,6 +20,17 @@ void dsp_buf_delete(struct dsp_buf_t *buf);
 
 
 /**
+ * Delete a buffer if non-null.
+ *   @buf: The buffer.
+ */
+static inline void dsp_buf_erase(struct dsp_buf_t *buf)
+{
+	if(buf != NULL)
+		dsp_buf_delete(buf);
+}
+
+
+/**
  * Ring buffer structure.
  *   @i, len: The index and length.
  *   @arr: The array.

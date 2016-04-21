@@ -3,12 +3,12 @@
 
 /**
  * Snap structure.
- *   @pt, mod: The activation time and modulus time.
+ *   @time: The snap time.
  *   @len: The instance array length.
  *   @inst: The instance array.
  */
 struct amp_snap_t {
-	struct amp_time_t pt, mod;
+	struct amp_time_t time;
 
 	unsigned int len;
 	struct amp_snap_inst_t *inst;
@@ -43,15 +43,15 @@ const struct amp_seq_i amp_snap_iface = {
 
 /**
  * Create a new snap.
+ *   @time: The snap time.
  *   &returns: The snap.
  */
-struct amp_snap_t *amp_snap_new(struct amp_time_t pt, struct amp_time_t mod)
+struct amp_snap_t *amp_snap_new(struct amp_time_t time)
 {
 	struct amp_snap_t *snap;
 
 	snap = malloc(sizeof(struct amp_snap_t));
-	snap->pt = pt;
-	snap->mod = mod;
+	snap->time = time;
 	snap->len = 0;
 	snap->inst = malloc(0);
 
@@ -67,7 +67,7 @@ struct amp_snap_t *amp_snap_copy(struct amp_snap_t *snap)
 {
 	struct amp_snap_t *copy;
 
-	copy = amp_snap_new(snap->pt, snap->mod);
+	copy = malloc(sizeof(struct amp_snap_t));
 	copy->len = snap->len;
 	copy->inst = malloc(copy->len * sizeof(struct amp_snap_inst_t));
 	memcpy(copy->inst, snap->inst, copy->len * sizeof(struct amp_snap_inst_t));
@@ -96,34 +96,35 @@ void amp_snap_delete(struct amp_snap_t *snap)
 char *amp_snap_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 #define onexit amp_snap_delete(snap);
-#define errstr "Type error. Snap expects type '((float,int,int),(float,int,int),[(int,int)])'."
+#define errstr "Type error. Snap expects type '((float,int,float),[(int,int)])'."
 	struct amp_snap_t *snap;
 	struct ml_link_t *link;
 	struct ml_tuple_t tuple;
-	struct amp_time_t pt, mod;
+	struct amp_time_t time;
 
 	if(value->type != ml_value_tuple_e)
 		return mprintf(errstr);
 
 	tuple = value->data.tuple;
-	if(tuple.len != 3)
+	if(tuple.len != 2)
 		return mprintf(errstr);
 
-	if(!make_time(&pt, tuple.value[0]) || !make_time(&pt, tuple.value[1]))
+	if(!make_time(&time, tuple.value[0]))
 		return mprintf(errstr);
 
-	snap = amp_snap_new(pt, mod);
+	snap = amp_snap_new(time);
 
-	if(tuple.value[2]->type != ml_value_list_e)
-		fail("Type error. Toggle expects type '[(int,int)]'.");
+	if(tuple.value[1]->type != ml_value_list_e)
+		fail(errstr);
 
-	for(link = tuple.value[2]->data.list.head; link != NULL; link = link->next) {
+	for(link = tuple.value[1]->data.list.head; link != NULL; link = link->next) {
 		struct amp_id_t id;
 
 		chkfail(amp_match_unpack(ml_value_copy(link->value), "(d,d)", &id.dev, &id.key));
 		amp_snap_add(snap, id);
 	}
 
+	ml_value_delete(value);
 	*ret = amp_pack_seq((struct amp_seq_t){ snap, &amp_snap_iface });
 	return NULL;
 #undef onexit
@@ -198,6 +199,51 @@ void amp_snap_info(struct amp_snap_t *snap, struct amp_info_t info)
  *   @len: The length.
  *   @queue: The action queue.
  */
+
+struct amp_snap_inst_t *contains(struct amp_snap_t *snap, struct amp_event_t *event)
+{
+	unsigned int i;
+
+	for(i = 0; i < snap->len; i++) {
+		if((snap->inst[i].id.dev == event->dev) && (snap->inst[i].id.key == event->key))
+			return &snap->inst[i];
+	}
+
+	return false;
+}
 void amp_snap_proc(struct amp_snap_t *snap, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
+	unsigned int i, n = 0;
+	struct amp_time_t left, right;
+	struct amp_action_t *action;
+	struct amp_snap_inst_t *inst;
+
+	left = time[0];
+	for(i = 0; i < len; i++) {
+		right = time[i+1];
+
+		while((action = amp_queue_get(queue, n, i)) != NULL) {
+			if((inst = contains(snap, &action->event)) != NULL) {
+				inst->cur = action->event.val;
+				amp_queue_remove(queue, n);
+			}
+			else
+				n++;
+		}
+
+		if(amp_time_between(snap->time, left, right)) {
+			unsigned int j;
+
+			for(j = 0; j < snap->len; j++) {
+				struct amp_snap_inst_t *inst = &snap->inst[i];
+
+				if(inst->prev != inst->cur)
+					;
+			}
+
+			printf("beep\n");
+		}
+
+		left = right;
+	}
 }

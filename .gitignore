@@ -1,6 +1,7 @@
 Makefile
 config.args
 config.h
+inc.h
 
 *.a
 *.d

@@ -46,6 +46,7 @@ setconf()
   c_src "src/efx/reverb.c"
   c_src "src/efx/scale.c"
   c_src "src/efx/sect.c"
+  c_src "src/efx/shaper.c"
   c_src "src/efx/track.c"
   c_src "src/efx/vol.c"
 
@@ -68,6 +69,7 @@ setconf()
   c_src "src/mod/synth.c"
   c_src "src/mod/trig.c"
 
+  c_src "src/seq/enable.c"
   c_src "src/seq/merge.c"
   c_src "src/seq/player.c"
   c_src "src/seq/repeat.c"

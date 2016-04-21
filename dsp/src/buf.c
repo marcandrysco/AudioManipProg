@@ -45,7 +45,7 @@ struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int
 	len = dsp_rerate(info.frames, rate, info.samplerate);
 
 	buf = malloc(sizeof(struct dsp_buf_t) + len * sizeof(float));
-	buf->len = info.frames;
+	buf->len = len;
 
 	data = malloc(info.frames * info.channels * sizeof(float));
 

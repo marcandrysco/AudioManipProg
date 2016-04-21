@@ -27,6 +27,9 @@ let amp2db v = 20 * log v / log 10
 
 (* compute amplitude from decibels *)
 let db2amp v = pow 10 (v / 20)
+let db v = db2amp v
+let gain v = db2amp v
+let cut v = db2amp (-v)
 
 
 (* create a sequence from low to high *)

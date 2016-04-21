@@ -173,7 +173,7 @@ struct avltree_node_t *avltree_root_atleast(struct avltree_root_t *root, const v
 	while(node != NULL) {
 		prev = node;
 
-		cmp = root->compare(ref, node->ref);
+		cmp = root->compare(node->ref, ref);
 		if(cmp < 0)
 			node = node->right;
 		else if(cmp > 0)
@@ -182,7 +182,7 @@ struct avltree_node_t *avltree_root_atleast(struct avltree_root_t *root, const v
 			return node;
 	}
 
-	if(cmp > 0)
+	if(cmp < 0)
 		return avltree_node_next(prev);
 	else
 		return prev;
@@ -202,7 +202,7 @@ struct avltree_node_t *avltree_root_atmost(struct avltree_root_t *root, const vo
 	while(node != NULL) {
 		prev = node;
 
-		cmp = root->compare(ref, node->ref);
+		cmp = root->compare(node->ref, ref);
 		if(cmp < 0)
 			node = node->right;
 		else if(cmp > 0)
@@ -211,7 +211,7 @@ struct avltree_node_t *avltree_root_atmost(struct avltree_root_t *root, const vo
 			return node;
 	}
 
-	if(cmp < 0)
+	if(cmp > 0)
 		return avltree_node_prev(prev);
 	else
 		return prev;

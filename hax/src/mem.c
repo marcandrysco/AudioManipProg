@@ -70,3 +70,28 @@ char *hax_strdup(const char *str)
 
 	return dup;
 }
+
+
+/**
+ * Increment the resource usage.
+ */
+void hax_inc(void)
+{
+#if DEBUG
+	sys_mutex_lock(&lock);
+	hax_memcnt++;
+	sys_mutex_unlock(&lock);
+#endif
+}
+
+/**
+ * Decrement the resource usage.
+ */
+void hax_dec(void)
+{
+#if DEBUG
+	sys_mutex_lock(&lock);
+	hax_memcnt--;
+	sys_mutex_unlock(&lock);
+#endif
+}

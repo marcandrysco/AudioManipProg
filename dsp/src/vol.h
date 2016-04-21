@@ -3,11 +3,11 @@
 
 /**
  * Volume tracker structure.
- *   @s: The state.
+ *   @s, v: The state and current volume.
  *   @c: The filter constant.
  */
 struct dsp_vol_t {
-	double s;
+	double s, v;
 	struct dsp_lpf_t c;
 };
 

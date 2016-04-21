@@ -8,7 +8,7 @@ struct amp_snap_t;
 
 extern const struct amp_seq_i amp_snap_iface;
 
-struct amp_snap_t *amp_snap_new(struct amp_time_t pt, struct amp_time_t mod);
+struct amp_snap_t *amp_snap_new(struct amp_time_t time);
 struct amp_snap_t *amp_snap_copy(struct amp_snap_t *snap);
 void amp_snap_delete(struct amp_snap_t *snap);
 

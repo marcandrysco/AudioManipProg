@@ -15,7 +15,6 @@
  *   @am_format_16bit_e: 16-bit.
  *   @am_format_24bit_e: 24-bit.
  */
-
 enum amp_format_e {
 	amp_format_8bit_e,
 	amp_format_16bit_e,
@@ -24,12 +23,19 @@ enum amp_format_e {
 
 
 /**
+ * Audio information structure.
+ *   @rate: The sample rate.
+ */
+struct amp_audio_info_t {
+	unsigned int rate;
+};
+
+/**
  * Audio processing function.
  *   @buf: The buffer.
  *   @len: The length.
  *   @arg: The argument.
  */
-
 typedef void (*amp_audio_f)(double **buf, unsigned int len, void *arg);
 
 
@@ -64,7 +70,6 @@ typedef void *(*amp_audio_close_f)(void *ref);
  *   @func: The callback function.
  *   @arg: The callback argument.
  */
-
 typedef void (*amp_audio_exec_f)(void *ref, amp_audio_f func, void *arg);
 
 /**
@@ -73,9 +78,14 @@ typedef void (*amp_audio_exec_f)(void *ref, amp_audio_f func, void *arg);
  *   @func: The function.
  *   @arg: The argument.
  */
-
 typedef void (*amp_audio_halt_f)(void *ref);
 
+/**
+ * Retrieve Audio information.
+ *   @ref: The reference.
+ *   &returns: The information structure.
+ */
+typedef struct amp_audio_info_t (*amp_audio_info_f)(void *ref);
 
 /**
  * Audio interface.
@@ -84,12 +94,12 @@ typedef void (*amp_audio_halt_f)(void *ref);
  *   @exec: Execute.
  *   @halt: Halt.
  */
-
 struct amp_audio_i {
 	amp_audio_open_f open;
 	amp_audio_close_f close;
 	amp_audio_exec_f exec;
 	amp_audio_halt_f halt;
+	amp_audio_info_f info;
 };
 
 /**
@@ -97,7 +107,6 @@ struct amp_audio_i {
  *   @ref: The reference.
  *   @iface; The interface.
  */
-
 struct amp_audio_t {
 	void *ref;
 	const struct amp_audio_i *iface;
@@ -109,7 +118,6 @@ struct amp_audio_t {
  *   @iface: The interface.
  *   &returns: The audio device.
  */
-
 static inline struct amp_audio_t amp_audio_open(const char *conf, const struct amp_audio_i *iface)
 {
 	return (struct amp_audio_t){ iface->open(conf), iface };
@@ -119,7 +127,6 @@ static inline struct amp_audio_t amp_audio_open(const char *conf, const struct a
  * Close an audio device.
  *   @audio: The audio device.
  */
-
 static inline void amp_audio_close(struct amp_audio_t audio)
 {
 	audio.iface->close(audio.ref);
@@ -131,7 +138,6 @@ static inline void amp_audio_close(struct amp_audio_t audio)
  *   @func: The function.
  *   @arg: The argument.
  */
-
 static inline void amp_audio_exec(struct amp_audio_t audio, amp_audio_f func, void *arg)
 {
 	audio.iface->exec(audio.ref, func, arg);
@@ -141,10 +147,19 @@ static inline void amp_audio_exec(struct amp_audio_t audio, amp_audio_f func, vo
  * Halt an audio device.
  *   @audio: The audio device.
  */
-
 static inline void amp_audio_halt(struct amp_audio_t audio)
 {
 	audio.iface->halt(audio.ref);
+}
+
+/**
+ * Retrieve audio information from a device.
+ *   @audio: The audio device.
+ *   &returns: The information structure.
+ */
+static inline struct amp_audio_info_t amp_audio_info(struct amp_audio_t audio)
+{
+	return audio.iface->info(audio.ref);
 }
 
 

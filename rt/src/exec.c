@@ -191,20 +191,6 @@ static void callback(double **buf, unsigned int len, void *arg)
 	while(amp_comm_read(engine->comm, &event))
 		amp_queue_add(&queue, (struct amp_action_t){ 0, event });
 
-		/*
-		if(engine->seq.iface != NULL)
-			amp_seq_info(engine->seq, amp_info_action(&action));
-
-		if(engine->instr.iface != NULL)
-			amp_instr_info(engine->instr, amp_info_action(&action));
-
-		if(engine->effect[0].iface != NULL)
-			amp_effect_info(engine->effect[0], amp_info_action(&action));
-
-		if(engine->effect[1].iface != NULL)
-			amp_effect_info(engine->effect[1], amp_info_action(&action));
-			*/
-
 	if(engine->seq.iface != NULL)
 		amp_seq_proc(engine->seq, time, len, &queue);
 

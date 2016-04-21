@@ -23,8 +23,8 @@ struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm, struct
 	engine->lock = sys_mutex_init(0);
 	engine->sync = sys_mutex_init(0);
 	engine->run = engine->toggle = false;
-	engine->core = amp_core_new(96000);
-	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, 96000));
+	engine->core = amp_core_new(amp_audio_info(audio).rate);
+	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, amp_audio_info(audio).rate));
 	engine->seq = amp_seq_null;
 	engine->instr = amp_instr_null;
 	engine->comm = comm ?: amp_comm_new();

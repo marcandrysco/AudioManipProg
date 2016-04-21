@@ -172,7 +172,7 @@ void hax_printf(const char *restrict format, ...)
  */
 noreturn void hax_vfatal(const char *restrict format, va_list args)
 {
-	d_vfprintf(stderr, format, args);
+	vfprintf(stderr, format, args);
 	fputc('\n', stderr);
 
 	abort();

@@ -2,53 +2,6 @@
 
 
 /**
- * Random storage structure.
- *   @x, y, z, w: Storage data.
- */
-struct m_rand_t {
-	uint32_t x, y, z, w;
-};
-
-/**
- * Initialize a random number generator.
- *   @seed: The seed.
- *   &returns; The random generator.
- */
-struct m_rand_t m_rand_init(uint32_t seed)
-{
-	return (struct m_rand_t){ 123456789, 362436069, 521288629, seed * 1049141 };
-}
-
-/**
- * Retrieve the next number from the generator.
- *   @rand: The number generator.
- *   &returns: The next number.
- */
-uint32_t m_rand_next(struct m_rand_t *rand)
-{
-	  uint32_t t;
-
-	  t = rand->x ^ (rand->x << 11);
-	  rand->x = rand->y;
-	  rand->y = rand->z;
-	  rand->z = rand->w;
-	  rand->w = rand->w ^ (rand->w >> 19) ^ (t ^ (t >> 8));
-
-	  return rand->w;
-}
-
-/**
- * Retrieve a random number between the values zero and one.
- *   @rand: The number generator.
- *   &returns: The next number.
- */
-double m_rand_d(struct m_rand_t *rand)
-{
-	return m_rand_next(rand) / (double)UINT32_MAX;
-}
-
-
-/**
  * Noise structure.
  *   @rand: The random number generator.
  */

@@ -13,4 +13,6 @@ void pulse_audio_close(struct pulse_audio_t *audio);
 void pulse_audio_exec(struct pulse_audio_t *audio, amp_audio_f func, void *arg);
 void pulse_audio_halt(struct pulse_audio_t *audio);
 
+struct amp_audio_info_t pulse_audio_info(struct pulse_audio_t *audio);
+
 #endif

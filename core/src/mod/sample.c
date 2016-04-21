@@ -18,7 +18,7 @@ struct play_t {
  *   @decay: The decay rate.
  *   @len: The velocity array length.
  *   @vel: The velocity array.
- *   @n: The number of players.
+ *   @i, n: The current index and number of players.
  *   @play: The player array.
  */
 struct amp_sample_t {
@@ -27,7 +27,7 @@ struct amp_sample_t {
 	unsigned int len;
 	struct amp_sample_vel_t *vel;
 
-	unsigned int n;
+	unsigned int i, n;
 	struct play_t play[];
 };
 
@@ -77,6 +77,7 @@ struct amp_sample_t *amp_sample_new(unsigned int n, double decay)
 	sample = malloc(sizeof(struct amp_sample_t) + n * sizeof(struct play_t));
 	sample->len = 0;
 	sample->vel = malloc(0);
+	sample->i = 0;
 	sample->n = n;
 	sample->decay = decay;
 
@@ -227,27 +228,22 @@ struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *en
 void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 {
 	if(info.type == amp_info_note_e) {
-		unsigned int i, n;
+		unsigned int n;
 		struct amp_sample_vel_t *vel;
 
 		if(info.data.note->vel == 0.0)
 			return;
 
-		for(i = 0; i < sample->n; i++) {
-			if(sample->play[i].idx == INT_MAX)
-				break;
-		}
-
-		if(i == sample->n)
-			return;
-
 		n = info.data.note->vel * sample->len;
 		vel = &sample->vel[(n >= sample->len) ? (sample->len - 1) : n];
 
-		sample->play[i].buf = vel->inst[vel->rr].buf;
-		sample->play[i].vol = 1.0;
-		sample->play[i].idx = -info.data.note->delay;
+		sample->play[sample->i].buf = vel->inst[vel->rr].buf;
+		sample->play[sample->i].vol = 1.0;
+		sample->play[sample->i].idx = -info.data.note->delay;
 
+		sample->play[(sample->i + sample->n - 1) % sample->n].vol *= sample->decay;
+
+		sample->i = (sample->i + 1) % sample->n;
 		vel->rr = (vel->rr + 1) % vel->len;
 	}
 }
@@ -284,7 +280,10 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 			else if(idx < 0)
 				continue;
 
-			buf[i] += play->buf->arr[idx];
+			buf[i] += play->vol * play->buf->arr[idx];
+
+			if(play->vol < 1.0)
+				play->vol *= sample->decay;
 		}
 
 		play->idx = (idx < (int)play->buf->len) ? idx : INT_MAX;

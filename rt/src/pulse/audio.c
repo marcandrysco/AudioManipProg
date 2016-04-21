@@ -33,7 +33,8 @@ const struct amp_audio_i pulse_audio_iface = {
 	(amp_audio_open_f)pulse_audio_open,
 	(amp_audio_close_f)pulse_audio_close,
 	(amp_audio_exec_f)pulse_audio_exec,
-	(amp_audio_halt_f)pulse_audio_halt
+	(amp_audio_halt_f)pulse_audio_halt,
+	(amp_audio_info_f)pulse_audio_info
 };
 
 
@@ -48,7 +49,7 @@ struct pulse_audio_t *pulse_audio_open(const char *conf)
 	struct pulse_audio_t *audio;
 
 	audio = malloc(sizeof(struct pulse_audio_t));
-	audio->conf = (struct pulse_conf_t){ 2, 2, 48000, 150.0f };
+	audio->conf = (struct pulse_conf_t){ 2, 2, 96000, 150.0f };
 	//audio->conf;
 
 	return audio;
@@ -84,6 +85,17 @@ void pulse_audio_exec(struct pulse_audio_t *audio, amp_audio_f func, void *arg)
 void pulse_audio_halt(struct pulse_audio_t *audio)
 {
 	pulse_conn_close(audio->conn);
+}
+
+
+/**
+ * Retrieve audio information.
+ *   @audio: The audio device.
+ *   &returns: The information structure.
+ */
+struct amp_audio_info_t pulse_audio_info(struct pulse_audio_t *audio)
+{
+	return (struct amp_audio_info_t){ audio->conf.rate };
 }
 
 

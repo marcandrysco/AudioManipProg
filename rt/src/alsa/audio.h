@@ -12,4 +12,6 @@ void alsa_audio_close(struct alsa_audio_t *audio);
 void alsa_audio_exec(struct alsa_audio_t *audio, amp_audio_f func, void *arg);
 void alsa_audio_halt(struct alsa_audio_t *audio);
 
+struct amp_audio_info_t alsa_audio_info(struct alsa_audio_t *audio);
+
 #endif

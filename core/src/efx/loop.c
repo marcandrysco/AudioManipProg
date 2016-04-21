@@ -5,6 +5,7 @@
 /**
  * Loop structure.
  *   @path: The file path.
+ *   @len: The buffer length.
  *   @buf: The buffer.
  *   @on: The writing flag.
  *   @off: The offset and modulus times.
@@ -14,6 +15,7 @@
  */
 struct amp_loop_t {
 	char *path;
+	unsigned int len;
 	struct dsp_buf_t *buf;
 
 	bool on;
@@ -51,7 +53,8 @@ struct amp_loop_t *amp_loop_new(char *path, struct amp_time_t mod, unsigned int 
 
 	loop = malloc(sizeof(struct amp_loop_t));
 	loop->path = path;
-	loop->buf = dsp_buf_new(len);
+	loop->len = len;
+	loop->buf = NULL;
 	loop->off = (struct amp_time_t){ INT_MIN, INT_MIN, 0.0 };
 	loop->mod = mod;
 	loop->rec = rec;
@@ -72,7 +75,7 @@ struct amp_loop_t *amp_loop_new(char *path, struct amp_time_t mod, unsigned int 
  */
 struct amp_loop_t *amp_loop_copy(struct amp_loop_t *loop)
 {
-	return amp_loop_new(strdup(loop->path), loop->mod, loop->buf->len, loop->rec);
+	return amp_loop_new(strdup(loop->path), loop->mod, loop->len, loop->rec);
 }
 
 /**
@@ -81,7 +84,7 @@ struct amp_loop_t *amp_loop_copy(struct amp_loop_t *loop)
  */
 void amp_loop_delete(struct amp_loop_t *loop)
 {
-	dsp_buf_delete(loop->buf);
+	dsp_buf_erase(loop->buf);
 	free(loop->path);
 	free(loop);
 }
@@ -122,6 +125,9 @@ char *amp_loop_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
  */
 void amp_loop_info(struct amp_loop_t *loop, struct amp_info_t info)
 {
+	if(info.type == amp_info_init_e) {
+		loop->buf = dsp_buf_new(loop->len);
+	}
 }
 
 
@@ -152,20 +158,19 @@ bool amp_loop_proc(struct amp_loop_t *loop, double *buf, struct amp_time_t *time
 
 		if(event != NULL) {
 			if(event->val > 0) {
-				printf("REC!\n");
 				loop->on = true;
 				loop->wr = 0;
-				loop->off = time[i];
+				loop->off = amp_time_mod(time[i], loop->mod);
 				loop->sel = 0;
 
 				for(j = 0; j < AMP_LOOP_CNT; j++)
 					loop->rd[j] = INT_MAX;
 			}
 			else
-				printf("off!\n"),
 				loop->on = false;
 		}
-		else if(!amp_time_isequal(left, right)) {
+
+		if(!amp_time_isequal(left, right)) {
 			if(amp_time_between(loop->off, left, right) && (loop->wr > 0)) {
 				loop->sel = (loop->sel - 1 + AMP_LOOP_CNT) % AMP_LOOP_CNT;
 				loop->rd[loop->sel] = 0;
@@ -190,63 +195,6 @@ bool amp_loop_proc(struct amp_loop_t *loop, double *buf, struct amp_time_t *time
 
 		left = right;
 	}
-	/*
-	unsigned int i, j, n = 0;
-
-	for(i = 0; i < len; i++) {
-		double v = 0;
-		struct amp_event_t *event;
-
-		while((event = amp_queue_event(queue, &n, i)) != NULL) {
-			if((event->dev == loop->rec.dev) && (event->key == loop->rec.key))
-				loop->wr = (event->val > 0) ? 0 : INT_MAX;
-
-			printf("loop->wr: %d\n", !loop->wr);
-
-			if((event->dev == loop->play.dev) && (event->key == loop->play.key)) {
-				unsigned int i;
-
-				if(event->val > 0) {
-					for(i = 0; i < loop->n; i++) {
-						if(loop->rd[i] == INT_MAX)
-							break;
-					}
-
-					if(i < loop->n)
-						loop->rd[i] = 0;
-				}
-				else {
-					for(i = 0; i < loop->n; i++)
-						loop->rd[i] = INT_MAX;
-				}
-			}
-		}
-
-		for(j = 0; j < loop->n; j++) {
-			if(loop->rd[j] == INT_MAX)
-				continue;
-
-			if(loop->rd[j] < loop->max)
-				v += loop->buf->arr[loop->rd[j]++];
-			else
-				loop->rd[j] = INT_MAX;
-		}
-
-		if(loop->wr != INT_MAX) {
-			if(loop->wr < loop->buf->len) {
-				loop->buf->arr[loop->wr] = buf[i];
-				if(loop->wr > loop->max)
-					loop->max = loop->wr;
-
-				loop->wr++;
-			}
-			else
-				loop->wr = INT_MAX;
-		}
-
-		buf[i] = v;
-	}
-	*/
 
 	return false;
 }

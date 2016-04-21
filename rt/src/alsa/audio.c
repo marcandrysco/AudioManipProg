@@ -9,7 +9,6 @@
  *   @name, hack: The name and hack.
  *   @rate, in, out, period, nperiod: The stream parameters.
  */
-
 struct alsa_conf_t {
 	char name[32], hack[32];
 	unsigned int rate, in, out, period, nperiod;
@@ -24,7 +23,6 @@ struct alsa_conf_t {
  *   @func: The audio function.
  *   @arg: The function argument.
  */
-
 struct alsa_audio_t {
 	snd_pcm_t *capture, *playback;
 	snd_pcm_format_t format;
@@ -45,7 +43,6 @@ struct alsa_audio_t {
 /*
  * local declarations
  */
-
 static int audio_find(const char *id);
 static void audio_conf(struct alsa_conf_t *conf, const char *str);
 
@@ -61,12 +58,12 @@ static void float2pcm(uint8_t *restrict raw, double **restrict data, snd_pcm_for
 /*
  * global variables.
  */
-
 const struct amp_audio_i alsa_audio_iface = {
 	(amp_audio_open_f)alsa_audio_open,
 	(amp_audio_close_f)alsa_audio_close,
 	(amp_audio_exec_f)alsa_audio_exec,
-	(amp_audio_halt_f)alsa_audio_halt
+	(amp_audio_halt_f)alsa_audio_halt,
+	(amp_audio_info_f)alsa_audio_info
 };
 
 void unquote(const char **ptr, char *dest, unsigned int len)
@@ -317,7 +314,6 @@ void alsa_audio_exec(struct alsa_audio_t *audio, amp_audio_f func, void *arg)
  * Halt the ALSA audio device.
  *  @audio: The audio device.
  */
-
 void alsa_audio_halt(struct alsa_audio_t *audio)
 {
 	int err;
@@ -345,13 +341,23 @@ void alsa_audio_halt(struct alsa_audio_t *audio)
 
 
 /**
+ * Retrieve audio information.
+ *   @audio: The audio device.
+ *   &returns: The information structure.
+ */
+struct amp_audio_info_t alsa_audio_info(struct alsa_audio_t *audio)
+{
+	return (struct amp_audio_info_t){ audio->conf.rate };
+}
+
+
+/**
  * Configure a PCM device.
  *   @pcm: The PCM device.
  *   @stream: The stream type.
  *   @conf: The configuration paratemers.
  *   @format: The configured format.
  */
-
 static void pcm_conf(snd_pcm_t *pcm, snd_pcm_stream_t stream, const struct alsa_conf_t *conf, snd_pcm_format_t *format)
 {
 	static snd_pcm_format_t formatlist[] = {
@@ -456,7 +462,6 @@ static void pcm_conf(snd_pcm_t *pcm, snd_pcm_stream_t stream, const struct alsa_
  *   @arg: The device argument.
  *   &returns: Always 'NULL'.
  */
-
 static void *pcm_thread(void *arg)
 {
 	int err;
@@ -524,6 +529,9 @@ static void *pcm_thread(void *arg)
 			pcm2float(buf, raw, audio->format, count, chan);
 
 			audio->func(buf, count, audio->arg);
+			dsp_clamp_d(buf[0], count);
+			dsp_clamp_d(buf[1], count);
+
 #if PULSE
 			if(audio->hack != NULL)
 				pulse_hack_proc(audio->hack, buf, count);
@@ -552,7 +560,6 @@ static void *pcm_thread(void *arg)
  * Prepare data on a PCM device.
  *   @audio: The audio device.
  */
-
 static void pcm_prepare(struct alsa_audio_t *audio, void *raw)
 {
 	int err;
@@ -589,7 +596,6 @@ static void pcm_prepare(struct alsa_audio_t *audio, void *raw)
  * Drop data on a PCM device.
  *   @device: The audio device.
  */
-
 static void pcm_drop(struct alsa_audio_t *device)
 {
 	int err;
@@ -612,7 +618,6 @@ static void pcm_drop(struct alsa_audio_t *device)
  *   @format: The given format type.
  *   &returns: The size of a single data element.
  */
-
 static unsigned short pcm_size(snd_pcm_format_t format)
 {
 	switch(format) {

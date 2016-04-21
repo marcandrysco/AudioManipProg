@@ -83,6 +83,20 @@ static inline void amp_queue_remove(struct amp_queue_t *queue, unsigned int idx)
 	queue->idx--;
 }
 
+static inline struct amp_action_t *amp_queue_get(struct amp_queue_t *queue, unsigned int n, unsigned int idx)
+{
+	struct amp_action_t *action;
+
+	if(n >= queue->idx)
+		return NULL;
+
+	action = &queue->arr[n];
+	if(action->delay > idx)
+		return NULL;
+
+	return action;
+}
+
 /**
  * Retrieve the next action from the queue.
  *   @queue: The queue.
