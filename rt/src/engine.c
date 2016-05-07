@@ -13,7 +13,7 @@ static void notify(const char *path, void *arg);
  *   @audio: The audio interface.
  *   &returns: The engine.
  */
-struct amp_engine_t *amp_engine_new(char **list, struct amp_comm_t *comm, struct amp_audio_t audio)
+struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, struct amp_audio_t audio)
 {
 	const char *iface;
 	struct amp_engine_t *engine;

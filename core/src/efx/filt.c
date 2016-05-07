@@ -107,6 +107,44 @@ struct amp_filt_t *amp_filt_hpf(struct amp_param_t *freq, double rate)
 }
 
 /**
+ * Create a state-variable low-pass filter.
+ *   @freq: The frequency.
+ *   @res: The resonance.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_svlpf(struct amp_param_t *freq, struct amp_param_t *res, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_svlpf_e, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(res);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+	amp_param_set(&filt->param[amp_filt_opt_res_e], res);
+
+	return filt;
+}
+
+/**
+ * Create a state-variable high-pass filter.
+ *   @freq: The frequency.
+ *   @res: The resonance.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_svhpf(struct amp_param_t *freq, struct amp_param_t *res, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_svhpf_e, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(res);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+	amp_param_set(&filt->param[amp_filt_opt_res_e], res);
+
+	return filt;
+}
+
+/**
  * Create a peaking filter.
  *   @freq: The frequency.
  *   @gain: The gain.
@@ -162,6 +200,108 @@ struct amp_filt_t *amp_filt_moog(struct amp_param_t *freq, struct amp_param_t *r
 	filt->fast = amp_param_isfast(freq) && amp_param_isfast(res);
 	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
 	amp_param_set(&filt->param[amp_filt_opt_res_e], res);
+
+	return filt;
+}
+
+/**
+ * Create a 2nd-order butterworth low-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter2low(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter2low_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a 2nd-order butterworth high-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter2high(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter2high_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a 3rd-order butterworth low-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter3low(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter3low_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a 3rd-order butterworth high-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter3high(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter3high_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a 4th-order butterworth low-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter4low(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter4low_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+
+	return filt;
+}
+
+/**
+ * Create a 4th-order butterworth high-pass filter.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_butter4high(struct amp_param_t *freq, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_butter4high_e, rate);
+	filt->fast = amp_param_isfast(freq);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
 
 	return filt;
 }
@@ -231,6 +371,30 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 		break;
 
+	case amp_filt_svlpf_e:
+		if(!filt->fast) {
+		}
+		else {
+			struct dsp_svf_t c = dsp_svf_init(filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_res_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_svf_low(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_svhpf_e:
+		if(!filt->fast) {
+		}
+		else {
+			struct dsp_svf_t c = dsp_svf_init(filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_res_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_svf_high(buf[i], c, filt->s);
+		}
+
+		break;
+
 	case amp_filt_peak_e:
 		if(!filt->fast) {
 			double freq[len], gain[len], qual[len], rate = filt->rate;
@@ -288,6 +452,114 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 		}
 
 		break;
+
+	case amp_filt_butter2low_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter2low_proc(buf[i], dsp_butter2low_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter2low_t c = dsp_butter2low_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter2low_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_butter2high_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter2high_proc(buf[i], dsp_butter2high_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter2high_t c = dsp_butter2high_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter2high_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_butter3low_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter3low_proc(buf[i], dsp_butter3low_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter3low_t c = dsp_butter3low_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter3low_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_butter3high_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter3high_proc(buf[i], dsp_butter3high_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter3high_t c = dsp_butter3high_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter3high_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_butter4low_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter4low_proc(buf[i], dsp_butter4low_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter4low_t c = dsp_butter4low_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter4low_proc(buf[i], c, filt->s);
+		}
+
+		break;
+
+	case amp_filt_butter4high_e:
+		if(!filt->fast) {
+			double freq[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter4high_proc(buf[i], dsp_butter4high_init(freq[i], filt->rate), filt->s);
+		}
+		else {
+			struct dsp_butter4high_t c = dsp_butter4high_init(filt->param[amp_filt_opt_freq_e]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_butter4high_proc(buf[i], c, filt->s);
+		}
+
+		break;
 	}
 
 	return cont;
@@ -328,6 +600,42 @@ struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, 
 		return NULL;
 
 	return amp_pack_effect(amp_filt_effect(amp_filt_hpf(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a state-variable low-pass filter from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_svlpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq, *res;
+
+	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_svlpf(freq, res, amp_core_rate(env))));
+}
+
+/**
+ * Create a state-variable high-pass filter from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_svhpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq, *res;
+
+	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_svhpf(freq, res, amp_core_rate(env))));
 }
 
 /**
@@ -384,15 +692,131 @@ struct ml_value_t *amp_moog_make(struct ml_value_t *value, struct ml_env_t *env,
 	return amp_pack_effect(amp_filt_effect(amp_filt_moog(freq, res, amp_core_rate(env))));
 }
 
+/**
+ * Create a 2nd-order butterworth low-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter2low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter2low(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a 2nd-order butterworth high-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter2high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter2high(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a 3rd-order butterworth low-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter3low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter3low(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a 3rd-order butterworth high-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter3high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter3high(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a 4th-order butterworth low-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter4low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter4low(freq, amp_core_rate(env))));
+}
+
+/**
+ * Create a 4th-order butterworth high-pass fitler from a value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   @err: The error.
+ *   &returns: The value or null.
+ */
+struct ml_value_t *amp_butter4high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+{
+	struct amp_param_t *freq;
+
+	*err = amp_match_unpack(value, "P", &freq);
+	if(*err != NULL)
+		return NULL;
+
+	return amp_pack_effect(amp_filt_effect(amp_filt_butter4high(freq, amp_core_rate(env))));
+}
+
 
 const char *amp_filt_name(enum amp_filt_e type)
 {
 	switch(type) {
 	case amp_filt_lpf_e: return "lpf";
 	case amp_filt_hpf_e: return "hpf";
+	case amp_filt_svlpf_e: return "svlpf";
+	case amp_filt_svhpf_e: return "svhpf";
 	case amp_filt_peak_e: return "peak";
 	case amp_filt_res_e: return "res";
 	case amp_filt_moog_e: return "moog";
+	case amp_filt_butter2low_e: return "butter2low";
+	case amp_filt_butter2high_e: return "butter2high";
+	case amp_filt_butter3low_e: return "butter3low";
+	case amp_filt_butter3high_e: return "butter3high";
+	case amp_filt_butter4low_e: return "butter4low";
+	case amp_filt_butter4high_e: return "butter4high";
 	}
 
 	fatal("Invalid filter type.");

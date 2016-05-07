@@ -21,7 +21,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 	env = amp_core_eval(engine->core, path, &err);
 	if(env == NULL) {
-		fprintf(stderr, "%s\n", err), free(err); return;
+		fprintf(stderr, "%s\n", "err"), free(err); return;
 	}
 
 	sys_mutex_lock(&engine->sync);
@@ -95,14 +95,14 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 /**
  * Execute the audio engine.
  *   @audio: The audio device.
- *   @file: The file list.
+ *   @file: The file.
  *   @plugin: The plugin list.
  *   @comm: Optional. Consumed. The communication structure.
  */
-void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_comm_t *comm)
+void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct amp_comm_t *comm)
 {
 	bool quit = false;
-	char **ml, **el;
+	char **el;
 	struct amp_engine_t *engine;
 
 	engine = amp_engine_new(file, comm, audio);
@@ -112,12 +112,10 @@ void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_c
 
 		err = amp_core_plugin(engine->core, *el);
 		if(err != NULL)
-			fprintf(stderr, "Warning. %s\n", err);
+			fprintf(stderr, "Warning. %s\n", err), free(err);
 	}
 
-	for(ml = file; *ml != NULL; ml++)
-		amp_engine_update(engine, *ml);
-
+	amp_engine_update(engine, file);
 	amp_audio_exec(audio, callback, engine);
 
 	while(!quit) {
@@ -125,6 +123,7 @@ void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_c
 		char **argv, buf[256];
 
 		printf("> ");
+		fflush(stdout);
 		if(fgets(buf, sizeof(buf), stdin) == NULL)
 			break;
 

@@ -4,7 +4,6 @@
 /*
  * execution declarations
  */
-
-void amp_exec(struct amp_audio_t audio, char **file, char **plugin, struct amp_comm_t *comm);
+void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct amp_comm_t *comm);
 
 #endif

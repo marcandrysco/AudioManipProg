@@ -22,7 +22,7 @@ struct amp_chain_inst_t {
 /*
  * chain declarations
  */
-const struct amp_effect_i amp_chain_iface;
+extern const struct amp_effect_i amp_chain_iface;
 
 struct amp_chain_t *amp_chain_new(void);
 struct amp_chain_t *amp_chain_copy(struct amp_chain_t *chain);

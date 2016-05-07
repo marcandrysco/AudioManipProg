@@ -529,6 +529,8 @@ static void *pcm_thread(void *arg)
 			pcm2float(buf, raw, audio->format, count, chan);
 
 			audio->func(buf, count, audio->arg);
+			//dsp_zero_d(buf[0], count);
+			//dsp_zero_d(buf[1], count);
 			dsp_clamp_d(buf[0], count);
 			dsp_clamp_d(buf[1], count);
 

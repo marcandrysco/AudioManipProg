@@ -3,19 +3,6 @@
 
 
 /**
- * Instance structure.
- *   @dev: The device number.
- *   @midi: The MIDI device.
- *   @comm: The communication structure.
- */
-
-struct inst_t {
-	uint16_t dev;
-	struct amp_midi_t midi;
-	struct amp_comm_t *comm;
-};
-
-/**
  * MIDI communication structure.
  *   @event: The event list.
  *   @rd, wr: The read and write indices.
@@ -23,7 +10,6 @@ struct inst_t {
  *   @inst: The instance list.
  *   @len: The instance list length.
  */
-
 struct amp_comm_t {
 	struct amp_event_t event[AMP_COMM_LEN];
 	volatile unsigned int rd, wr;
@@ -31,14 +17,27 @@ struct amp_comm_t {
 	pthread_mutex_t lock;
 
 	struct inst_t *inst;
-	unsigned int len;
+};
+
+/**
+ * Instance structure.
+ *   @dev: The device number.
+ *   @midi: The MIDI device.
+ *   @comm: The communication structure.
+ *   @next: The next instance.
+ */
+struct inst_t {
+	uint16_t dev;
+	struct amp_midi_t midi;
+	struct amp_comm_t *comm;
+
+	struct inst_t *next;
 };
 
 
 /*
  * local declarations
  */
-
 static void callback(uint16_t key, uint16_t val, void *arg);
 
 
@@ -46,15 +45,13 @@ static void callback(uint16_t key, uint16_t val, void *arg);
  * Create a communication structure.
  *   &returns: The communication structure.
  */
-
 struct amp_comm_t *amp_comm_new(void)
 {
 	struct amp_comm_t *comm;
 
 	comm = malloc(sizeof(struct amp_comm_t));
 	comm->rd = comm->wr = 0;
-	comm->inst = malloc(0);
-	comm->len = 0;
+	comm->inst = NULL;
 	pthread_mutex_init(&comm->lock, NULL);
 
 	return comm;
@@ -64,16 +61,18 @@ struct amp_comm_t *amp_comm_new(void)
  * Delete a communication structure.
  *   @comm: The communication structure.
  */
-
 void amp_comm_delete(struct amp_comm_t *comm)
 {
-	unsigned int i;
+	struct inst_t *inst;
 
-	for(i = 0; i < comm->len; i++)
-		amp_midi_close(comm->inst[i].midi);
+	while((inst = comm->inst) != NULL) {
+		comm->inst = inst->next;
+
+		amp_midi_close(inst->midi);
+		free(inst);
+	}
 
 	pthread_mutex_destroy(&comm->lock);
-	free(comm->inst);
 	free(comm);
 }
 
@@ -86,17 +85,16 @@ void amp_comm_delete(struct amp_comm_t *comm)
  *   @iface: The MIDI interface.
  *   @midi: The MIDI device.
  */
-
 void amp_comm_add(struct amp_comm_t *comm, uint16_t dev, const char *conf, const struct amp_midi_i *iface)
 {
 	struct inst_t *inst;
 
-	comm->inst = realloc(comm->inst, (comm->len + 1) * sizeof(struct inst_t));
-
-	inst = &comm->inst[comm->len++];
+	inst = malloc(sizeof(struct inst_t));
 	inst->dev = dev;
 	inst->midi = amp_midi_open(conf, callback, inst, iface);
 	inst->comm = comm;
+	inst->next = comm->inst;
+	comm->inst = inst;
 }
 
 /**
@@ -105,7 +103,6 @@ void amp_comm_add(struct amp_comm_t *comm, uint16_t dev, const char *conf, const
  *   @event: Out. The output event pointer.
  *   &returns: True if event available, false otherwise.
  */
-
 bool amp_comm_read(struct amp_comm_t *comm, struct amp_event_t *event)
 {
 	if(comm->rd != comm->wr) {
@@ -126,7 +123,6 @@ bool amp_comm_read(struct amp_comm_t *comm, struct amp_event_t *event)
  *   @val: The value.
  *   @arg: The argument.
  */
-
 static void callback(uint16_t key, uint16_t val, void *arg)
 {
 	struct inst_t *inst = arg;

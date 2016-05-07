@@ -344,6 +344,9 @@ void ml_value_print(struct ml_value_t *value, struct io_file_t file)
 	case ml_value_eval_e:
 		hprintf(file, "eval");
 		break;
+
+	default:
+		hprintf(file, "unknown (%d)", value->type);
 	}
 }
 

@@ -3,11 +3,11 @@
 
 /**
  * Chorus structure.
- *   @osc, feedback: The oscillator, depth, and feedback parameters.
+ *   @osc, feedback: The oscillator and feedback parameters.
  *   @ring: The ring buffer.
  */
 struct amp_chorus_t {
-	struct amp_param_t *osc, *depth, *feedback[2];
+	struct amp_param_t *osc, *feedback;
 	struct dsp_ring_t *ring;
 };
 
@@ -16,7 +16,7 @@ struct amp_chorus_t {
  */
 extern const struct amp_effect_i amp_chorus_iface;
 
-struct amp_chorus_t *amp_chorus_new(unsigned int len, struct amp_param_t *osc, struct amp_param_t *depth, struct amp_param_t *feedback1, struct amp_param_t *feedback2);
+struct amp_chorus_t *amp_chorus_new(unsigned int len, struct amp_param_t *osc, struct amp_param_t *feedback);
 struct amp_chorus_t *amp_chorus_copy(struct amp_chorus_t *chorus);
 void amp_chorus_delete(struct amp_chorus_t *chorus);
 

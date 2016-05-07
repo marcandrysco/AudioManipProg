@@ -21,15 +21,14 @@ const char *hax_basename(const char *path)
 
 /**
  * Notifier structure.
- *   @list: The file list.
+ *   @path: The file path.
  *   @pipe: The synchronization pipe.
  *   @thread: The thread.
  *   @notify: The notify callback.
  *   @arg: The notify argument.
  */
-
 struct amp_notify_t {
-	char **list;
+	const char *path;
 
 	int pipe[2];
 	pthread_t thread;
@@ -42,24 +41,23 @@ struct amp_notify_t {
 /*
  * local declarations
  */
-
 static void *notify_thread(void *arg);
 
 
 /**
  * Create a notifier.
- *   @list: The file list.
+ *   @path: The path.
  *   @func: The callback function.
  *   @arg: The argument.
  *   &returns: The notifier.
  */
-struct amp_notify_t *amp_notify_new(char **list, amp_notify_f func, void *arg)
+struct amp_notify_t *amp_notify_new(const char *path, amp_notify_f func, void *arg)
 {
 	int err;
 	struct amp_notify_t *notify;
 
 	notify = malloc(sizeof(struct amp_notify_t));
-	notify->list = list;
+	notify->path = path;
 	notify->func = func;
 	notify->arg = arg;
 
@@ -99,31 +97,27 @@ void amp_notify_delete(struct amp_notify_t *notify)
  *   @arg: The argument.
  *   &returns: Always null.
  */
-
 static void *notify_thread(void *arg)
 {
 	int fd, ret;
-	char **file;
 	struct pollfd fdset[2];
 	struct amp_notify_t *notify = arg;
 
 	fd = inotify_init();
 
-	for(file = notify->list; *file != NULL; file++) {
-		const char *slash = strrchr(*file, '/');
+		const char *slash = strrchr(notify->path, '/');
 
 		if(slash != NULL) {
-			size_t len = slash-*file;
+			size_t len = slash - notify->path;
 			char dir[len+1];
 
-			memcpy(dir, *file, len);
+			memcpy(dir, notify->path, len);
 			dir[len] = '\0';
 
 			inotify_add_watch(fd, dir, IN_MODIFY | IN_MOVED_TO | IN_ATTRIB);
 		}
 		else
 			inotify_add_watch(fd, ".", IN_MODIFY | IN_MOVED_TO | IN_ATTRIB);
-	}
 
 	fdset[0].fd = notify->pipe[0];
 	fdset[1].fd = fd;
@@ -146,10 +140,8 @@ static void *notify_thread(void *arg)
 				fatal("Read failed. %s.", strerror(errno));
 
 			event = (void *)buf;
-			for(file = notify->list; *file != NULL; file++) {
-				if(strcmp(hax_basename(*file), event->name) == 0)
-					notify->func(*file, notify->arg);
-			}
+			if(strcmp(hax_basename(notify->path), event->name) == 0)
+				notify->func(notify->path, notify->arg);
 		}
 	}
 

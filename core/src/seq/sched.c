@@ -249,6 +249,7 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_time_t *time, unsigned
 				break;
 
 			for(j = 0; j < iter->len; j++)
+				printf("add %d %d %d\n", (int)iter->event[j].dev, (int)iter->event[j].key, (int)iter->event[j].val),
 				amp_queue_add(queue, (struct amp_action_t){ i, iter->event[j], queue });
 		} while((iter = iter->next) != cur);
 

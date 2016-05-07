@@ -44,7 +44,6 @@ with the `Chain` instance.
            | Gen (Module)
            | Lpcf (float, Param, Param)
            | Mix (Param, Module)
-           | Synth (int, Module)
 
 AmpCore provides the following set of `Effect` instances:
 
@@ -88,11 +87,12 @@ generates a signal given an input `Module` and a processing `Effect`.
 
     Module = ADSR ((Param, Param), (Param, Param, Param, Param))
            | Mul (Param, Param)
-           | Osc (osc-type, Param, Param)
            | Patch (Module, Effect)
            | Sample (string, int, num, Key)
+           | Osc
            | Trig ()
            | Sum [Param]
+           | Synth (int, Module)
 
 AmpCore provides the following set of `Module` instances:
 
@@ -103,6 +103,22 @@ AmpCore provides the following set of `Module` instances:
   * [Sample](mod/sample.md) generates audio from a sound sample.
   * [Trig](mod/trig.md) creates a signal based off a note event.
   * [Sum](mod/sum.d) performs an arithmetic sum of signals.
+
+### Oscillators
+
+`Osc` is a subclass of `Module`, providing a set of basic oscillators. Each
+oscillator takes as input a frequency and a warping factor.
+
+    Osc = Pulse (Param, Param)
+        | Sine (Param, Param)
+        | Saw (Param, Param)
+
+AmpCore provides the following set of `Osc` instances:
+
+  * [Pulse](mod/osc.md#pulse) creates a square wave that warps into a pulse
+      wave.
+  * [Sine](mod/osc.md#sine) create a standard sine wave.
+  * [Saw](mod/osc.md#saw) creates a triangle wave that warps into a saw.
 
 ## Parameter
 

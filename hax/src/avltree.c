@@ -14,6 +14,9 @@ static struct avltree_node_t *rotate_left(struct avltree_node_t *node);
 static int_fast8_t getdir(struct avltree_node_t *node);
 static struct avltree_node_t **getref(struct avltree_node_t *node);
 
+static void inst_delete(struct avltree_inst_t *inst);
+
+
 /**
  * Create an empty AVL tree root.
  *   @compare: The comparison.
@@ -442,4 +445,118 @@ static struct avltree_node_t **getref(struct avltree_node_t *node)
 static int_fast8_t getdir(struct avltree_node_t *node)
 {
 	return (node->parent->right == node) ? 1 : -1;
+}
+
+
+
+/**
+ * Initialize an AVL tree.
+ *   @compare: The comparison function.
+ *   @delete: the deletion function.
+ *   &returns: The AVL Tree.
+ */
+struct avltree_t avltree_init(compare_f compare, delete_f delete)
+{
+	return (struct avltree_t){ avltree_root_init(compare), delete };
+}
+
+/**
+ * Destroy an AVL tree.
+ *   @tree: The tree.
+ */
+void avltree_destroy(struct avltree_t *tree)
+{
+	avltree_root_destroy(&tree->root, offsetof(struct avltree_inst_t, node), (delete_f)inst_delete);
+}
+static void inst_delete(struct avltree_inst_t *inst)
+{
+	inst->tree->delete(inst->val);
+}
+
+
+/**
+ * Lookup a value in the tree.
+ *   @tree: The tree.
+ *   @key: The key.
+ *   &returns: The value or null.
+ */
+void *avltree_lookup(struct avltree_t *tree, const void *key)
+{
+	struct avltree_node_t *node;
+
+	node = avltree_root_lookup(&tree->root, key);
+	return node ? getparent(node, struct avltree_inst_t, node)->val : NULL;
+}
+
+/**
+ * Insert a key-value pair into the AVL tree.
+ *   @tree: The AVL tree.
+ *   @key: The key.
+ *   @val: The value.
+ *   &returns: The inserted instance.
+ */
+struct avltree_inst_t *avltree_insert(struct avltree_t *tree, const void *key, void *val)
+{
+	struct avltree_inst_t *inst;
+
+	inst = malloc(sizeof(struct avltree_inst_t));
+	inst->val = val;
+	inst->tree = tree;
+	inst->node.ref = key;
+	avltree_root_insert(&tree->root, &inst->node);
+
+	return inst;
+}
+
+
+/**
+ * Retrieve the first instance from the tree.
+ *   @tree: The tree.
+ *   &returns: The instance or null.
+ */
+struct avltree_inst_t *avltree_first(struct avltree_t *tree)
+{
+	struct avltree_node_t *node;
+
+	node = avltree_root_first(&tree->root);
+	return node ? getparent(node, struct avltree_inst_t, node): NULL;
+}
+
+/**
+ * Retrieve the last instance from the tree.
+ *   @tree: The tree.
+ *   &returns: The instance or null.
+ */
+struct avltree_inst_t *avltree_last(struct avltree_t *tree)
+{
+	struct avltree_node_t *node;
+
+	node = avltree_root_last(&tree->root);
+	return node ? getparent(node, struct avltree_inst_t, node): NULL;
+}
+
+/**
+ * Retrieve the previous instance from the tree.
+ *   @inst: The current instance.
+ *   &returns: The previous instance or null.
+ */
+struct avltree_inst_t *avltree_prev(struct avltree_inst_t *inst)
+{
+	struct avltree_node_t *node;
+
+	node = avltree_node_prev(&inst->node);
+	return node ? getparent(node, struct avltree_inst_t, node): NULL;
+}
+
+/**
+ * Retrieve the next instance from the tree.
+ *   @inst: The current instance.
+ *   &returns: The next instance or null.
+ */
+struct avltree_inst_t *avltree_next(struct avltree_inst_t *inst)
+{
+	struct avltree_node_t *node;
+
+	node = avltree_node_next(&inst->node);
+	return node ? getparent(node, struct avltree_inst_t, node): NULL;
 }

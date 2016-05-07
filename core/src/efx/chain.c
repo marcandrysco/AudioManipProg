@@ -125,7 +125,7 @@ struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env
 	for(link = value->data.list.head; link != NULL; link = link->next) {
 		box = amp_unbox_value(link->value, amp_box_effect_e);
 		if(box == NULL)
-			fail("Type error. Effects chain instance must take the form 'Effect' or '(num,Effect)'.");
+			fail("Type error. Effects chain instance must be an effect.");
 
 		amp_chain_append(chain, amp_effect_copy(box->data.effect));
 	}

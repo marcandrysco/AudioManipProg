@@ -4,27 +4,14 @@
 /*
  * local declarations
  */
-
 static char *optlong(char ***arg, const char *opt);
 
 /*
  * debug variables
  */
-
 #ifdef DEBUG
 int DBG_memcnt = 0, DBG_rescnt = 0;
 #endif
-
-
-/**
- * Audio interface.
- *   @audio_alsa_e: ALSA.
- *   @audio_none_e: Nothing selected.
- */
-enum audio_e {
-	audio_alsa_e,
-	audio_none_e
-};
 
 
 /**
@@ -85,17 +72,20 @@ int main(int argc, char **argv)
 	struct amp_audio_t audio;
 	struct amp_comm_t *comm;
 	const struct amp_audio_i *iface = NULL;
-	char **arg, **file, **plugin, *val, *conf = NULL;
+	char **arg, *file = NULL, **plugin, *val, *conf = NULL;
 
 	srand(sys_utime());
 
-	file = strlist_new();
 	plugin = strlist_new();
 	comm = amp_comm_new();
 
 	for(arg = argv + 1; *arg != NULL; arg++) {
-		if((*arg)[0] != '-')
-			strlist_add(&file, strdup(*arg));
+		if((*arg)[0] != '-') {
+			if(file != NULL)
+				fprintf(stderr, "Cannot specify two files.");
+
+			file = *arg;
+		}
 		else if((*arg)[1] == '-') {
 			if((val = optlong(&arg, "--plugin")) != NULL)
 				strlist_add(&plugin, strdup(val));
@@ -170,7 +160,6 @@ int main(int argc, char **argv)
 	audio = amp_audio_open(conf, iface);
 	amp_exec(audio, file, plugin, comm);
 	amp_audio_close(audio);
-	strlist_delete(file);
 	strlist_delete(plugin);
 
 #ifdef DEBUG
@@ -190,7 +179,6 @@ int main(int argc, char **argv)
  *   @opt: The option.
  *   &returns: The value if matched, false otherwise.
  */
-
 static char *optlong(char ***arg, const char *opt)
 {
 	unsigned int len = strlen(opt);

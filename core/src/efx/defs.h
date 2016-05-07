@@ -69,10 +69,7 @@ static inline bool amp_effect_proc(struct amp_effect_t effect, double *buf, stru
  *   @effect: The original effect.
  *   &returns: The copied effect.
  */
-static inline struct amp_effect_t amp_effect_copy(struct amp_effect_t effect)
-{
-	return (struct amp_effect_t){ effect.iface->copy(effect.ref), effect.iface };
-}
+struct amp_effect_t amp_effect_copy(struct amp_effect_t effect);
 
 /**
  * Delete an effect.

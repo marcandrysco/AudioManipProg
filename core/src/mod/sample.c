@@ -187,37 +187,6 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 #undef error
 #undef onexit
 }
-/*
-struct ml_value_t *amp_sample_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
-{
-#undef fail
-#define fail(format, ...) do { *err = amp_printf(format ?: "Type error. Expected '(string,int,num)'.", ##__VA_ARGS__); ml_value_delete(value); return NULL; } while(0);
-
-	struct ml_tuple_t tuple;
-	struct amp_file_t *file;
-	struct amp_sample_t *sample;
-	struct amp_cache_t *cache = amp_core_cache(env);
-
-	if(value->type != ml_value_tuple_e)
-		fail(NULL);
-
-	tuple = value->data.tuple;
-	if(tuple.len != 3)
-		fail(NULL);
-
-	if((tuple.value[0]->type != ml_value_str_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_num_e))
-		fail(NULL);
-
-	file = amp_cache_open(cache, tuple.value[0]->data.str, 0);
-	if(file == NULL)
-		fail("Cannot open sample '%s'.", tuple.value[1]->data.str);
-
-	sample = amp_sample_new(file, tuple.value[1]->data.num, tuple.value[2]->data.num);
-	ml_value_delete(value);
-
-	return amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
-}
-*/
 
 
 /**
@@ -235,6 +204,7 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 			return;
 
 		n = info.data.note->vel * sample->len;
+		printf("n: %d\n", n);
 		vel = &sample->vel[(n >= sample->len) ? (sample->len - 1) : n];
 
 		sample->play[sample->i].buf = vel->inst[vel->rr].buf;

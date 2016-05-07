@@ -29,7 +29,7 @@ struct amp_mixer_t *amp_mixer_new(void);
 struct amp_mixer_t *amp_mixer_copy(struct amp_mixer_t *mixer);
 void amp_mixer_delete(struct amp_mixer_t *mixer);
 
-struct ml_value_t *amp_mixer_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_mixer_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_mixer_prepend(struct amp_mixer_t *mixer, struct amp_instr_t instr);
 void amp_mixer_append(struct amp_mixer_t *mixer, struct amp_instr_t instr);

@@ -60,14 +60,17 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Octave"), ml_value_eval(amp_octave_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Sect"), ml_value_impl(amp_sect_make));
 	ml_env_add(&core->env, strdup("Scale"), ml_value_eval(amp_scale_make, ml_tag_null));
+	ml_env_add(&core->env, strdup("Svhpf"), ml_value_impl(amp_svhpf_make));
+	ml_env_add(&core->env, strdup("Svlpf"), ml_value_impl(amp_svlpf_make));
 	ml_env_add(&core->env, strdup("Synth"), ml_value_impl(amp_synth_make));
+	ml_env_add(&core->env, strdup("Wrap"), ml_value_eval(amp_wrap_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Vol"), ml_value_eval(amp_vol_make, ml_tag_null));
 
 	ml_env_add(&core->env, strdup("Ctrl"), ml_value_impl(amp_ctrl_make));
 
 	/* instruments */
 	ml_env_add(&core->env, strdup("Inject"), ml_value_eval(amp_inject_make, ml_tag_null));
-	ml_env_add(&core->env, strdup("Mixer"), ml_value_impl(amp_mixer_make));
+	ml_env_add(&core->env, strdup("Mixer"), ml_value_eval(amp_mixer_make, ml_tag_null));
 	ml_env_add(&core->env, strdup("Series"), ml_value_impl(amp_series_make));
 	ml_env_add(&core->env, strdup("Single"), ml_value_impl(amp_single_make));
 	ml_env_add(&core->env, strdup("Splice"), ml_value_impl(amp_splice_make));
@@ -98,6 +101,13 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Moog"), ml_value_impl(amp_moog_make));
 	ml_env_add(&core->env, strdup("Peak"), ml_value_impl(amp_peak_make));
 	ml_env_add(&core->env, strdup("Res"), ml_value_impl(amp_res_make));
+	
+	ml_env_add(&core->env, strdup("Butter2low"), ml_value_impl(amp_butter2low_make));
+	ml_env_add(&core->env, strdup("Butter2high"), ml_value_impl(amp_butter2high_make));
+	ml_env_add(&core->env, strdup("Butter3low"), ml_value_impl(amp_butter3low_make));
+	ml_env_add(&core->env, strdup("Butter3high"), ml_value_impl(amp_butter3high_make));
+	ml_env_add(&core->env, strdup("Butter4low"), ml_value_impl(amp_butter4low_make));
+	ml_env_add(&core->env, strdup("Butter4high"), ml_value_impl(amp_butter4high_make));
 
 	/* reverberators */
 	ml_env_add(&core->env, strdup("Allpass"), ml_value_impl(amp_allpass_make));

@@ -5,16 +5,32 @@
  * Filter type enumerator.
  *   @amp_filt_lpf_e: Simple low-pass filter.
  *   @amp_filt_hpf_e: Simple high-pass filter.
+ *   @amp_filt_svlpf_e: State-variable low-pass filter.
+ *   @amp_filt_svhpf_e: State-variable high-pass filter.
  *   @amp_filt_peak_e: Peaking filter.
  *   @amp_filt_res_e: Resonance filter.
  *   @amp_filt_moog_e: Moog VCF.
+ *   @amp_filt_butter2low_e: 2nd-order low-pass butterworth.
+ *   @amp_filt_butter2high_e: 2nd-order high-pass butterworth.
+ *   @amp_filt_butter3low_e: 3rd-order low-pass butterworth.
+ *   @amp_filt_butter3high_e: 3rd-order high-pass butterworth.
+ *   @amp_filt_butter4low_e: 4th-order low-pass butterworth.
+ *   @amp_filt_butter4high_e: 4th-order high-pass butterworth.
  */
 enum amp_filt_e {
 	amp_filt_lpf_e,
 	amp_filt_hpf_e,
+	amp_filt_svlpf_e,
+	amp_filt_svhpf_e,
 	amp_filt_peak_e,
 	amp_filt_res_e,
 	amp_filt_moog_e,
+	amp_filt_butter2low_e,
+	amp_filt_butter2high_e,
+	amp_filt_butter3low_e,
+	amp_filt_butter3high_e,
+	amp_filt_butter4low_e,
+	amp_filt_butter4high_e,
 };
 
 /**
@@ -68,18 +84,34 @@ void amp_filt_delete(struct amp_filt_t *filt);
 
 struct amp_filt_t *amp_filt_lpf(struct amp_param_t *freq, double rate);
 struct amp_filt_t *amp_filt_hpf(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_svlpf(struct amp_param_t *freq, struct amp_param_t *res, double rate);
+struct amp_filt_t *amp_filt_svhpf(struct amp_param_t *freq, struct amp_param_t *res, double rate);
 struct amp_filt_t *amp_filt_peak(struct amp_param_t *freq, struct amp_param_t *gain, struct amp_param_t *qual, double rate);
 struct amp_filt_t *amp_filt_res(struct amp_param_t *freq, struct amp_param_t *qual, double rate);
 struct amp_filt_t *amp_filt_moog(struct amp_param_t *freq, struct amp_param_t *res, double rate);
+struct amp_filt_t *amp_filt_butter2low(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_butter2high(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_butter3low(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_butter3high(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_butter4low(struct amp_param_t *freq, double rate);
+struct amp_filt_t *amp_filt_butter4high(struct amp_param_t *freq, double rate);
 
 void amp_filt_info(struct amp_filt_t *filt, struct amp_info_t info);
 bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 struct ml_value_t *amp_lpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_svlpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_svhpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *amp_peak_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *amp_res_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 struct ml_value_t *amp_moog_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter2low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter2high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter3low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter3high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter4low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+struct ml_value_t *amp_butter4high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
 
 const char *amp_filt_name(enum amp_filt_e type);
 

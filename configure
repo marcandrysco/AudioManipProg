@@ -1,0 +1,63 @@
+#!/bin/sh
+
+dirs="hax dsp lang core"
+
+# option defaults
+link="static"
+alsa=""
+pulse=""
+
+# parse options
+while [ "$#" -gt 0 ] ; do
+  :
+done
+
+# select audio interface if none specified
+if [ -z "$alsa$pulse" ] ; then
+  pkg-config --exists alsa && alsa=yes
+  pkg-config --exists libpulse && pulse=yes
+
+  if [ -z "$alsa$pulse" ] ; then
+    printf "Warning: No audio interface selected!\n" >&2
+  fi
+fi
+
+# print option information
+cat <<EOF
+Configure tool for building AmpRT
+.
+Note: This performs a "common case" build of AmpRT. For greater control of the
+build process, you should manually 'configure' and 'make' the each subdirectory
+individually. For more details for a manual build, see the README.
+.
+Build options
+.
+Link Type  $link
+ALSA       ${alsa:-no}
+PulseAudio ${pulse:-no}
+EOF
+
+# run all configures
+for dir in $dirs ; do
+  cd $dir
+  ./configure || exit $?
+  cd ..
+done
+
+# build make rule
+mkrule()
+{
+  for dir in $dirs ; do
+    printf '\n\t$(MAKE) $0 -C "%s"' "$dir"
+  done
+  printf '\n'
+}
+
+# build Makefile
+cat <<EOF > Makefile
+all: `mkrule all`
+run: `mkrule run`
+test: `mkrule test`
+EOF
+
+exit 0

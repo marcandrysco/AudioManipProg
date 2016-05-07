@@ -65,18 +65,18 @@ void amp_mixer_delete(struct amp_mixer_t *mixer)
 
 /**
  * Create a mixer from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_mixer_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_mixer_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(...) do { ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
-
+#define onexit ml_value_delete(value); amp_mixer_delete(mixer);
 	struct amp_mixer_t *mixer;
 	struct ml_link_t *link;
+
+	mixer = amp_mixer_new();
 
 	if(value->type != ml_value_list_e)
 		fail("Type error. Instrument mixer requires a list of instrument as input.");
@@ -86,14 +86,14 @@ struct ml_value_t *amp_mixer_make(struct ml_value_t *value, struct ml_env_t *env
 			fail("Type error. Instrument mixer requires a list of instrument as input.");
 	}
 
-	mixer = amp_mixer_new();
-
 	for(link = value->data.list.head; link != NULL; link = link->next)
 		amp_mixer_append(mixer, amp_instr_copy(amp_unbox_value(link->value, amp_box_instr_e)->data.instr));
 
+	*ret = amp_pack_instr((struct amp_instr_t){ mixer, &amp_mixer_iface });
 	ml_value_delete(value);
 
-	return amp_pack_instr((struct amp_instr_t){ mixer, &amp_mixer_iface });
+	return NULL;
+#undef onexit
 }
 
 

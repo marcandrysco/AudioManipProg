@@ -264,8 +264,6 @@ static void *iface_thread(void *arg)
 					midi->func(key, val, midi->arg);
 					break;
 				}
-
-				if(key&&val);
 			}
 		}
 	}

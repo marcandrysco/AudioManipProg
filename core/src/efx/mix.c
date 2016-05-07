@@ -116,6 +116,6 @@ bool amp_mix_proc(struct amp_mix_t *mix, double *buf, struct amp_time_t *time, u
 			buf[i] = t * tmp[i] + (1.0 - t) * buf[i];
 		}
 	}
-
+	
 	return cont;
 }
