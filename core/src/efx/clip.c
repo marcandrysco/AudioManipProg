@@ -68,18 +68,21 @@ void amp_clip_delete(struct amp_clip_t *clip)
 
 /**
  * Create a clip from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_clip_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_clip_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
 
-	*err = amp_match_unpack(value, "(P,P,P,P)", &maxlo, &satlo, &sathi, &maxhi);
+	chkfail(amp_match_unpack(value, "(P,P,P,P)", &maxlo, &satlo, &sathi, &maxhi));
 
-	return (*err == NULL) ? amp_pack_effect((struct amp_effect_t){ amp_clip_new(maxlo, satlo, sathi, maxhi), &amp_clip_iface }) : NULL;
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_clip_new(maxlo, satlo, sathi, maxhi), &amp_clip_iface });
+	return NULL;
+#undef onexit
 }
 
 

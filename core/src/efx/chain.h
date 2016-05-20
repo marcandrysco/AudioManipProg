@@ -31,7 +31,7 @@ void amp_chain_delete(struct amp_chain_t *chain);
 void amp_chain_prepend(struct amp_chain_t *chain, struct amp_effect_t effect);
 void amp_chain_append(struct amp_chain_t *chain, struct amp_effect_t effect);
 
-struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_chain_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_chain_info(struct amp_chain_t *chain, struct amp_info_t info);
 bool amp_chain_proc(struct amp_chain_t *chain, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);

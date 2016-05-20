@@ -78,20 +78,21 @@ void amp_comp_delete(struct amp_comp_t *comp)
 
 /**
  * Create a compressor from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_comp_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_comp_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *atk, *rel, *thresh, *ratio;
 
-	*err = amp_match_unpack(value, "(P,P,P,P)", &atk, &rel, &thresh, &ratio);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P,P,P)", &atk, &rel, &thresh, &ratio));
 
-	return amp_pack_effect((struct amp_effect_t){ amp_comp_new(atk, rel, thresh, ratio, amp_core_rate(env)), &amp_comp_iface });
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_comp_new(atk, rel, thresh, ratio, amp_core_rate(env)), &amp_comp_iface });
+	return NULL;
+#undef onexit
 }
 
 

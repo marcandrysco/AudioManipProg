@@ -52,18 +52,22 @@ void amp_single_delete(struct amp_single_t *single)
 
 /**
  * Create a single from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_single_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_single_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	int idx;
+#define onexit
+        int idx;
 	struct amp_effect_t effect;
 
-	*err = amp_match_unpack(value, "(d,E)", &idx, &effect);
-	return (*err == NULL) ? amp_pack_instr((struct amp_instr_t){ amp_single_new(idx, effect), &amp_single_iface }) : NULL;
+	chkfail(amp_match_unpack(value, "(d,E)", &idx, &effect));
+
+	*ret = amp_pack_instr((struct amp_instr_t){ amp_single_new(idx, effect), &amp_single_iface });
+	return NULL;
+#undef onexit
 }
 
 

@@ -3,19 +3,12 @@
 
 /**
  * Oscillator structure.
- *   @t: The time.
  *   @type: The type.
- *   @freq, warp: The frequency and warping.
- *   @prev: The previous warp.
- *   @rate: Sample rate.
+ *   @phase: The phase.
  */
 struct amp_osc_t {
-	double t;
 	enum amp_osc_e type;
-	struct amp_param_t *freq, *warp;
-	double prev;
-
-	unsigned int rate;
+	struct amp_module_t phase;
 };
 
 
@@ -33,21 +26,16 @@ const struct amp_module_i amp_osc_iface = {
 /**
  * Create an oscillator.
  *   @type: The type.
- *   @freq: Consumed. The frequency parameter.
- *   @warp: Consumed. The warping parameter.
+ *   @phase: Consumed. The phaseic signal.
  *   &returns: The oscillator.
  */
-struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, struct amp_param_t *warp, unsigned int rate)
+struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_module_t phase)
 {
 	struct amp_osc_t *osc;
 
 	osc = malloc(sizeof(struct amp_osc_t));
-	osc->t = 0.0;
 	osc->type = type;
-	osc->freq = freq;
-	osc->warp = warp;
-	osc->rate = rate;
-	osc->prev = 0.0;
+	osc->phase = phase;
 
 	return osc;
 }
@@ -59,7 +47,7 @@ struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, str
  */
 struct amp_osc_t *amp_osc_copy(struct amp_osc_t *osc)
 {
-	return amp_osc_new(osc->type, amp_param_copy(osc->freq), amp_param_copy(osc->warp), osc->rate);
+	return amp_osc_new(osc->type, amp_module_copy(osc->phase));
 }
 
 /**
@@ -68,30 +56,66 @@ struct amp_osc_t *amp_osc_copy(struct amp_osc_t *osc)
  */
 void amp_osc_delete(struct amp_osc_t *osc)
 {
-	amp_param_delete(osc->freq);
-	amp_param_delete(osc->warp);
+	amp_module_delete(osc->phase);
 	free(osc);
 }
 
 
 /**
- * Create an oscillator from a value.
+ * Create a sine oscillator from a value.
+ *   @ret: Ref. The return value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error
  */
-
-struct ml_value_t *amp_osc_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_sine_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	int type;
-	struct amp_param_t *freq, *warp;
+#define onexit
+	struct amp_module_t phase;
 
-	*err = amp_match_unpack(value, "(eO,P,P)", &type, &freq, &warp);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "M", &phase));
+	
+	*ret = amp_pack_module((struct amp_module_t){ amp_osc_new(amp_osc_sine_e, phase), &amp_osc_iface });
+	return NULL;
+#undef onexit
+}
 
-	return amp_pack_module((struct amp_module_t){ amp_osc_new(type, freq, warp, amp_core_rate(env)), &amp_osc_iface });
+/**
+ * Create a triangle oscillator from a value.
+ *   @ret: Ref. The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error
+ */
+char *amp_tri_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit
+	struct amp_module_t phase;
+
+	chkfail(amp_match_unpack(value, "M", &phase));
+	
+	*ret = amp_pack_module((struct amp_module_t){ amp_osc_new(amp_osc_tri_e, phase), &amp_osc_iface });
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Create a square oscillator from a value.
+ *   @ret: Ref. The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error
+ */
+char *amp_square_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit
+	struct amp_module_t phase;
+
+	chkfail(amp_match_unpack(value, "M", &phase));
+	
+	*ret = amp_pack_module((struct amp_module_t){ amp_osc_new(amp_osc_square_e, phase), &amp_osc_iface });
+	return NULL;
+#undef onexit
 }
 
 
@@ -102,13 +126,7 @@ struct ml_value_t *amp_osc_make(struct ml_value_t *value, struct ml_env_t *env, 
  */
 void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info)
 {
-	if(info.type == amp_info_note_e) {
-		if(info.data.note->init)
-			osc->t = 0.0;
-	}
-
-	amp_param_info(osc->freq, info);
-	amp_param_info(osc->warp, info);
+	amp_module_info(osc->phase, info);
 }
 
 /**
@@ -122,45 +140,33 @@ void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info)
  */
 bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	double t, freq[len];
-	unsigned int i, rate;
+	bool cont;
+	double phase[len];
+	unsigned int i;
 
-	if(amp_param_isfast(osc->warp)) {
-		double warp;
+	cont = amp_module_proc(osc->phase, phase, time, len, queue);
 
-		rate = osc->rate;
-		warp = osc->warp->flt;
-		t = dsp_osc_unwarp(dsp_osc_warp(osc->t, osc->prev), warp);
+	switch(osc->type) {
+	case amp_osc_sine_e:
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_osc_sine_f(phase[i]);
 
-		amp_param_proc(osc->freq, freq, time, len, queue);
+		break;
 
-		switch(osc->type) {
-		case amp_osc_sine_e:
-			for(i = 0; i < len; i++)
-				buf[i] = dsp_osc_sine_f(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
+	case amp_osc_tri_e:
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_osc_tri(phase[i]);
 
-			break;
+		break;
 
-		case amp_osc_tri_e:
-			for(i = 0; i < len; i++)
-				buf[i] = dsp_osc_tri(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
+	case amp_osc_square_e:
+		for(i = 0; i < len; i++)
+			buf[i] = dsp_osc_square(phase[i]);
 
-			break;
-
-		case amp_osc_square_e:
-			for(i = 0; i < len; i++)
-				buf[i] = dsp_osc_square(dsp_osc_warp(t = dsp_osc_inc(t, dsp_osc_step(freq[i], rate)), warp));
-
-			break;
-		}
-
-		osc->t = t;
-		osc->prev = warp;
-	}
-	else {
+		break;
 	}
 
-	return false;
+	return cont;
 }
 
 

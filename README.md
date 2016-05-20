@@ -3,7 +3,7 @@ Audio Manipulation Program
 
 The Audio Manipulation Program (or AMP) is a set of tools for performing real
 time audio synthesis, processing, mixing, and mastering. The project is split
-into four components:
+into five components:
 
   * [cHax](hax/README.Md) - Cross-platform library for augmenting the C
     standard library.
@@ -12,10 +12,10 @@ into four components:
     sophisticated processing effects.
   * [MuseLang](lang/README.md) - Music oriented functional language based off
     of ML. By itself, the language provides a very basic set of features. The
-    language must be combined with AmpCore to gain useful functionality.
+    language must be combined with AmpCore to achieve useful functionality.
   * [AmpCore](core/README.md) - The core library for AMP. This library
     provides a number of high-level components for editing real time audio.
-    Wen combined with MuseLang, user can compose complicated real time
+    Wen combined with MuseLang, users can compose complicated real time
     programs that are written in a high-level language.
   * [AmpRT](rt/README.md) - Real time processing application. This program
     reads in high-level programs written in MuseLang+AmpCore and executes the
@@ -38,7 +38,14 @@ however they wish.
 This section covers building the AMP components and using AmpRT with the
 provided examples.
 
-### Building
+### Default Build
+
+The root directory contains a `configure` script for performing a "default"
+build. Running `make` will recusively build and locally all subdirectories.
+The libraries are installed into `lib` and `include`, and the AmpRT binary is
+installed into `bin` and executed with the command `bin/amprt`.
+
+### Manual Build
 
 Each subdirectory contains an individual `configure` script for generating a
 `Makefile`. Once the `Makefile` is generated, `make` will build the binary and

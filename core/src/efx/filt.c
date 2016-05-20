@@ -568,128 +568,135 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 /**
  * Create a low-pass filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_lpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_lpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq;
 
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &freq));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_lpf(freq, amp_core_rate(env))));
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_filt_lpf(freq, amp_core_rate(env)), &amp_filt_iface });
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a high-pass filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_hpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_hpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq;
 
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &freq));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_hpf(freq, amp_core_rate(env))));
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_filt_hpf(freq, amp_core_rate(env)), &amp_filt_iface });
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a state-variable low-pass filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_svlpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_svlpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq, *res;
 
-	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P)", &freq, &res));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_svlpf(freq, res, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_svlpf(freq, res, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a state-variable high-pass filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_svhpf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_svhpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq, *res;
 
-	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P)", &freq, &res));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_svhpf(freq, res, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_svhpf(freq, res, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a peaking filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_peak_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_peak_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq, *gain, *qual;
 
-	*err = amp_match_unpack(value, "(P,P,P)", &freq, &gain, &qual);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P,P)", &freq, &gain, &qual));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_peak(freq, gain, qual, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_peak(freq, gain, qual, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a resonance filter from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_res_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_res_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq, *qual;
 
-	*err = amp_match_unpack(value, "(P,P)", &freq, &qual);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P)", &freq, &qual));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_res(freq, qual, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_res(freq, qual, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a Moog VCF from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_moog_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_moog_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *freq, *res;
 
-	*err = amp_match_unpack(value, "(P,P)", &freq, &res);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P)", &freq, &res));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_moog(freq, res, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_moog(freq, res, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**

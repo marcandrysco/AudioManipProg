@@ -23,11 +23,13 @@ struct amp_osc_t;
 
 extern const struct amp_module_i amp_osc_iface;
 
-struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_param_t *freq, struct amp_param_t *warp, unsigned int rate);
+struct amp_osc_t *amp_osc_new(enum amp_osc_e type, struct amp_module_t phase);
 struct amp_osc_t *amp_osc_copy(struct amp_osc_t *osc);
 void amp_osc_delete(struct amp_osc_t *osc);
 
-struct ml_value_t *amp_osc_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_sine_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_tri_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_square_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_osc_info(struct amp_osc_t *osc, struct amp_info_t info);
 bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);

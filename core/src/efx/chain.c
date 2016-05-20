@@ -103,16 +103,15 @@ void amp_chain_append(struct amp_chain_t *chain, struct amp_effect_t effect)
 
 /**
  * Create a chain from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_chain_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(...) do { amp_chain_delete(chain); ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
-
+#define onexit amp_chain_delete(chain);
+#define error() fail("Type error. Chain requires a list of effects as input.");
 	struct ml_link_t *link;
 	struct amp_chain_t *chain;
 	struct amp_box_t *box;
@@ -120,19 +119,22 @@ struct ml_value_t *amp_chain_make(struct ml_value_t *value, struct ml_env_t *env
 	chain = amp_chain_new();
 
 	if(value->type != ml_value_list_e)
-		fail("Type error. Chain requires a list of effects as input.");
+		error();
 
 	for(link = value->data.list.head; link != NULL; link = link->next) {
 		box = amp_unbox_value(link->value, amp_box_effect_e);
 		if(box == NULL)
-			fail("Type error. Effects chain instance must be an effect.");
+			error();
 
 		amp_chain_append(chain, amp_effect_copy(box->data.effect));
 	}
 
 	ml_value_delete(value);
+	*ret = amp_pack_effect((struct amp_effect_t){ chain, &amp_chain_iface });
 
-	return amp_pack_effect((struct amp_effect_t){ chain, &amp_chain_iface });
+	return NULL;
+#undef error
+#undef onexit
 }
 
 

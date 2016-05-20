@@ -50,17 +50,21 @@ void amp_splice_delete(struct amp_splice_t *splice)
 
 /**
  * Create a splice from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_splice_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_splice_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_effect_t effect;
 
-	*err = amp_match_unpack(value, "E", &effect);
-	return (*err == NULL) ? amp_pack_instr((struct amp_instr_t){ amp_splice_new(effect), &amp_splice_iface }) : NULL;
+	chkfail(amp_match_unpack(value, "E", &effect));
+
+	*ret = amp_pack_instr((struct amp_instr_t){ amp_splice_new(effect), &amp_splice_iface });
+	return NULL;
+#undef onexit
 }
 
 

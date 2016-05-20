@@ -65,18 +65,18 @@ void amp_series_delete(struct amp_series_t *series)
 
 /**
  * Create a series from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_series_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_series_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(...) do { ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
-
+#define onexit ml_value_delete(value); amp_series_delete(series);
 	struct amp_series_t *series;
 	struct ml_link_t *link;
+
+	series = amp_series_new();
 
 	if(value->type != ml_value_list_e)
 		fail("Type error. Instrument series requires a list of instrument as input.");
@@ -86,14 +86,14 @@ struct ml_value_t *amp_series_make(struct ml_value_t *value, struct ml_env_t *en
 			fail("Type error. Instrument series requires a list of instrument as input.");
 	}
 
-	series = amp_series_new();
-
 	for(link = value->data.list.head; link != NULL; link = link->next)
 		amp_series_append(series, amp_instr_copy(amp_unbox_value(link->value, amp_box_instr_e)->data.instr));
 
+	*ret = amp_pack_instr((struct amp_instr_t){ series, &amp_series_iface });
 	ml_value_delete(value);
 
-	return amp_pack_instr((struct amp_instr_t){ series, &amp_series_iface });
+	return NULL;
+#undef onexit
 }
 
 

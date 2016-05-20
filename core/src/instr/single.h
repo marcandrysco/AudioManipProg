@@ -20,7 +20,7 @@ struct amp_single_t *amp_single_new(unsigned int idx, struct amp_effect_t effect
 struct amp_single_t *amp_single_copy(struct amp_single_t *single);
 void amp_single_delete(struct amp_single_t *single);
 
-struct ml_value_t *amp_single_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_single_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_single_prepend(struct amp_single_t *single, struct amp_instr_t instr);
 void amp_single_append(struct amp_single_t *single, struct amp_instr_t instr);

@@ -9,9 +9,9 @@ The output covers the range of outputs from `-1` to `1`.
 
 MuseLang constructor
 
-    Pulse (freq:Param, warp:Param)
-    Sine (freq:Param, warp:Param)
+    Sine (phase:Module)
     Saw (freq:Param, warp:Param)
+    Square (freq:Param, warp:Param)
 
 The oscillator generates a period given by `freq`. The `warp` parameter varies
 from `-1` to `1` to deform the output wave by stretching or compressing the

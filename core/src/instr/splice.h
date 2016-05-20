@@ -18,7 +18,7 @@ struct amp_splice_t *amp_splice_new(struct amp_effect_t effect);
 struct amp_splice_t *amp_splice_copy(struct amp_splice_t *splice);
 void amp_splice_delete(struct amp_splice_t *splice);
 
-struct ml_value_t *amp_splice_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_splice_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_splice_prepend(struct amp_splice_t *splice, struct amp_instr_t instr);
 void amp_splice_append(struct amp_splice_t *splice, struct amp_instr_t instr);

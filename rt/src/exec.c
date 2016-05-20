@@ -21,7 +21,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 	env = amp_core_eval(engine->core, path, &err);
 	if(env == NULL) {
-		fprintf(stderr, "%s\n", "err"), free(err); return;
+		fprintf(stderr, "%s\n", err), free(err); return;
 	}
 
 	sys_mutex_lock(&engine->sync);

@@ -14,6 +14,10 @@ setconf()
   lib_dep "hax"
   lib_dep "pthread"
   lib_dep "m"
+  lib_dep "dl"
+  lib_dep "sndfile"
+
+  pkgcfg="${pkgcfg} sndfile"
 
   c_src "src/main.c"
 
@@ -292,10 +296,10 @@ SHAREDIR = ${sharedir}
 all: $target $hdr
 
 $target:$obj
-	\$(CC)  $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
+	\$(CC) $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
 
 %.o: %.c Makefile configure
-	\$(CC) -c $< -o \$@ \$(CFLAGS)
+	\$(CC) \$(CFLAGS) -c $< -o \$@
 
 Makefile: configure \$(wildcard config.args)
 	./configure \$(ARGS)

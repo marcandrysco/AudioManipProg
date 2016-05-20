@@ -116,6 +116,7 @@ struct alsa_midi_t *alsa_midi_open(const char *conf, amp_midi_f func, void *arg)
 	midi->conf = conf;
 	midi->func = func;
 	midi->arg = arg;
+	midi->next = NULL;
 
 	if(write(iface->wr[1], &midi, sizeof(void *)) < 0)
 		fatal("Failed to write to synchronization pipe. %s (%d).", strerror(errno), errno);

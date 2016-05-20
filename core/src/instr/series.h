@@ -29,7 +29,7 @@ struct amp_series_t *amp_series_new(void);
 struct amp_series_t *amp_series_copy(struct amp_series_t *series);
 void amp_series_delete(struct amp_series_t *series);
 
-struct ml_value_t *amp_series_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_series_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_series_prepend(struct amp_series_t *series, struct amp_instr_t instr);
 void amp_series_append(struct amp_series_t *series, struct amp_instr_t instr);

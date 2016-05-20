@@ -101,6 +101,19 @@ let Scale'(l,h) = Scale(-1,1,l,h)
  *)
 let Scale1 = Scale'(0,1)
 
+
+(**** Synthesizer Components ****)
+
+(**
+ * Create an oscillator with a frequency.
+ *   @f (Module): The frequency.
+ *   &ret (Module): The oscillator module.
+ *)
+let Sine'(f) = Sine(Ramp(f))
+let Tri'(f) = Tri(Ramp(f))
+let Square'(f) = Square(Ramp(f))
+
+(*
 let Sine(f,w) = Osc("sine",f,w)
 let Sine'(f,w,l,h)  = Patch(Sine(f,w),Scale'(l,h))
 let Sine1(f,w) = Patch(Sine(f,w),Scale1)
@@ -110,6 +123,7 @@ let Saw1(f,w) = Patch(Saw(f,w),Scale1)
 
 let Pulse(f,w) = Osc("square",f,w)
 let Pulse1(f,w) = Patch(Pulse(f,w),Scale1)
+*)
 
 (**
  * Create a muted generator.
