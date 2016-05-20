@@ -156,6 +156,8 @@ int main(int argc, char **argv)
 
 	if(iface == NULL)
 		fprintf(stderr, "No audio interface selected.\n"), exit(1);
+	if(file == NULL)
+		fprintf(stderr, "Missing source file.\n"), exit(1);
 
 	audio = amp_audio_open(conf, iface);
 	amp_exec(audio, file, plugin, comm);

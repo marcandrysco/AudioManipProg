@@ -80,6 +80,7 @@ setconf()
   c_src "src/seq/merge.c"
   c_src "src/seq/player.c"
   c_src "src/seq/repeat.c"
+  c_src "src/seq/rule.c"
   c_src "src/seq/sched.c"
   c_src "src/seq/snap.c"
   c_src "src/seq/toggle.c"

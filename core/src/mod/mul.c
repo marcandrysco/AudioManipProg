@@ -62,20 +62,21 @@ void amp_mul_delete(struct amp_mul_t *mul)
 
 /**
  * Create a multiply from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_mul_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_mul_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *left, *right;
 
-	*err = amp_match_unpack(value, "(P,P)", &left, &right);
-	if(*err == NULL)
-		return amp_pack_module((struct amp_module_t){ amp_mul_new(left, right), &amp_mul_iface });
-	else
-		return NULL;
+	chkfail(amp_match_unpack(value, "(P,P)", &left, &right));
+	*ret = amp_pack_module((struct amp_module_t){ amp_mul_new(left, right), &amp_mul_iface });
+
+	return NULL;
+#undef onexit
 }
 
 

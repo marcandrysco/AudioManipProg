@@ -15,12 +15,12 @@ struct inst_t {
 
 /**
  * Synthesizer structure.
- *   @dev, key: Listening device and key.
+ *   @dev: Listening device.
  *   @n: The width.
  *   @inst: The instance array.
  */
 struct amp_synth_t {
-	uint16_t dev, key;
+	uint16_t dev;
 	unsigned int n;
 
 	struct inst_t *inst;
@@ -41,12 +41,11 @@ struct amp_module_i amp_synth_iface = {
 /**
  * Create a synthesizer.
  *   @dev: The device.
- *   @key: The key. Zero handles all keys.
  *   @n: The number of instances.
  *   @module: Consumed. The module.
  *   &returns: The synthesizer.
  */
-struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, struct amp_module_t module)
+struct amp_synth_t *amp_synth_new(uint16_t dev, unsigned int n, struct amp_module_t module)
 {
 	unsigned int i;
 	struct amp_synth_t *synth;
@@ -55,7 +54,6 @@ struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, st
 
 	synth = malloc(sizeof(struct amp_synth_t));
 	synth->dev = dev;
-	synth->key = key;
 	synth->n = n;
 	synth->inst = malloc(n * sizeof(struct inst_t));
 	synth->inst[0] = (struct inst_t){ -1, { 0.0, 0.0 }, module };
@@ -73,7 +71,7 @@ struct amp_synth_t *amp_synth_new(uint16_t dev, uint16_t key, unsigned int n, st
  */
 struct amp_synth_t *amp_synth_copy(struct amp_synth_t *synth)
 {
-	return amp_synth_new(synth->dev, synth->key, synth->n, amp_module_copy(synth->inst[0].module));
+	return amp_synth_new(synth->dev, synth->n, amp_module_copy(synth->inst[0].module));
 }
 
 /**
@@ -99,16 +97,17 @@ void amp_synth_delete(struct amp_synth_t *synth)
  *   @err: The error.
  *   &returns: The value or null.
  */
-struct ml_value_t *amp_synth_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_synth_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	int dev, key, n;
+#define onexit
+	int dev, n;
 	struct amp_module_t module;
 
-	*err = amp_match_unpack(value, "((d,d),d,M)", &dev, &key, &n, &module);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(d,d,M)", &dev, &n, &module));
+	*ret = amp_pack_module((struct amp_module_t){ amp_synth_new(dev, n, module), &amp_synth_iface });
 
-	return amp_pack_module((struct amp_module_t){ amp_synth_new(dev, key, n, module), &amp_synth_iface });
+	return NULL;
+#undef onexit
 }
 
 
@@ -125,11 +124,6 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 		struct amp_action_t action = *info.data.action;
 
 		if(action.event.dev != synth->dev)
-			return;
-
-		if(action.event.key > 128)
-			return;
-		if((synth->key != 0) && (action.event.key != synth->key))
 			return;
 
 		for(i = 0; i < synth->n; i++) {
@@ -186,9 +180,7 @@ bool amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *t
 		if(action->event.dev != synth->dev)
 			continue;
 
-		if(action->event.key > 128)
-			continue;
-		if((synth->key != 0) && (action->event.key != synth->key))
+		if(action->event.key >= 128)
 			continue;
 
 		for(i = 0; i < synth->n; i++) {

@@ -2,7 +2,7 @@ Quick Start Guide
 =================
 
 This tutorial explains the bare minimum in order to begin working with AMP. By
-the end of the tutorial, you will be able to create very basic AMP programs.
+the end of the tutorial, you will be able to create a very basic AMP programs.
 
 ## Building AMP
 
@@ -18,22 +18,22 @@ The default build will include the following automatically:
 
 ## Running AmpRT
 
-The `amprt` binary reads an source program and executes it in real time. The
+The `amprt` binary reads a source program and executes it in real time. The
 following subsections will cover usage of each device interface using the
 example source file `dist.ml`.
 
 *Important!* Most AmpRT programs read audio from the input (e.g. the
 microphone) and write it back to the output (e.g. the speaker). If the speaker
 volume is too high or the microphone is too sensitive, this will cause a
-positive feedback loop that will be very loud. I strongly suggest using
+positive feedback loop that is extremely loud. I strongly suggest using
 headphones or direction microphones.
 
 ### ALSA
 
-The ALSA interface provides very direct bindings to audio devices in Linux
-providing very low latency. Note that AmpRT opens the device for exclusive
-access, and therefore no other application can use the audio device at the
-same time.
+The ALSA interface provides very direct bindings to audio devices in Linux,
+thereby providing very low latencies. Note that AmpRT opens the device for
+exclusive access, and therefore no other application can use the audio device
+at the same time.
 
 	  amprt --alsa "hw:0" "dist.ml"
 
@@ -44,14 +44,14 @@ of `96000`.
 
 	  amprt --alsa "hw:0 r96000" "dist.ml"
 
-Without specify any hardware options, the module select a relatively useful
-set of default values.
+Without specifying any hardware options, the ALSA interface selects a
+relatively useful set of default values.
 
 ### PulseAudio
 
-PulseAudio provides a very simple although high latency interface for AMP. It
-is not suitable for real time processing but is useful for purely
-synthesis-based AMP programs.
+PulseAudio provides a very simple but high latency interface for AMP. It is
+not suitable for real time processing but is useful for purely synthesis-based
+AMP programs.
 
 	  amprt --pulse "AMP" "dist.ml"
 

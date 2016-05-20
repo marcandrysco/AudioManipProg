@@ -1,148 +1,165 @@
 #include "common.h"
 
+/*
+ * local declarations
+ */
+static char *parse_pat(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_pat_cons(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_pat_value(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_pat_tuple(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env);
+
+static char *parse_expr(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_concat(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_cons(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_app(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_cmp(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_addsub(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_muldiv(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_unary(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_value(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_tuple(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env);
+static char *parse_expr_list(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env);
+
 
 /**
- * Parse from the top.
- *   @token: The head token.
- *   @env: The environment.
- *   @path: Optional. The path for parsing imports.
+ * Parse a file from a path.
+ *   @env: The environment pointer.
+ *   @path: The path.
  *   &returns: Error.
  */
-char *ml_parse_top(struct ml_token_t *token, struct ml_env_t **env, const char *path)
+char *ml_parse_file(struct ml_env_t **env, const char *path)
 {
+#define onexit ml_token_delete(token);
+	struct ml_token_t *token = NULL;
+
+	chkfail(ml_token_load(&token, path));
+	ml_token_strip(&token);
+	chkfail(ml_parse_top(env, token, path));
+	ml_token_delete(token);
+
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Parse the top of a file.
+ *   @env: The environment pointer.
+ *   @token: The token.
+ *   @path: The path used for imports.
+ *   &returns: Error.
+ */
+char *ml_parse_top(struct ml_env_t **env, struct ml_token_t *token, const char *path)
+{
+	while(token->id != 0) {
+		if(token->id == ml_token_let_v) {
 #define onexit ml_pat_erase(pat); ml_expr_erase(expr); ml_value_erase(value);
-	char *err;
+			bool suc;
+			struct ml_pat_t *pat = NULL;
+			struct ml_expr_t *expr = NULL;
+			struct ml_value_t *value = NULL;
+			//struct ml_token_t *orig = token;
 
-	while(token->type != ml_token_end_e) {
-		struct ml_value_t *value = NULL;
-		struct ml_pat_t *pat = NULL;
-		struct ml_expr_t *expr = NULL;
-
-		if(token->type == ml_token_import_e) {
 			token = token->next;
-			chkfail(ml_parse_stmt(&expr, &token));
-			if(expr == NULL)
-				fatal("Invalid let. Expected expression.");
-
-			value = ml_expr_eval(expr, *env, &err);
-			if(value == NULL)
-				return err;
-
-			if(value->type != ml_value_str_e)
-				fatal("Import requries string value.");
-
-			chkfail(ml_env_proc(value->data.str, env)); // TODO: relative to 'path'
-
-			ml_value_delete(value);
-			ml_expr_delete(expr);
-		}
-		else if(token->type == ml_token_let_e) {
-			token = token->next;
-
-			chkfail(ml_parse_pat(&pat, &token, false));
+			chkfail(parse_pat(&pat, &token, *env));
 			if(pat == NULL)
-				fatal("Missin pattern.");
+				fail("%C: Missing pattern.", ml_tag_chunk(&token->tag));
 
-			if(token->type != ml_token_assign_e)
-				fatal("Invalid let. Expected '='.");
+			if(token->id != '=')
+				fail("%C: Missing '='.", ml_tag_chunk(&token->tag));
 
 			token = token->next;
-			chkfail(ml_parse_stmt(&expr, &token));
+			chkfail(parse_expr(&expr, &token, *env));
 			if(expr == NULL)
-				fatal("Invalid let. Expected expression.");
+				fail("%C: Missing expression.", ml_tag_chunk(&token->tag));
 
 			if(pat->next != NULL) {
-				struct ml_closure_t closure;
+				struct ml_closure_t *closure;
 
-				if(pat->type != ml_pat_id_e)
-					fatal("Invalid function declaration.");
+				if(pat->type != ml_pat_var_v)
+					fail("%C: Invalid function declaration.", ml_tag_chunk(&pat->tag));
 
-				closure = ml_closure(ml_env_copy(*env), ml_pat_copy(pat->next), strdup(pat->data.id), ml_expr_copy(expr));
-				ml_env_add(env, strdup(pat->data.id), ml_value_closure(closure));
+				closure = ml_closure_new(strdup(pat->data.var), ml_env_copy(*env), ml_pat_copy(pat->next), ml_expr_copy(expr));
+				ml_env_add(env, strdup(pat->data.var), ml_value_closure(closure, ml_tag_copy(pat->tag)));
 			}
 			else {
-				value = ml_expr_eval(expr, *env, &err);
-				if(value == NULL)
-					return err;
+				chkfail(ml_expr_eval(&value, expr, *env));
 
-				if(!ml_pat_match(env, pat, value))
-					fatal("Pattern match failed.");
+				suc = ml_pat_match(pat, value, env);
+				if(!suc)
+					fail("%C: Failed to match.", ml_tag_chunk(&pat->tag));
 
 				ml_value_delete(value);
 			}
 
 			ml_pat_delete(pat);
 			ml_expr_delete(expr);
+#undef onexit
+		}
+		else if(token->id == ml_token_import_v) {
+#define onexit ml_expr_erase(expr); ml_value_erase(value);
+			struct ml_expr_t *expr = NULL;
+			struct ml_value_t *value = NULL;
+
+			token = token->next;
+			chkfail(parse_expr(&expr, &token, *env));
+			if(expr == NULL)
+				fail("%C: Missing expression.", ml_tag_chunk(&token->tag));
+
+			chkfail(ml_expr_eval(&value, expr, *env));
+			if(value->type != ml_value_str_v)
+				fail("%C: Import expects string value.", ml_tag_chunk(&value->tag));
+
+			ml_expr_delete(expr);
+			ml_value_delete(value);
+#undef onexit
 		}
 		else
-			fatal("Missing let.");
+			fatal("%C: Unexpected token '%C'. Expected statement.", ml_tag_chunk(&token->tag), ml_token_chunk(token));
 	}
 
 	return NULL;
-#undef onexit
 }
 
 
 /**
  * Parse a pattern.
- *   @dest: The destination.
- *   @token: The token.
- *   @comma: Comma separator flag.
+ *   @pat: Ref. The pattern.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
  *   &returns: Error.
  */
-char *ml_parse_pat(struct ml_pat_t **dest, struct ml_token_t **token, bool comma)
+static char *parse_pat(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env)
 {
-#define onexit ml_pat_delete(head);
-	struct ml_pat_t *head = NULL, **pat = &head;
+#define onexit ml_pat_delete(head); *pat = NULL;
+	struct ml_pat_t *head = *pat;
 
 	while(true) {
-		chkfail(ml_parse_pat_cons(pat, token));
-		if(*pat == NULL) {
-			if(comma)
-				fail("Missing ')'.");
-			else
-				break;
-		}
-		else if(comma) {
-			if((*token)->type != ml_token_comma_e)
-				break;
-
-			*token = (*token)->next;
-		}
+		chkfail(parse_pat_cons(pat, token, env));
+		if(*pat == NULL)
+			break;
 
 		pat = &(*pat)->next;
 	}
-
-	*dest = head;
 
 	return NULL;
 #undef onexit
 }
 
 /**
- * Parse a cons pattern.
+ * Parse cons a pattern.
  *   @pat: Ref. The pattern.
- *   @token: The token.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
  *   &returns: Error.
  */
-char *ml_parse_pat_cons(struct ml_pat_t **pat, struct ml_token_t **token)
+static char *parse_pat_cons(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env)
 {
-#define onexit ml_pat_erase(*pat);
-	struct ml_pat_t *right;
-
-	chkfail(ml_parse_pat_value(pat, token));
-	if(*pat == NULL)
+#define onexit
+	chkfail(parse_pat_value(pat, token, env));
+	if((*token)->id != ml_token_cons_v)
 		return NULL;
 
-	if((*token)->type != ml_token_cons_e)
-		return NULL;
-
-	*token = (*token)->next;
-	chkfail(ml_parse_pat_cons(&right, token));
-	if(right == NULL)
-		fail("Missing pattern after '::'.");
-
-	*pat = ml_pat_list(*pat, right);
+	fatal("stub2");
 
 	return NULL;
 #undef onexit
@@ -151,578 +168,634 @@ char *ml_parse_pat_cons(struct ml_pat_t **pat, struct ml_token_t **token)
 /**
  * Parse a value pattern.
  *   @pat: Ref. The pattern.
- *   @token: The token.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
  *   &returns: Error.
  */
-char *ml_parse_pat_value(struct ml_pat_t **pat, struct ml_token_t **token)
+static char *parse_pat_value(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env)
 {
-#define onexit
-	if((*token)->type == ml_token_id_e) {
-		*pat = ml_pat_id(strdup((*token)->data.str));
+#define onexit ml_pat_delete(*pat); *pat = NULL;
+	if((*token)->id == ml_token_id_v) {
+		*pat = ml_pat_var(strdup((*token)->data.str), ml_tag_copy((*token)->tag));
 		*token = (*token)->next;
 	}
-	else if((*token)->type == ml_token_num_e) {
-		*pat = ml_pat_value(ml_value_num((*token)->data.flt));
+	else if((*token)->id == '(') {
 		*token = (*token)->next;
-	}
-	else if((*token)->type == ml_token_str_e) {
-		*pat = ml_pat_value(ml_value_str(strdup((*token)->data.str)));
-		*token = (*token)->next;
-	}
-	else if((*token)->type == ml_token_lparen_e) {
-		struct ml_pat_t *sub;
+		chkfail(parse_pat_tuple(pat, token, env));
+
+		if((*token)->id != ')')
+			fail("%C: Missing ')'.", ml_tag_chunk(&(*token)->tag));
 
 		*token = (*token)->next;
-		chkfail(ml_parse_pat(&sub, token, true));
-		if((*token)->type != ml_token_rparen_e)
-			fail("Missing ')'.");
-
-		*token = (*token)->next;
-		*pat = ml_pat_tuple(sub);
-	}
-	else if((*token)->type == ml_token_nil_e) {
-		*token = (*token)->next;
-		*pat = ml_pat_nil();
 	}
 	else
-		return NULL;
+		*pat = NULL;
 
 	return NULL;
 #undef onexit
 }
 
-
 /**
- * Parse a statement.
- *   @expr: Ref. The expression.
- *   @token: The token.
+ * Parse a tuple pattern.
+ *   @pat: Ref. The pattern.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
  *   &returns: Error.
  */
-char *ml_parse_stmt(struct ml_expr_t **expr, struct ml_token_t **token)
+static char *parse_pat_tuple(struct ml_pat_t **pat, struct ml_token_t **token, struct ml_env_t *env)
 {
-#define onexit ml_pat_delete(pat); ml_expr_erase(tmp[0]); ml_expr_erase(tmp[1]); ml_match_erase(match);
-	struct ml_match_t *match = NULL;
-	struct ml_pat_t *pat = NULL;
-	struct ml_expr_t *tmp[2] = { NULL, NULL };
+#define onexit ml_pat_erase(head); *pat = NULL;
+	struct ml_pat_t *head = NULL, **cur;
 
-	if((*token)->type == ml_token_func_e) {
-		*token = (*token)->next;
-		chkfail(ml_parse_pat(&pat, token, false));
-		if(pat == NULL)
-			fail("Missing function parameters.");
+	chkfail(parse_pat_cons(pat, token, env));
+	if(*pat == NULL)
+		fail("%C: Missing pattern.", ml_tag_chunk(&(*token)->tag));
 
-		if((*token)->type != ml_token_arrow_e)
-			fail("Missing '->'.");
-
-		*token = (*token)->next;
-		chkfail(ml_parse_stmt(expr, token));
-		if(expr == NULL)
-			fail("Missing function expression.");
-
-		*expr = ml_expr_func(pat, *expr);
-		return NULL;
-	}
-	else if((*token)->type == ml_token_let_e) {
-		*token = (*token)->next;
-		chkfail(ml_parse_pat(&pat, token, false));
-		if(pat == NULL)
-			fail("Missing function parameters.");
-
-		if((*token)->type != ml_token_assign_e)
-			fail("Missing '='.");
-
-		*token = (*token)->next;
-		chkfail(ml_parse_stmt(&tmp[0], token));
-		if(tmp[0] == NULL)
-			fail("Missing expression in 'let'.");
-
-		if((*token)->type != ml_token_in_e)
-			fail("Expected 'in'.");
-
-		*token = (*token)->next;
-		chkfail(ml_parse_stmt(expr, token));
-		if(*expr == NULL)
-			fail("Missing expression in 'let'.");
-
-		*expr = ml_expr_let(pat, tmp[0], *expr);
-		return NULL;
-	}
-	else if((*token)->type == ml_token_if_e) {
-		char *err = NULL;
-
-		*token = (*token)->next;
-		tmp[0] = ml_parse_expr(token, &err);
-		if(err != NULL)
-			return err;
-		if(tmp[0] == NULL)
-			fail("Missing boolean expression.");
-
-		if((*token)->type != ml_token_then_e)
-			fail("Expected 'then'.");
-
-		*token = (*token)->next;
-		chkfail(ml_parse_stmt(&tmp[1], token));
-		if(tmp[1] == NULL)
-			fail("Missing ontrue expression in 'if'.");
-
-		if((*token)->type != ml_token_else_e)
-			fail("Expected 'else'.");
-
-		*token = (*token)->next;
-		chkfail(ml_parse_stmt(expr, token));
-		if(*expr == NULL)
-			fail("Missing onfalse expression in 'if'.");
-
-		*expr = ml_expr_cond(tmp[0], tmp[1], *expr);
-		return NULL;
-	}
-	else if((*token)->type == ml_token_match_e) {
-		char *err = NULL;
-
-		*token = (*token)->next;
-		tmp[0] = ml_parse_expr(token, &err);
-		if(err != NULL)
-			return err;
-		if(tmp[0] == NULL)
-			fail("Missing match expression.");
-
-		if((*token)->type != ml_token_with_e)
-			fail("Expected 'with'.");
-
-		match = ml_match_new(tmp[0]);
-
-		*token = (*token)->next;
-		while((*token)->type == ml_token_pipe_e) {
-			pat = NULL;
-			tmp[0] = NULL;
-
-			*token = (*token)->next;
-			chkfail(ml_parse_pat(&pat, token, false));
-			if(pat == NULL)
-				fail("Missing pattern.");
-
-			if((*token)->type != ml_token_arrow_e)
-				fail("Expected '->'.");
-
-			*token = (*token)->next;
-			chkfail(ml_parse_stmt(&tmp[0], token));
-			if(tmp[0] == NULL)
-				fail("Expected expresion.");
-
-			ml_match_append(match, pat, tmp[0]);
-		}
-
-		*expr = ml_expr_match(match);
-		return NULL;
-	}
-	else {
-		char *err = NULL;
-		*expr = ml_parse_expr(token, &err);
-		return err;
-	}
-#undef onexit
-}
-
-/**
- * Parse an expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_expr(struct ml_token_t **token, char **err)
-{
-	return ml_parse_concat(token, err);
-}
-
-/**
- * Parse a set.
- *   @expr: Ref. The expression.
- *   @token: The token.
- *   &returns: Error.
- */
-char *ml_parse_set(struct ml_expr_t **expr, struct ml_token_t **token)
-{
-#define onexit if(set.expr != NULL) ml_set_delete(set);
-	struct ml_set_t set = { 0 };
-
-	chkfail(ml_parse_stmt(expr, token));
-	if(*expr == NULL)
-		fail("Missing expression in set.");
-
-	if((*token)->type != ml_token_comma_e)
+	if((*token)->id != ',')
 		return NULL;
 
-	set = ml_set_new();
-	ml_set_add(&set, *expr);
+	head = *pat;
+	cur = &head->next;
 
 	do {
 		*token = (*token)->next;
-		chkfail(ml_parse_stmt(expr, token));
-		if(*expr == NULL)
-			fail("Missing expression in set.");
+		chkfail(parse_pat(cur, token, env));
+		if(*cur == NULL)
+			fail("%C: Missing pattern in tuple.", ml_tag_chunk(&(*token)->tag));
 
-		ml_set_add(&set, *expr);
-	} while((*token)->type == ml_token_comma_e);
+		cur = &(*cur)->next;
+	} while((*token)->id == ',');
 
-	*expr = ml_expr_set(set);
+	*pat = ml_pat_tuple(head, ml_tag_copy(head->tag));
+
+	return NULL;
+#undef onexit
+}
+
+
+/**
+ * Parse an expression.
+ *   @ret: Ref. The returned expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env)
+{
+	if((*token)->id == ml_token_let_v) {
+#define onexit ml_pat_erase(pat); ml_expr_erase(value);
+		struct ml_tag_t tag;
+		struct ml_pat_t *pat;
+		struct ml_expr_t *value;
+
+		tag = (*token)->tag;
+
+		*token = (*token)->next;
+		chkfail(parse_pat(&pat, token, env));
+		if(pat == NULL)
+			fail("%C: Missing pattern.", ml_tag_chunk(&(*token)->tag));
+
+		if((*token)->id != '=')
+			fail("%C: Missing '='.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		chkfail(parse_expr(&value, token, env));
+		if(value == NULL)
+			fail("%C: Missing value expression.", ml_tag_chunk(&(*token)->tag));
+
+		if((*token)->id != ml_token_in_v)
+			fail("%C: Missing 'in'.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		chkfail(parse_expr(ret, token, env));
+		if(*ret == NULL)
+			fail("%C: Missing in expression.", ml_tag_chunk(&(*token)->tag));
+
+		*ret = ml_expr_let(ml_let_new(pat, value, *ret), ml_tag_copy(tag)); return NULL;
+#undef onexit
+	}
+	else if((*token)->id == ml_token_if_v) {
+#define onexit ml_expr_erase(eval); ml_expr_erase(ontrue); ml_expr_erase(onfalse);
+		struct ml_tag_t tag;
+		struct ml_expr_t *eval = NULL, *ontrue = NULL, *onfalse = NULL;
+
+		tag = (*token)->tag;
+
+		*token = (*token)->next;
+		chkfail(parse_expr(&eval, token, env));
+		if(eval == NULL)
+			fail("%C: Missing conditional expression.", ml_tag_chunk(&(*token)->tag));
+
+		if((*token)->id != ml_token_then_v)
+			fail("%C: Missing 'then'.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		chkfail(parse_expr(&ontrue, token, env));
+		if(eval == NULL)
+			fail("%C: Missing true expression.", ml_tag_chunk(&(*token)->tag));
+
+		if((*token)->id != ml_token_else_v)
+			fail("%C: Missing 'else'.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		chkfail(parse_expr(&onfalse, token, env));
+		if(eval == NULL)
+			fail("%C: Missing false expression.", ml_tag_chunk(&(*token)->tag));
+
+		*ret = ml_expr_cond(ml_cond_new(eval, ontrue, onfalse), ml_tag_copy(tag));
+		return NULL;
+#undef onexit
+	}
+	else if((*token)->id == ml_token_match_v) {
+#define onexit if(match != NULL) ml_match_delete(match); ml_pat_erase(pat); ml_expr_erase(expr);
+		struct ml_tag_t tag;
+		struct ml_match_t *match = NULL;
+		struct ml_with_t **with;
+		struct ml_pat_t *pat = NULL;
+		struct ml_expr_t *expr = NULL;
+
+		tag = (*token)->tag;
+		*token = (*token)->next;
+		chkfail(parse_expr(&expr, token, env));
+		if(expr == NULL)
+			fail("%C: Missing match expression.", ml_tag_chunk(&(*token)->tag));
+
+		match = ml_match_new(expr);
+		with = &match->with;
+
+		if((*token)->id != ml_token_with_v)
+			fail("%C: Missing 'else'.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		while((*token)->id == '|') {
+			pat = NULL;
+			expr = NULL;
+
+			*token = (*token)->next;
+			chkfail(parse_pat(&pat, token, env));
+			if(pat == NULL)
+				fail("%C: Missing pattern.", ml_tag_chunk(&(*token)->tag));
+
+			if((*token)->id != ml_token_arrow_v)
+				fail("%C: Missing '->' in match statement.", ml_tag_chunk(&(*token)->tag));
+
+			*token = (*token)->next;
+			chkfail(parse_expr(&expr, token, env));
+			if(expr == NULL)
+				fail("%C: Missing expression.", ml_tag_chunk(&(*token)->tag));
+
+			*with = ml_with_new(pat, expr);
+			with = &(*with)->next;
+		}
+
+		*with = NULL;
+		*ret = ml_expr_match(match, ml_tag_copy(tag));
+		return NULL;
+#undef onexit
+	}
+	else
+		return parse_expr_concat(ret, token, env);
+}
+
+/**
+ * Parse a concat expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_concat(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	struct ml_tag_t tag;
+	struct ml_expr_t *right, *func, *value;
+
+	chkfail(parse_expr_cons(expr, token, env));
+	if(*expr == NULL)
+		return NULL;
+
+	while(true) {
+		if((*token)->id != ml_token_concat_v)
+			break;
+
+		tag = (*token)->tag;
+		*token = (*token)->next;
+		chkfail(parse_expr_cons(&right, token, env));
+		if(right == NULL)
+			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
+
+		func = ml_expr_value(ml_value_eval(ml_eval_concat, ml_tag_copy(tag)), ml_tag_copy(tag));
+		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
+		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
+	}
+
+#undef onexit
+	return NULL;
+}
+
+/**
+ * Parse a cons expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_cons(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	struct ml_tag_t tag;
+	struct ml_expr_t *right, *func, *value;
+
+	chkfail(parse_expr_cmp(expr, token, env));
+	if(*expr == NULL)
+		return NULL;
+
+	while(true) {
+		if((*token)->id != ml_token_cons_v)
+			break;
+
+		tag = (*token)->tag;
+		*token = (*token)->next;
+		chkfail(parse_expr_cmp(&right, token, env));
+		if(right == NULL)
+			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
+
+		func = ml_expr_value(ml_value_eval(ml_eval_cons, ml_tag_copy(tag)), ml_tag_copy(tag));
+		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
+		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
+	}
+
+#undef onexit
+	return NULL;
+}
+
+/**
+ * Parse a comparison expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_cmp(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	ml_eval_f eval;
+	struct ml_tag_t tag;
+	struct ml_expr_t *right, *func, *value;
+
+	chkfail(parse_expr_addsub(expr, token, env));
+	if(*expr == NULL)
+		return NULL;
+
+	while(true) {
+		tag = (*token)->tag;
+
+		if((*token)->id == '>')
+			eval = ml_eval_gt;
+		else if((*token)->id == '<')
+			eval = ml_eval_lt;
+		else if((*token)->id == ml_token_lte_v)
+			eval = ml_eval_lte;
+		else if((*token)->id == ml_token_gte_v)
+			eval = ml_eval_gte;
+		else
+			break;
+
+		*token = (*token)->next;
+		chkfail(parse_expr_addsub(&right, token, env));
+		if(right == NULL)
+			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
+
+		func = ml_expr_value(ml_value_eval(eval, ml_tag_copy(tag)), ml_tag_copy(tag));
+		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
+		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
+	}
+
+#undef onexit
+	return NULL;
+}
+
+/**
+ * Parse an add or subtract expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_addsub(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	ml_eval_f eval;
+	struct ml_tag_t tag;
+	struct ml_expr_t *right, *func, *value;
+
+	chkfail(parse_expr_muldiv(expr, token, env));
+	if(*expr == NULL)
+		return NULL;
+
+	while(true) {
+		tag = (*token)->tag;
+
+		if((*token)->id == '+')
+			eval = ml_eval_add;
+		else if((*token)->id == '-')
+			eval = ml_eval_sub;
+		else
+			break;
+
+		*token = (*token)->next;
+		chkfail(parse_expr_muldiv(&right, token, env));
+		if(right == NULL)
+			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
+
+		func = ml_expr_value(ml_value_eval(eval, ml_tag_copy(tag)), ml_tag_copy(tag));
+		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
+		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
+	}
+
+#undef onexit
+	return NULL;
+}
+
+/**
+ * Parse a multiply or divide expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_muldiv(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	ml_eval_f eval;
+	struct ml_tag_t tag;
+	struct ml_expr_t *right, *func, *value;
+
+	chkfail(parse_expr_unary(expr, token, env));
+	if(*expr == NULL)
+		return NULL;
+
+	while(true) {
+		tag = (*token)->tag;
+
+		if((*token)->id == '*')
+			eval = ml_eval_mul;
+		else if((*token)->id == '/')
+			eval = ml_eval_div;
+		else if((*token)->id == '%')
+			eval = ml_eval_mod;
+		else
+			break;
+
+		*token = (*token)->next;
+		chkfail(parse_expr_unary(&right, token, env));
+		if(right == NULL)
+			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
+
+		func = ml_expr_value(ml_value_eval(eval, ml_tag_copy(tag)), ml_tag_copy(tag));
+		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
+		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
+	}
+
+#undef onexit
+	return NULL;
+}
+
+/**
+ * Parse a unary expression.
+ *   @ret: Ref. The return expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_unary(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit
+	if((*token)->id == '-') {
+		struct ml_tag_t tag = (*token)->tag;
+
+		*token = (*token)->next;
+		chkfail(parse_expr_app(ret, token, env));
+		if(*ret == NULL)
+			fail("%C: Missing expression to negate.", ml_tag_chunk(&(*token)->tag));
+
+		*ret = ml_expr_app(ml_app_new(ml_expr_value(ml_value_eval(ml_eval_neg, ml_tag_copy(tag)), ml_tag_copy(tag)), *ret), ml_tag_copy(tag));
+	}
+	else if((*token)->id == '+') {
+		*token = (*token)->next;
+		chkfail(parse_expr_app(ret, token, env));
+	}
+	else
+		chkfail(parse_expr_app(ret, token, env));
+
 	return NULL;
 #undef onexit
 }
 
 /**
- * Parse a list.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
+ * Parse an application expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
  */
-struct ml_expr_t *ml_parse_list(struct ml_token_t **token, char **err)
+static char *parse_expr_app(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
 {
-#undef fail
-#define fail(str, ...) do { ml_set_delete(set); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: " str, (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, ##__VA_ARGS__); return NULL; } while(0)
+#define onexit ml_expr_erase(*expr); *expr = NULL;
+	struct ml_expr_t *next;
 
-	struct ml_set_t set;
-	struct ml_expr_t *expr;
-
-	set = ml_set_new();
-
-	while((*token)->type != ml_token_rbrace_e) {
-		expr = ml_parse_expr(token, err);
-		if(expr == NULL)
-			fail("Missing expression in list.");
-
-		ml_set_add(&set, expr);
-
-		if((*token)->type != ml_token_comma_e)
-			break;
-
-		*token = (*token)->next;
-	} while((*token)->type == ml_token_comma_e);
-
-	return ml_expr_app(ml_expr_value(ml_value_impl(ml_eval_list)), ml_expr_set(set));
-}
-
-/**
- * Parse an concat expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-struct ml_expr_t *ml_parse_concat(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(left != NULL) ml_expr_delete(left); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-	ml_impl_f impl;
-	struct ml_expr_t *left, *right;
-
-	left = ml_parse_cons(token, err);
-	if(left == NULL)
+	*expr = NULL;
+	chkfail(parse_expr_value(expr, token, env));
+	if(*expr == NULL)
 		return NULL;
 
 	while(true) {
-		if((*token)->type == ml_token_concat_e)
-			impl = ml_eval_concat;
-		else
-			break;
-
-		*token = (*token)->next;
-		right = ml_parse_cons(token, err);
-		if(right == NULL)
-			fail("Missing right-hand expression.");
-
-		left = ml_expr_app(ml_expr_value(ml_value_impl(impl)), ml_expr_set(ml_set_new2(left, right)));
-	}
-
-	return left;
-}
-
-/**
- * Parse an cons expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_cons(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(left != NULL) ml_expr_delete(left); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-	ml_impl_f impl;
-	struct ml_expr_t *left, *right;
-
-	left = ml_parse_cmp(token, err);
-	if(left == NULL)
-		return NULL;
-
-	while(true) {
-		if((*token)->type == ml_token_cons_e)
-			impl = ml_eval_cons;
-		else
-			break;
-
-		*token = (*token)->next;
-		right = ml_parse_cons(token, err);
-		if(right == NULL)
-			fail("Missing right-hand expression.");
-
-		left = ml_expr_app(ml_expr_value(ml_value_impl(impl)), ml_expr_set(ml_set_new2(left, right)));
-	}
-
-	return left;
-}
-
-/**
- * Parse an comparison expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-struct ml_expr_t *ml_parse_cmp(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(left != NULL) ml_expr_delete(left); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-	ml_impl_f impl;
-	struct ml_expr_t *left, *right;
-
-	left = ml_parse_addsub(token, err);
-	if(left == NULL)
-		return NULL;
-
-	while(true) {
-		if((*token)->type == ml_token_equal_e)
-			impl = ml_eval_eq;
-		else if((*token)->type == ml_token_gt_e)
-			impl = ml_eval_gt;
-		else if((*token)->type == ml_token_gte_e)
-			impl = ml_eval_gte;
-		else if((*token)->type == ml_token_lt_e)
-			impl = ml_eval_lt;
-		else if((*token)->type == ml_token_lte_e)
-			impl = ml_eval_lte;
-		else
-			break;
-
-		*token = (*token)->next;
-		right = ml_parse_addsub(token, err);
-		if(right == NULL)
-			fail("Missing right-hand expression.");
-
-		left = ml_expr_app(ml_expr_value(ml_value_impl(impl)), ml_expr_set(ml_set_new2(left, right)));
-	}
-
-	return left;
-}
-
-/**
- * Parse an addition or subtraction expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_addsub(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(left != NULL) ml_expr_delete(left); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-	ml_impl_f impl;
-	struct ml_expr_t *left, *right;
-
-	left = ml_parse_muldiv(token, err);
-	if(left == NULL)
-		return NULL;
-
-	while(true) {
-		if((*token)->type == ml_token_plus_e)
-			impl = ml_eval_add;
-		else if((*token)->type == ml_token_minus_e)
-			impl = ml_eval_sub;
-		else
-			break;
-
-		*token = (*token)->next;
-		right = ml_parse_muldiv(token, err);
-		if(right == NULL)
-			fail("Missing right-hand expression.");
-
-		left = ml_expr_app(ml_expr_value(ml_value_impl(impl)), ml_expr_set(ml_set_new2(left, right)));
-	}
-
-	return left;
-}
-
-/**
- * Parse a multiplication or division expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_muldiv(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(left != NULL) ml_expr_delete(left); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-	ml_impl_f impl;
-	struct ml_expr_t *left, *right;
-
-	left = ml_parse_unary(token, err);
-	if(left == NULL)
-		return NULL;
-
-	while(true) {
-		if((*token)->type == ml_token_star_e)
-			impl = ml_eval_mul;
-		else if((*token)->type == ml_token_slash_e)
-			impl = ml_eval_div;
-		else if((*token)->type == ml_token_mod_e)
-			impl = ml_eval_mod;
-		else
-			break;
-
-		*token = (*token)->next;
-		right = ml_parse_unary(token, err);
-		if(right == NULL)
-			fail("Missing right-hand expression.");
-
-		left = ml_expr_app(ml_expr_value(ml_value_impl(impl)), ml_expr_set(ml_set_new2(left, right)));
-	}
-
-	return left;
-}
-
-/**
- * Parse an unary expression.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_unary(struct ml_token_t **token, char **err)
-{
-	if((*token)->type == ml_token_minus_e) {
-		struct ml_expr_t *expr;
-
-		*token = (*token)->next;
-		expr = ml_parse_app(token, err);
-
-		return expr ? ml_expr_app(ml_expr_value(ml_value_impl(ml_eval_neg)), expr) : NULL;
-	}
-	else if((*token)->type == ml_token_plus_e) {
-		*token = (*token)->next;
-
-		return ml_parse_app(token, err);
-	}
-	else
-		return ml_parse_app(token, err);
-}
-
-/**
- * Parse an applicationn.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_app(struct ml_token_t **token, char **err)
-{
-	struct ml_expr_t *expr, *value;
-
-	expr = ml_parse_value(token, err);
-	if(expr == NULL)
-		return expr;
-
-	while(true) {
-		value = ml_parse_value(token, err);
-		if(value == NULL)
-			return expr;
-
-		expr = ml_expr_app(expr, value);
-	}
-}
-
-/**
- * Parse a value.
- *   @token: The token.
- *   @err: The error.
- *   &returns: The expression or null.
- */
-
-struct ml_expr_t *ml_parse_value(struct ml_token_t **token, char **err)
-{
-#undef fail
-#define fail(str) do { if(expr != NULL) ml_expr_delete(expr); if(*err == NULL) ml_eprintf(err, "%s:%u:%u: %s", (*token)->tag.file, (*token)->tag.line, (*token)->tag.col, str); return NULL; } while(0)
-
-	struct ml_expr_t *expr;
-
-	if((*token)->type == ml_token_nil_e)
-		expr = ml_expr_value(ml_value_nil((*token)->tag));
-	else if((*token)->type == ml_token_num_e)
-		expr = ml_expr_value(ml_value_num((*token)->data.flt));
-	else if((*token)->type == ml_token_str_e)
-		expr = ml_expr_value(ml_value_str(strdup((*token)->data.str)));
-	else if((*token)->type == ml_token_id_e) {
-		if(strcmp((*token)->data.str, "true") == 0)
-			expr = ml_expr_value(ml_value_bool(true));
-		else if(strcmp((*token)->data.str, "false") == 0)
-			expr = ml_expr_value(ml_value_bool(false));
-		else if(strcmp((*token)->data.str, "exp") == 0)
-			expr = ml_expr_value(ml_value_impl(ml_eval_exp));
-		else if(strcmp((*token)->data.str, "log") == 0)
-			expr = ml_expr_value(ml_value_impl(ml_eval_log));
-		else if(strcmp((*token)->data.str, "floor") == 0)
-			expr = ml_expr_value(ml_value_impl(ml_eval_floor));
-		else if(strcmp((*token)->data.str, "ceil") == 0)
-			expr = ml_expr_value(ml_value_impl(ml_eval_ceil));
-		else if(strcmp((*token)->data.str, "round") == 0)
-			expr = ml_expr_value(ml_value_impl(ml_eval_round));
-		else {
-			struct ml_eval_t *eval;
-
-			for(eval = ml_eval_arr; eval->id != NULL; eval++) {
-				if(strcmp(eval->id, (*token)->data.str) == 0)
-					break;
-			}
-
-			if(eval->id != NULL)
-				expr = ml_expr_value(ml_value_impl(eval->func));
-			else {
-				struct ml_eval0_t *eval;
-
-				for(eval = ml_eval_table; eval->id != NULL; eval++) {
-					if(strcmp(eval->id, (*token)->data.str) == 0)
-						break;
-				}
-
-				if(eval->id != NULL)
-					expr = ml_expr_value(ml_value_eval(eval->func, (*token)->tag));
-				else
-					expr = ml_expr_id(strdup((*token)->data.str), (*token)->tag);
-			}
-		}
-	}
-	else if((*token)->type == ml_token_lbrace_e) {
-		*token = (*token)->next;
-
-		expr = ml_parse_list(token, err);
-
-		if((*token)->type != ml_token_rbrace_e)
-			fail("Missing ']'.");
-	}
-	else if((*token)->type == ml_token_lparen_e) {
-		*token = (*token)->next;
-
-		*err = ml_parse_set(&expr, token);
-		if(*err != NULL)
+		chkfail(parse_expr_value(&next, token, env));
+		if(next == NULL)
 			return NULL;
-		if(expr == NULL)
-			fail("Missing expresion.");
 
-		if((*token)->type != ml_token_rparen_e)
-			fail("Missing ')'.");
+		*expr = ml_expr_app(ml_app_new(*expr, next), ml_tag_copy((*expr)->tag));
 	}
+
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Parse an value expression.
+ *   @expr: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_value(struct ml_expr_t **expr, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit ml_expr_erase(*expr); *expr = NULL;
+	struct ml_tag_t tag = (*token)->tag;
+
+	if((*token)->id == ml_token_id_v) {
+		*expr = ml_expr_var(strdup((*token)->data.str), ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_num_v) {
+		struct ml_value_t *value;
+
+		value = ml_value_num((*token)->data.num, ml_tag_copy(tag));
+		*expr = ml_expr_value(value, ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_flt_v) {
+		struct ml_value_t *value;
+
+		value = ml_value_flt((*token)->data.flt, ml_tag_copy(tag));
+		*expr = ml_expr_value(value, ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_str_v) {
+		struct ml_value_t *value;
+
+		value = ml_value_str(strdup((*token)->data.str), ml_tag_copy(tag));
+		*expr = ml_expr_value(value, ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_nil_v) {
+		*expr = ml_expr_value(ml_value_nil(ml_tag_copy(tag)), ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_true_v) {
+		*expr = ml_expr_value(ml_value_bool(true, ml_tag_copy(tag)), ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == ml_token_false_v) {
+		*expr = ml_expr_value(ml_value_bool(false, ml_tag_copy(tag)), ml_tag_copy(tag));
+		*token = (*token)->next;
+	}
+	else if((*token)->id == '(')
+		chkfail(parse_expr_tuple(expr, token, env));
+	else if((*token)->id == '[')
+		chkfail(parse_expr_list(expr, token, env));
 	else
+		*expr = NULL;
+
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Parse a tuple expression.
+ *   @ret: Ref. The expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_tuple(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit ml_expr_erase(*ret); ml_tuple_erase(tuple); *ret = NULL;
+	struct ml_tuple_t *tuple = NULL;
+
+	if((*token)->id != '(')
 		return NULL;
 
 	*token = (*token)->next;
+	chkfail(parse_expr(ret, token, env));
+	if(*ret == NULL)
+		fail("%C: Missing expression.", ml_tag_chunk(&(*token)->tag));
 
-	return expr;
+	if((*token)->id == ',') {
+		tuple = ml_tuple_new();
+		ml_tuple_append(tuple, *ret);
+
+		do {
+			*ret = NULL;
+			*token = (*token)->next;
+			chkfail(parse_expr(ret, token, env));
+			if(*ret == NULL)
+				fail("%C: Missing expression in tuple.", ml_tag_chunk(&(*token)->tag));
+
+			ml_tuple_append(tuple, *ret);
+		} while((*token)->id == ',');
+
+		if((*token)->id != ')')
+			fail("%C: Missing ',' or ')'.", ml_tag_chunk(&(*token)->tag));
+
+		*token = (*token)->next;
+		*ret = ml_expr_tuple(tuple, ml_tag_copy(tuple->head->expr->tag));
+	}
+	else if((*token)->id == ')')
+		*token = (*token)->next;
+	else
+		fail("%C: Missing ',' or ')'.", ml_tag_chunk(&(*token)->tag));
+
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Parse a list expression.
+ *   @ret: Ref. The return expression.
+ *   @token: Ref. The current token.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+static char *parse_expr_list(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env)
+{
+#define onexit ml_tuple_delete(tuple);
+	struct ml_tag_t tag;
+	struct ml_tuple_t *tuple;
+	struct ml_expr_t *expr;
+
+	if((*token)->id != '[')
+		return NULL;
+
+	tuple = ml_tuple_new();
+	tag = (*token)->tag;
+
+	while(true) {
+		*token = (*token)->next;
+		if((*token)->id == ']')
+			break;
+
+		chkfail(parse_expr(&expr, token, env));
+		if(expr == NULL)
+			fail("%C: Missing expression.", ml_tag_chunk(&(*token)->tag));
+
+		ml_tuple_append(tuple, expr);
+
+		if((*token)->id == ']')
+			break;
+		else if((*token)->id != ',')
+			fail("%C: Expected ',' or ']'.", ml_tag_chunk(&(*token)->tag));
+	}
+
+	*token = (*token)->next;
+	*ret = ml_expr_tuple(tuple, ml_tag_copy(tag));
+	*ret = ml_expr_app(ml_app_new(ml_expr_value(ml_value_eval(ml_eval_list, ml_tag_copy(tag)), ml_tag_copy(tag)), *ret), ml_tag_copy(tag));
+	return NULL;
+#undef onexit
+	/*
+#define onexit ml_tuple_erase(tuple);
+	struct ml_tuple_t *tuple = NULL;
+	struct ml_tag_t tag = (*token)->tag;
+
+	chkfail(parse_expr(expr, token, env));
+	if(*expr == NULL)
+		fail("%C: Missing expression.", ml_tag_chunk(&(*token)->tag));
+
+	tuple = ml_tuple_new();
+	ml_tuple_append(tuple, *expr);
+
+	while((*token)->id == ',') {
+		*token = (*token)->next;
+		chkfail(parse_expr(expr, token, env));
+		if(*expr == NULL)
+			fail("%C: Missing expression in list.", ml_tag_chunk(&(*token)->tag));
+
+		ml_tuple_append(tuple, *expr);
+	}
+
+	*expr = ml_expr_tuple(tuple, ml_tag_copy(tag));
+	*expr = ml_expr_app(ml_app_new(ml_expr_value(ml_value_eval(ml_eval_list, ml_tag_copy(ml_tag_null)), ml_tag_copy(ml_tag_null)), *expr), ml_tag_copy(tag));
+	return NULL;
+#undef onexit
+*/
 }

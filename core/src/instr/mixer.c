@@ -78,19 +78,18 @@ char *amp_mixer_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 
 	mixer = amp_mixer_new();
 
-	if(value->type != ml_value_list_e)
+	if(value->type != ml_value_list_v)
 		fail("Type error. Instrument mixer requires a list of instrument as input.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		if(amp_unbox_value(link->value, amp_box_instr_e) == NULL)
 			fail("Type error. Instrument mixer requires a list of instrument as input.");
 	}
 
-	for(link = value->data.list.head; link != NULL; link = link->next)
+	for(link = value->data.list->head; link != NULL; link = link->next)
 		amp_mixer_append(mixer, amp_instr_copy(amp_unbox_value(link->value, amp_box_instr_e)->data.instr));
 
 	*ret = amp_pack_instr((struct amp_instr_t){ mixer, &amp_mixer_iface });
-	ml_value_delete(value);
 
 	return NULL;
 #undef onexit

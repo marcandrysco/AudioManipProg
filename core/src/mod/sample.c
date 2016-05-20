@@ -140,8 +140,9 @@ void amp_sample_delete(struct amp_sample_t *sample)
  */
 char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+	/*
 #define onexit ml_value_delete(value); if(sample != NULL) amp_sample_delete(sample);
-#define error() fail("%C: Type error. Expected (int,float,[[string]]).", ml_tag_chunk(&value->tag))
+#define error() fail("%C: Type error. Expected (Int,Float,[[String]]).", ml_tag_chunk(&value->tag))
 	struct ml_tuple_t tuple;
 	struct ml_link_t *link, *inst;
 	struct amp_sample_t *sample = NULL;
@@ -186,6 +187,9 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 	return NULL;
 #undef error
 #undef onexit
+*/
+
+	fatal("stub");
 }
 
 

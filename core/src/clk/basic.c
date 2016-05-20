@@ -100,6 +100,7 @@ void amp_basic_seek(struct amp_basic_t *basic, double bar)
 
 struct ml_value_t *amp_basic_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
+	/*
 #undef fail
 #define fail() do { ml_value_delete(value); *err = amp_printf("Type error. Expected '(Num,Num,[])'."); return NULL; } while(0);
 
@@ -120,6 +121,8 @@ struct ml_value_t *amp_basic_make(struct ml_value_t *value, struct ml_env_t *env
 	ml_value_delete(value);
 
 	return amp_pack_clock(amp_basic_clock(basic));
+	*/
+	fatal("stub");
 }
 
 

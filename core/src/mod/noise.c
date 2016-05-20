@@ -68,7 +68,7 @@ struct ml_value_t *amp_noise_make(struct ml_value_t *value, struct ml_env_t *env
 
 	ml_value_delete(value);
 
-	if(type != ml_value_nil_e) {
+	if(type != ml_value_nil_v) {
 		*err = amp_printf("Type error. Expected '()'.");
 		return NULL;
 	}

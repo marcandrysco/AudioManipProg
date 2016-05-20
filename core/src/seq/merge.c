@@ -98,17 +98,16 @@ char *amp_merge_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 
 	merge = amp_merge_new();
 
-	if(value->type != ml_value_list_e)
+	if(value->type != ml_value_list_v)
 		fail("Type error. Toggle expects type '[Seq]'.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		struct amp_seq_t seq;
 
 		chkfail(amp_match_unpack(ml_value_copy(link->value), "S", &seq));
 		amp_merge_append(merge, seq);
 	}
 
-	ml_value_delete(value);
 	*ret = amp_pack_seq((struct amp_seq_t){ merge, &amp_merge_iface });
 
 	return NULL;

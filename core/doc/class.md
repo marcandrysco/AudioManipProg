@@ -60,7 +60,7 @@ AmpCore provides the following set of `Effect` instances:
 
 ## Instrument
 
-The `Instr` or Instrument class processes data on a stereo signal. The
+The `Instr` or Instrument class processes data on a multichannel signal. The
 instrument is the base class for processing audio in real time.
 
     Instr = Mixer [Instr]
@@ -71,6 +71,8 @@ instrument is the base class for processing audio in real time.
 
 AmpCore provides the following set of `Instr` instances:
 
+  * [Inject](instr/inject.md) inject a modified set of events from a
+      sequencer.
   * [Mixer](instr/mixer.md) sums together a set of instruments.
   * [Pan](instr/pan.md) performs a delay and gain panning of an instrument.
   * [Series](instr/series.md) processes a set of instruments in series.

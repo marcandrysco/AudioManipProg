@@ -32,7 +32,7 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 	engine->watch = NULL;
 	engine->rt = (struct amp_rt_t){ engine, amp_engine_watch };
 
-	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt)));
+	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt), ml_tag_copy(ml_tag_null)));
 
 	iface = "unk";
 	
@@ -46,7 +46,7 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 		iface = "pulse";
 #endif
 
-	ml_env_add(&engine->core->env, strdup("amp.audio"), ml_value_str(strdup(iface)));
+	ml_env_add(&engine->core->env, strdup("amp.audio"), ml_value_str(strdup(iface), ml_tag_copy(ml_tag_null)));
 
 	return engine;
 }

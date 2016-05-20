@@ -78,8 +78,8 @@ char *amp_enable_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 	struct amp_seq_t seq;
 
 	chkfail(amp_match_unpack(value, "((d,d),S)", &dev, &key, &seq));
-
 	*ret = amp_pack_seq((struct amp_seq_t){ amp_enable_new((struct amp_id_t){ dev, key }, seq), &amp_enable_iface });
+
 	return NULL;
 #undef onexit
 }

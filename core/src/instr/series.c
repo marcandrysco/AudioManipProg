@@ -78,15 +78,15 @@ char *amp_series_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 
 	series = amp_series_new();
 
-	if(value->type != ml_value_list_e)
+	if(value->type != ml_value_list_v)
 		fail("Type error. Instrument series requires a list of instrument as input.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		if(amp_unbox_value(link->value, amp_box_instr_e) == NULL)
 			fail("Type error. Instrument series requires a list of instrument as input.");
 	}
 
-	for(link = value->data.list.head; link != NULL; link = link->next)
+	for(link = value->data.list->head; link != NULL; link = link->next)
 		amp_series_append(series, amp_instr_copy(amp_unbox_value(link->value, amp_box_instr_e)->data.instr));
 
 	*ret = amp_pack_instr((struct amp_instr_t){ series, &amp_series_iface });

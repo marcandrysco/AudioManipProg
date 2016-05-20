@@ -85,7 +85,7 @@ struct ml_value_t *amp_pack_module(struct amp_module_t module);
 struct ml_value_t *amp_pack_seq(struct amp_seq_t seq);
 
 void amp_match_str(char *str, size_t len, const char *format);
-char *amp_match_err(const char *format);
+char *amp_match_err(struct ml_tag_t *tag, const char *format);
 char *amp_match_unpack(struct ml_value_t *value, const char *format, ...);
 
 /**
@@ -105,7 +105,7 @@ static inline struct ml_box_t amp_box_pack(struct amp_box_t *box)
  */
 static inline struct ml_value_t *amp_box_value(struct amp_box_t *box)
 {
-	return ml_value_box(amp_box_pack(box));
+	return ml_value_box(amp_box_pack(box), ml_tag_copy(ml_tag_null));
 }
 
 /**
@@ -128,7 +128,7 @@ static inline struct amp_box_t *amp_unbox_value(struct ml_value_t *value, enum a
 {
 	struct amp_box_t *box;
 
-	if(value->type != ml_value_box_e)
+	if(value->type != ml_value_box_v)
 		return NULL;
 
 	box = amp_box_unpack(value->data.box);
@@ -140,7 +140,7 @@ static inline struct amp_box_t *amp_unbox_value(struct ml_value_t *value, enum a
 
 static inline bool amp_unbox_isparam(struct ml_value_t *value)
 {
-	return (value->type == ml_value_num_e) || (amp_unbox_value(value, amp_box_ctrl_e) != NULL) || (amp_unbox_value(value, amp_box_module_e) != NULL);
+	return (value->type == ml_value_num_v) || (value->type == ml_value_flt_v) || (amp_unbox_value(value, amp_box_ctrl_e) != NULL) || (amp_unbox_value(value, amp_box_module_e) != NULL);
 }
 
 #endif

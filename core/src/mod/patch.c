@@ -69,16 +69,17 @@ void amp_patch_delete(struct amp_patch_t *patch)
  *   @err: The error.
  *   &returns: The value or null.
  */
-struct ml_value_t *amp_patch_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_patch_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_module_t input;
 	struct amp_effect_t effect;
 
-	*err = amp_match_unpack(value, "(M,E)", &input, &effect);
-	if(*err == NULL)
-		return amp_pack_module((struct amp_module_t){ amp_patch_new(input, effect), &amp_patch_iface });
-	else
-		return NULL;
+	chkfail(amp_match_unpack(value, "(M,E)", &input, &effect));
+
+	*ret = amp_pack_module((struct amp_module_t){ amp_patch_new(input, effect), &amp_patch_iface });
+	return NULL;
+#undef onexit
 }
 
 

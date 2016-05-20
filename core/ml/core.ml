@@ -1,27 +1,3 @@
-let map f l = mapl (f,l)
-
-(*
-  match l with
-    | h::t -> (f h) :: (map f t)
-    | _    -> []
-*)
-let println s = print (s ++ "\n")
-
-(**
- * Compute a mathematical power 'a^b'.
- *   @a (num): The base.
- *   @b (num): The exponent.
- *   &returns (num): The result 'a^b'.
- *)
-let pow a b = exp (b * (log a))
-
-(**
- * Compute a square root.
- *   @v (num): The value.
- *   &returns (num): The result 'sqrt(v)'.
- *)
-let sqrt v = pow v 0.5
-
 (* compute decibels from an amplitude *)
 let amp2db v = 20 * log v / log 10
 
@@ -110,6 +86,7 @@ let Scale1 = Scale'(0,1)
  *   &ret (Module): The oscillator module.
  *)
 let Sine'(f) = Sine(Ramp(f))
+let SineW(f,w) = Sine(Warp(Ramp(f),w))
 let Tri'(f) = Tri(Ramp(f))
 let Square'(f) = Square(Ramp(f))
 
@@ -139,8 +116,8 @@ let Gen' m  = Chain[Mute,Gen(m)]
  *   @m (Module): The module.
  *   &ret (Effect): The generator.
  *)
-let SynthGen (d,n,m) = Gen(Synth((d,0),n,m))
-let SynthGen' (d,n,m) = Gen'(Synth((d,0),n,m))
+let SynthGen (d,n,m) = Gen(Synth(d,n,m))
+let SynthGen' (d,n,m) = Gen'(Synth(d,n,m))
 
 (**
  * Process an effect on the left channel.

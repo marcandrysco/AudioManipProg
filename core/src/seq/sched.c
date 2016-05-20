@@ -48,84 +48,38 @@ static struct amp_sched_inst_t *inst_copy(struct amp_sched_inst_t *inst);
 static void inst_delete(struct amp_sched_inst_t *inst);
 
 
-bool amp_scan_time(struct amp_time_t *time, struct ml_value_t *value)
-{
-	struct ml_tuple_t tuple;
-
-	if(value->type != ml_value_tuple_e)
-		return false;
-
-	tuple = value->data.tuple;
-	if(tuple.len != 2)
-		return false;
-
-	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e))
-		return false;
-
-	*time = (struct amp_time_t){ 0, tuple.value[0]->data.num, tuple.value[1]->data.num };
-
-	return true;
-}
-
-bool amp_scan_event(struct amp_event_t *event, struct ml_value_t *value)
-{
-	struct ml_tuple_t tuple;
-
-	if(value->type != ml_value_tuple_e)
-		return false;
-
-	tuple = value->data.tuple;
-	if(tuple.len != 3)
-		return false;
-
-	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_num_e))
-		return false;
-
-	*event = (struct amp_event_t){ tuple.value[0]->data.num, tuple.value[1]->data.num, tuple.value[2]->data.num };
-
-	return true;
-}
-
 /**
  * Create a schedule from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_sched_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_sched_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail() do { amp_sched_delete(sched); ml_value_delete(value); *err = amp_printf("Type error. Expected '[((Num,Num),(Num,Num,Num))]'."); return NULL; } while(0)
-
+#define onexit amp_sched_delete(sched);
+#define error() fail("%C: Type error. Expected list of events.", ml_tag_chunk(&value->tag))
 	struct ml_link_t *link;
-	struct ml_tuple_t tuple;
 	struct amp_sched_t *sched;
-	struct amp_time_t time;
-	struct amp_event_t event;
 
 	sched = amp_sched_new();
 
-	if(value->type != ml_value_list_e)
-		fail();
+	if(value->type != ml_value_list_v)
+		error();
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
-		if(link->value->type != ml_value_tuple_e)
-			fail();
+	for(link = value->data.list->head; link != NULL; link = link->next) {
+		struct amp_time_t time;
+		struct amp_event_t event;
 
-		tuple = link->value->data.tuple;
-		if(tuple.len != 2)
-			fail();
-
-		if(!amp_scan_time(&time, tuple.value[0]) || !amp_scan_event(&event, tuple.value[1]))
-			fail();
+		chkfail(amp_match_unpack(link->value, "((d,f),(d,d,d))", &time.bar, &time.beat, &event.dev, &event.key, &event.val));
 
 		amp_sched_add(sched, time, event);
 	}
 
-	ml_value_delete(value);
+	*ret = amp_pack_seq((struct amp_seq_t){ sched, &amp_sched_iface });
 
-	return amp_pack_seq((struct amp_seq_t){ sched, &amp_sched_iface });
+	return NULL;
+#undef onexit
 }
 
 

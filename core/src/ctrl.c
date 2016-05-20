@@ -53,20 +53,21 @@ void amp_ctrl_delete(struct amp_ctrl_t *ctrl)
  */
 struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
+	/*
 #undef fail
 #define fail() do { ml_value_delete(value); *err = strdup("Type mismatch. Control constructor requires the form '(num:Default, (num:Low, num:High), (num:Device, num:Key))'."); return NULL; } while(0)
 
 	double val, low, high, dev, key;
 	struct ml_tuple_t tuple, range, instr;
 
-	if(value->type != ml_value_tuple_e)
+	if(value->type != ml_value_tuple_v)
 		fail();
 
 	tuple = value->data.tuple;
 	if(tuple.len != 3)
 		fail();
 
-	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_tuple_e) || (tuple.value[2]->type != ml_value_tuple_e))
+	if((tuple.value[0]->type != ml_value_num_v) || (tuple.value[1]->type != ml_value_tuple_v) || (tuple.value[2]->type != ml_value_tuple_v))
 		fail();
 
 	range = tuple.value[1]->data.tuple;
@@ -74,10 +75,10 @@ struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env,
 	if((range.len != 2) || (instr.len != 2))
 		fail();
 
-	if((range.value[0]->type != ml_value_num_e) || (range.value[1]->type != ml_value_num_e))
+	if((range.value[0]->type != ml_value_num_v) || (range.value[1]->type != ml_value_num_v))
 		fail();
 
-	if((instr.value[0]->type != ml_value_num_e) || (instr.value[1]->type != ml_value_num_e))
+	if((instr.value[0]->type != ml_value_num_v) || (instr.value[1]->type != ml_value_num_v))
 		fail();
 
 	val = tuple.value[0]->data.num;
@@ -99,6 +100,8 @@ struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env,
 	ml_value_delete(value);
 
 	return amp_pack_ctrl(amp_ctrl_new(val, low, high, false, dev, key));
+	*/
+	fatal("stub");
 }
 
 

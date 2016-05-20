@@ -49,29 +49,6 @@ void ml_env_delete(struct ml_env_t *env)
 
 
 /**
- * Process a file path against an environment.
- *   @path: The path.
- *   @env: The environment pointer.
- *   &returns: The error if failed, null if successful.
- */
-char *ml_env_proc(const char *path, struct ml_env_t **env)
-{
-	char *err = NULL;
-	struct ml_token_t *token;
-
-	token = ml_token_load(path, &err);
-
-	if(token == NULL)
-		return err;
-
-	err = ml_parse_top(token, env, path);
-	ml_token_clean(token);
-
-	return err;
-}
-
-
-/**
  * Add a binding to the environment.
  *   @env: The environment.
  *   @id: Consumed. The identifier.

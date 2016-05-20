@@ -7,7 +7,6 @@
  *   @endptr: The end pointer.
  *   &returns: The letter value or negative.
  */
-
 int16_t amp_key_get(const char *str, char **endptr)
 {
 	long octave;
@@ -36,13 +35,12 @@ int16_t amp_key_get(const char *str, char **endptr)
  *   @err: The error.
  *   &returns: The value or null.
  */
-
 struct ml_value_t *amp_key_eval(struct ml_value_t *value, struct ml_env_t *env, char **err)
 {
 	int16_t key;
 	char *endptr;
 
-	if(value->type == ml_value_str_e)
+	if(value->type == ml_value_str_v)
 		key = amp_key_get(value->data.str, &endptr);
 	else
 		key = -1;
@@ -52,7 +50,7 @@ struct ml_value_t *amp_key_eval(struct ml_value_t *value, struct ml_env_t *env, 
 
 	ml_value_delete(value);
 
-	return (*err == NULL) ? ml_value_num(key) : NULL;
+	return (*err == NULL) ? ml_value_num(key, ml_tag_copy(value->tag)) : NULL;
 }
 
 
@@ -62,7 +60,6 @@ struct ml_value_t *amp_key_eval(struct ml_value_t *value, struct ml_env_t *env, 
  *   @endptr: The end pointer.
  *   &returns: The letter value or negative.
  */
-
 int8_t amp_let_get(const char *str, char **endptr)
 {
 	uint8_t val;
@@ -94,7 +91,6 @@ int8_t amp_let_get(const char *str, char **endptr)
  *   @let: The letter value.
  *   &returns: The letter or null.
  */
-
 const char *amp_let_str(int16_t let)
 {
 	switch((let % 12 + 12) % 12) {

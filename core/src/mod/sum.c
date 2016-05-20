@@ -84,35 +84,34 @@ void amp_sum_delete(struct amp_sum_t *sum)
 
 /**
  * Create a sum from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_sum_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_sum_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(...) do { ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
-
+#define onexit amp_sum_delete(sum);
+#define error() fail("Type error. Sum requires a list of parameters as input.")
 	struct amp_sum_t *sum;
 	struct ml_link_t *link;
 
-	if(value->type != ml_value_list_e)
-		fail("Type error. Sum requires a list of parameters as input.");
-
-	for(link = value->data.list.head; link != NULL; link = link->next) {
-		if(!amp_unbox_isparam(link->value))
-			fail("Type error. Sum requires a list of parameters as input.");
-	}
-
 	sum = amp_sum_new();
 
-	for(link = value->data.list.head; link != NULL; link = link->next)
+	if(value->type != ml_value_list_v)
+		error();
+
+	for(link = value->data.list->head; link != NULL; link = link->next) {
+		if(!amp_unbox_isparam(link->value))
+			error();
+
 		amp_sum_append(sum, amp_unbox_param(link->value));
+	}
 
-	ml_value_delete(value);
+	*ret = amp_pack_module((struct amp_module_t){ sum, &amp_sum_iface });
 
-	return amp_pack_module((struct amp_module_t){ sum, &amp_sum_iface });
+	return NULL;
+#undef onexit
 }
 
 

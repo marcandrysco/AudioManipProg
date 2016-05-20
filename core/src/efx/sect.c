@@ -119,10 +119,10 @@ struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env,
 
 	sect = amp_sect_new();
 
-	if(value->type != ml_value_list_e)
-		fail("Type error. Chain requires a list of effects as input.");
+	if(value->type != ml_value_list_v)
+		fail("Type error. Section requires a list of effects as input.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		box = amp_unbox_value(link->value, amp_box_effect_e);
 		if(box == NULL)
 			fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");

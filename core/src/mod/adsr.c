@@ -79,15 +79,16 @@ void amp_adsr_delete(struct amp_adsr_t *adsr)
  *   @err: The error.
  *   &returns: The value or null.
  */
-struct ml_value_t *amp_adsr_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_adsr_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double min, max, atk, decay, sus, rel;
 
-	*err = amp_match_unpack(value, "((f,f),(f,f,f,f))", &min, &max, &atk, &decay, &sus, &rel);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "((f,f),(f,f,f,f))", &min, &max, &atk, &decay, &sus, &rel));
 
-	return amp_pack_module((struct amp_module_t){ amp_adsr_new(min, max, atk, decay, sus, rel, amp_core_rate(env)), &amp_adsr_iface });
+	*ret = amp_pack_module((struct amp_module_t){ amp_adsr_new(min, max, atk, decay, sus, rel, amp_core_rate(env)), &amp_adsr_iface });
+	return NULL;
+#undef onexit
 }
 
 

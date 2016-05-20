@@ -96,10 +96,10 @@ char *amp_toggle_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 
 	toggle = amp_toggle_new();
 
-	if(value->type != ml_value_list_e)
+	if(value->type != ml_value_list_v)
 		fail("Type error. Toggle expects type '[(int,int)]'.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		struct amp_id_t id;
 
 		chkfail(amp_match_unpack(ml_value_copy(link->value), "(d,d)", &id.dev, &id.key));

@@ -64,8 +64,8 @@ char *amp_inject_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 	struct amp_instr_t instr;
 
 	chkfail(amp_match_unpack(value, "(S,I)", &seq, &instr));
-
 	*ret = amp_pack_instr((struct amp_instr_t){ amp_inject_new(seq, instr), &amp_inject_iface });
+
 	return NULL;
 #undef onexit
 }

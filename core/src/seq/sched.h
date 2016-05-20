@@ -12,7 +12,7 @@ struct amp_sched_t *amp_sched_new(void);
 struct amp_sched_t *amp_sched_copy(struct amp_sched_t *sched);
 void amp_sched_delete(struct amp_sched_t *sched);
 
-struct ml_value_t *amp_sched_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_sched_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_sched_add(struct amp_sched_t *sched, struct amp_time_t time, struct amp_event_t event);
 

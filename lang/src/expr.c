@@ -4,8 +4,8 @@
 /**
  * Create a new expression.
  *   @type: The type.
- *   @data: The data.
- *   @tag: The tag.
+ *   @data: Consumed. The data.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
 struct ml_expr_t *ml_expr_new(enum ml_expr_e type, union ml_expr_u data, struct ml_tag_t tag)
@@ -13,9 +13,9 @@ struct ml_expr_t *ml_expr_new(enum ml_expr_e type, union ml_expr_u data, struct 
 	struct ml_expr_t *expr;
 
 	expr = malloc(sizeof(struct ml_expr_t));
-	expr->tag = tag;
 	expr->type = type;
 	expr->data = data;
+	expr->tag = tag;
 
 	return expr;
 }
@@ -27,33 +27,43 @@ struct ml_expr_t *ml_expr_new(enum ml_expr_e type, union ml_expr_u data, struct 
  */
 struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 {
-	switch(expr->type) {
-	case ml_expr_id_e:
-		return ml_expr_id(strdup(expr->data.id), ml_tag_copy(expr->tag));
+	struct ml_expr_t *copy;
 
-	case ml_expr_set_e:
-		return ml_expr_set(ml_set_copy(expr->data.set));
+	copy = malloc(sizeof(struct ml_expr_t));
+	copy->type = expr->type;
+	copy->tag = ml_tag_copy(expr->tag);
 
-	case ml_expr_func_e:
-		return ml_expr_func(ml_pat_copy(expr->data.func.pat), ml_expr_copy(expr->data.func.expr));
+	switch(copy->type) {
+	case ml_expr_value_v:
+		copy->data.value = ml_value_copy(expr->data.value);
+		break;
 
-	case ml_expr_app_e:
-		return ml_expr_app(ml_expr_copy(expr->data.app.func), ml_expr_copy(expr->data.app.value));
+	case ml_expr_var_v:
+		copy->data.var = strdup(expr->data.var);
+		break;
+		
+	case ml_expr_app_v:
+		copy->data.app = ml_app_copy(expr->data.app);
+		break;
+		
+	case ml_expr_let_v:
+		copy->data.let = ml_let_copy(expr->data.let);
+		break;
+		
+	case ml_expr_cond_v:
+		copy->data.cond = ml_cond_copy(expr->data.cond);
+		break;
+		
+	case ml_expr_match_v:
+		copy->data.match = ml_match_copy(expr->data.match);
+		break;
 
-	case ml_expr_let_e:
-		return ml_expr_let(ml_pat_copy(expr->data.let.pat), ml_expr_copy(expr->data.let.value), ml_expr_copy(expr->data.let.expr));
-
-	case ml_expr_cond_e:
-		return ml_expr_cond(ml_expr_copy(expr->data.cond.eval), ml_expr_copy(expr->data.cond.ontrue), ml_expr_copy(expr->data.cond.onfalse));
-
-	case ml_expr_match_e:
-		return ml_expr_match(ml_match_copy(expr->data.match));
-
-	case ml_expr_value_e:
-		return ml_expr_value(ml_value_copy(expr->data.value));
+	case ml_expr_tuple_v:
+		copy->data.tuple = ml_tuple_copy(expr->data.tuple);
+		break;
 	}
 
-	fatal("Invalid expression.");
+	return copy;
 }
 
 /**
@@ -63,488 +73,393 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 void ml_expr_delete(struct ml_expr_t *expr)
 {
 	switch(expr->type) {
-	case ml_expr_id_e:
-		free(expr->data.id);
+	case ml_expr_value_v:
+		ml_value_delete(expr->data.value);
 		break;
 
-	case ml_expr_set_e:
-		ml_set_delete(expr->data.set);
+	case ml_expr_var_v:
+		free(expr->data.var);
 		break;
 
-	case ml_expr_func_e:
-		ml_pat_delete(expr->data.func.pat);
-		ml_expr_delete(expr->data.func.expr);
+	case ml_expr_app_v:
+		ml_app_delete(expr->data.app);
 		break;
 
-	case ml_expr_app_e:
-		ml_expr_delete(expr->data.app.func);
-		ml_expr_delete(expr->data.app.value);
+	case ml_expr_let_v:
+		ml_let_delete(expr->data.let);
 		break;
 
-	case ml_expr_let_e:
-		ml_pat_delete(expr->data.let.pat);
-		ml_expr_delete(expr->data.let.value);
-		ml_expr_delete(expr->data.let.expr);
+	case ml_expr_cond_v:
+		ml_cond_delete(expr->data.cond);
 		break;
 
-	case ml_expr_cond_e:
-		ml_expr_delete(expr->data.cond.eval);
-		ml_expr_delete(expr->data.cond.ontrue);
-		ml_expr_delete(expr->data.cond.onfalse);
-		break;
-		
-	case ml_expr_match_e:
+	case ml_expr_match_v:
 		ml_match_delete(expr->data.match);
 		break;
 
-	case ml_expr_value_e:
-		ml_value_delete(expr->data.value);
+	case ml_expr_tuple_v:
+		ml_tuple_delete(expr->data.tuple);
 		break;
 	}
 
+	ml_tag_delete(expr->tag);
 	free(expr);
 }
 
 
 /**
- * Create an identifier expression.
- *   @id: Consumed. The identifier.
+ * Create a value expression.
+ *   @value: Consumed. The value.
  *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-struct ml_expr_t *ml_expr_id(char *id, struct ml_tag_t tag)
+struct ml_expr_t *ml_expr_value(struct ml_value_t *value, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_id_e, (union ml_expr_u){ .id = id }, tag);
+	return ml_expr_new(ml_expr_value_v, (union ml_expr_u){ .value = value }, tag);
 }
 
 /**
- * Create a set expression.
- *   @set: Consumed. The set.
+ * Create a variable expression.
+ *   @var: Consumed. The variable identifier.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-struct ml_expr_t *ml_expr_set(struct ml_set_t set)
+struct ml_expr_t *ml_expr_var(char *var, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_set_e, (union ml_expr_u){ .set = set }, set.len ? ml_tag_copy(set.expr[0]->tag) : ml_tag_null);
-}
-
-/**
- * Create a function expression.
- *   @pat: Consumed. The pattern.
- *   @expr: Consumed. The expression.
- *   &returns: The expression.
- */
-struct ml_expr_t *ml_expr_func(struct ml_pat_t *pat, struct ml_expr_t *expr)
-{
-	return ml_expr_new(ml_expr_func_e, (union ml_expr_u){ .func = { pat, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_var_v, (union ml_expr_u){ .var = var }, tag);
 }
 
 /**
  * Create an application expression.
- *   @func: Consumed. The function expression.
- *   @value: Consumed. The value expression.
+ *   @app: Consumed. The application.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-
-struct ml_expr_t *ml_expr_app(struct ml_expr_t *func, struct ml_expr_t *value)
+struct ml_expr_t *ml_expr_app(struct ml_app_t *app, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_app_e, (union ml_expr_u){ .app = { func, value } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_app_v, (union ml_expr_u){ .app = app }, tag);
 }
 
 /**
  * Create a let expression.
- *   @pat: Consumed. The pattern expression.
- *   @value: Consumed. The value expression.
- *   @expr: Consumed. The evaluated expression.
+ *   @let: Consumed. The let.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-
-struct ml_expr_t *ml_expr_let(struct ml_pat_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr)
+struct ml_expr_t *ml_expr_let(struct ml_let_t *let, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_let_e, (union ml_expr_u){ .let = { pat, value, expr } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_let_v, (union ml_expr_u){ .let = let }, tag);
 }
 
 /**
  * Create a conditional expression.
- *   @eval: Consumed. The evaluated expression.
- *   @ontrue: Consumed. The true expression.
- *   @onfalse: Consumed. The false expression.
+ *   @cond: Consumed. The conditional.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-struct ml_expr_t *ml_expr_cond(struct ml_expr_t *eval, struct ml_expr_t *onfalse, struct ml_expr_t *ontrue)
+struct ml_expr_t *ml_expr_cond(struct ml_cond_t *cond, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_cond_e, (union ml_expr_u){ .cond = { eval, onfalse, ontrue } }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_cond_v, (union ml_expr_u){ .cond = cond }, tag);
 }
 
 /**
  * Create a match expression.
  *   @match: Consumed. The match.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-struct ml_expr_t *ml_expr_match(struct ml_match_t *match)
+struct ml_expr_t *ml_expr_match(struct ml_match_t *match, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_match_e, (union ml_expr_u){ .match = match }, (struct ml_tag_t){ NULL, 0, 0, 0 });
+	return ml_expr_new(ml_expr_match_v, (union ml_expr_u){ .match = match }, tag);
 }
 
 /**
- * Create a constant value expression.
- *   @value: The constant value.
+ * Create a tuple expression.
+ *   @tuple: Consumed. The tuple.
+ *   @tag: Consumed. The tag.
  *   &returns: The expression.
  */
-struct ml_expr_t *ml_expr_value(struct ml_value_t *value)
+struct ml_expr_t *ml_expr_tuple(struct ml_tuple_t *tuple, struct ml_tag_t tag)
 {
-	return ml_expr_new(ml_expr_value_e, (union ml_expr_u){ .value = value }, value->tag);
+	return ml_expr_new(ml_expr_tuple_v, (union ml_expr_u){ .tuple = tuple }, tag);
 }
 
 
 /**
  * Evaluate an expression.
- *   @expr: The expression.
+ *   @ret: Ref. The returned value.
+ *   @expr: The expresion.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value.
+ *   &returns: Error.
  */
-struct ml_value_t *ml_expr_eval(struct ml_expr_t *expr, struct ml_env_t *env, char **err)
+char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_env_t *env)
 {
-#undef fail
-#define fail(str, ...) do { if(*err == NULL) ml_eprintf(err, "%s:%u:%u: " str, expr->tag.file, expr->tag.line, expr->tag.col, ##__VA_ARGS__); return NULL; } while(0)
-
 	switch(expr->type) {
-	case ml_expr_set_e:
-		{
-			unsigned int i;
-			struct ml_tuple_t tuple;
-			struct ml_value_t *sub;
+	case ml_expr_value_v:
+		*ret = ml_value_copy(expr->data.value);
+		return NULL;
+		
+	case ml_expr_var_v:
+		*ret = ml_env_lookup(env, expr->data.var);
+		if(*ret == NULL) {
+			ml_eval_f func;
 
-			tuple = ml_tuple_new();
-			for(i = 0; i < expr->data.set.len; i++) {
-				sub = ml_expr_eval(expr->data.set.expr[i], env, err);
-				if(sub == NULL)
-					break;
-
-				ml_tuple_add(&tuple, sub);
-			}
-
-			if(i == expr->data.set.len)
-				return ml_value_tuple(tuple);
-			else { 
-				ml_tuple_delete(tuple);
-
-				return NULL;
-			}
-		}
-
-	case ml_expr_id_e:
-		{
-			struct ml_value_t *value;
-
-			value = ml_env_lookup(env, expr->data.id);
-			if(value == NULL)
-				fail("Unknown variable '%s'.", expr->data.id);
-
-			return ml_value_copy(value);
-		}
-
-	case ml_expr_func_e:
-		return ml_value_closure(ml_closure(ml_env_copy(env), ml_pat_copy(expr->data.func.pat), NULL, ml_expr_copy(expr->data.func.expr)));
-
-	case ml_expr_app_e:
-		{
-			struct ml_value_t *func, *value;
-
-			func = ml_expr_eval(expr->data.app.func, env, err);
-			if(func == NULL)
-				return NULL;
-
-			if(func->type == ml_value_closure_e) {
-				struct ml_pat_t *pat;
-				struct ml_env_t *sub;
-
-				pat = func->data.closure.pat;
-				sub = ml_env_copy(func->data.closure.env);
-
-				value = ml_expr_eval(expr->data.app.value, env, err);
-				if(value != NULL) {
-					if(!ml_pat_match(&sub, pat, value))
-						fail("Cannot match pattern.");
-
-					ml_value_delete(value);
-
-					if(func->data.closure.rec != NULL)
-						ml_env_add(&sub, strdup(func->data.closure.rec), ml_value_copy(func));
-
-					if(pat->next)
-						value = ml_value_closure(ml_closure(ml_env_copy(sub), ml_pat_copy(pat->next), NULL, ml_expr_copy(func->data.closure.expr)));
-					else
-						value = ml_expr_eval(func->data.closure.expr, sub, err);
-				}
-
-				ml_env_delete(sub);
-			}
-			else if(func->type == ml_value_impl_e) {
-				*err = NULL;
-				value = ml_expr_eval(expr->data.app.value, env, err);
-				if(value != NULL)
-					value = func->data.impl(value, env, err);
-			}
-			else if(func->type == ml_value_eval_e) {
-				struct ml_value_t *ret;
-
-				*err = NULL;
-				value = ml_expr_eval(expr->data.app.value, env, err);
-				if(value != NULL) {
-					*err = func->data.eval(&ret, value, env);
-					value = *err?NULL:ret;
-				}
-			}
+			func = ml_eval_find(expr->data.var);
+			if(func != NULL)
+				*ret = ml_value_eval(func, ml_tag_copy(expr->tag));
+			else if((*ret = ml_eval_closure(expr->data.var)) != NULL)
+				ml_tag_replace(&(*ret)->tag, ml_tag_copy(expr->tag));
 			else
-				fail("Cannot call non-function value.");
+				fatal("%C: Unknown variable '%s'.", ml_tag_chunk(&expr->tag), expr->data.var);
+		}
+		else
+			*ret = ml_value_copy(*ret);
+
+		return NULL;
+
+	case ml_expr_app_v:
+		{
+#define onexit ml_value_erase(func); ml_value_erase(value); ml_env_erase(sub);
+			struct ml_env_t *sub = NULL;
+			struct ml_value_t *func = NULL, *value = NULL;
+
+			chkfail(ml_expr_eval(&func, expr->data.app->left, env));
+			chkfail(ml_expr_eval(&value, expr->data.app->right, env));
+
+			if(func->type == ml_value_closure_v) {
+				struct ml_pat_t *pat;
+
+				pat = func->data.closure->pat;
+				sub = ml_env_copy(func->data.closure->env);
+
+				if(!ml_pat_match(pat, value, &sub))
+					fail("%C: Pattern match between '%C' and '%C' failed.", ml_tag_chunk(&expr->tag), ml_pat_chunk(pat), ml_value_chunk(value));
+
+				if(func->data.closure->rec != NULL)
+					ml_env_add(&sub, strdup(func->data.closure->rec), ml_value_copy(func));
+
+				if(pat->next == NULL) {
+					chkfail(ml_expr_eval(ret, func->data.closure->expr, sub));
+					ml_env_delete(sub);
+				}
+				else
+					*ret = ml_value_closure(ml_closure_new(NULL, sub, ml_pat_copy(pat->next), ml_expr_copy(func->data.closure->expr)), ml_tag_copy(expr->tag));
+			}
+			else if(func->type == ml_value_eval_v)
+				chkfail(func->data.eval(ret, value, env));
+			else
+				fail("%C: Cannot apply non-function.", ml_tag_chunk(&expr->tag));
 
 			ml_value_delete(func);
-
-			return value;
-		}
-
-	case ml_expr_let_e:
-		if(expr->data.let.pat->next != NULL) {
-			struct ml_env_t *sub;
-			struct ml_value_t *ret;
-			struct ml_closure_t closure;
-			const char *id = expr->data.let.pat->data.id;
-
-			if(expr->data.let.pat->type != ml_pat_id_e) {
-				*err = mprintf("Invalid function declarations.");
-				return NULL;
-			}
-			
-			closure = ml_closure(ml_env_copy(env), ml_pat_copy(expr->data.let.pat->next), strdup(id), ml_expr_copy(expr->data.let.value));
-
-			sub = ml_env_copy(env);
-			ml_env_add(&sub, strdup(id), ml_value_closure(closure));
-
-			ret = ml_expr_eval(expr->data.let.expr, sub, err);
-
-			ml_env_delete(sub);
-
-			return ret;
-		}
-		else {
-			struct ml_env_t *sub;
-			struct ml_value_t *value, *ret;
-
-			value = ml_expr_eval(expr->data.let.value, env, err);
-			if(value == NULL)
-				return NULL;
-
-			sub = ml_env_copy(env);
-
-			if(ml_pat_match(&sub, expr->data.let.pat, value))
-				ret = ml_expr_eval(expr->data.let.expr, sub, err);
-			else {
-				ret = NULL, *err = mprintf("Match failed.");
-			}
-
-			ml_env_delete(sub);
 			ml_value_delete(value);
 
-			return ret;
-		}
-		
-	case ml_expr_cond_e:
-		{
-			struct ml_value_t *value, *ret = NULL;
+			ml_tag_replace(&(*ret)->tag, ml_tag_copy(expr->tag));
 
-			value = ml_expr_eval(expr->data.cond.eval, env, err);
-			if(value == NULL)
-				return NULL;
-
-			if(value->type == ml_value_bool_e)
-				ret = ml_expr_eval(value->data.flag ? expr->data.cond.ontrue : expr->data.cond.onfalse, env, err);
-			else
-				*err = mprintf("Invalid type. Expected 'bool'.");
-
-			ml_value_delete(value);
-
-			return ret;
+			return NULL;
+#undef onexit
 		}
 
-	case ml_expr_match_e:
+	case ml_expr_let_v:
 		{
-			struct ml_with_t *with;
+#define onexit ml_value_erase(value); ml_env_delete(env);
 			struct ml_value_t *value;
 
-			value = ml_expr_eval(expr->data.match->expr, env, err);
-			if(value == NULL)
-				return NULL;
+			env = ml_env_copy(env);
+			chkfail(ml_expr_eval(&value, expr->data.let->value, env));
+			if(!ml_pat_match(expr->data.let->pat, value, &env))
+				fail("%C: Pattern match between '%C' and '%C' failed.", ml_tag_chunk(&expr->tag), ml_pat_chunk(expr->data.let->pat), ml_value_chunk(value));
 
-			for(with = expr->data.match->head; with != NULL; with = with->next) {
-				struct ml_env_t *sub;
+			ml_expr_eval(ret, expr->data.let->expr, env);
 
+			ml_value_delete(value);
+			ml_env_delete(env);
+
+			return NULL;
+#undef onexit
+		}
+
+	case ml_expr_cond_v:
+		{
+#define onexit ml_value_erase(value);
+			struct ml_value_t *value = NULL;
+
+			chkfail(ml_expr_eval(&value, expr->data.cond->eval, env));
+			if(value->type != ml_value_bool_v)
+				fail("%C from %C: Conditional must evaluate to a boolean.", ml_tag_chunk(&expr->data.cond->eval->tag), ml_tag_chunk(&value->tag));
+
+			chkfail(ml_expr_eval(ret, value->data.flag ? expr->data.cond->ontrue : expr->data.cond->onfalse, env));
+			ml_value_delete(value);
+
+			return NULL;
+#undef onexit
+		}
+
+	case ml_expr_match_v:
+		{
+#define onexit ml_value_erase(value); ml_env_erase(sub);
+			struct ml_with_t *with;
+			struct ml_env_t *sub = NULL;
+			struct ml_value_t *value = NULL;
+
+			chkfail(ml_expr_eval(&value, expr->data.cond->eval, env));
+
+			for(with = expr->data.match->with; with != NULL; with = with->next) {
 				sub = ml_env_copy(env);
 
-				if(ml_pat_match(&sub, with->pat, value)) {
+				if(ml_pat_match(with->pat, value, &sub)) {
+					chkfail(ml_expr_eval(ret, with->expr, sub));
+					ml_env_delete(sub);
 					ml_value_delete(value);
 
-					value = ml_expr_eval(with->expr, sub, err);
-					ml_env_delete(sub);
-
-					return value;
+					return NULL;
 				}
 
 				ml_env_delete(sub);
 			}
 
-			ml_value_delete(value);
-			*err = mprintf("Match failed.");
+			fail("Match failed.");
+#undef onexit
+		}
+
+	case ml_expr_tuple_v:
+		{
+#define onexit ml_list_delete(list);
+			struct ml_list_t *list;
+			struct ml_elem_t *elem;
+
+			list = ml_list_new();
+
+			for(elem = expr->data.tuple->head; elem != NULL; elem = elem->next) {
+				chkfail(ml_expr_eval(ret, elem->expr, env));
+				ml_list_append(list, *ret);
+			}
+
+			*ret = ml_value_tuple(list, ml_tag_copy(expr->tag));
 
 			return NULL;
+#undef onexit
 		}
-
-	case ml_expr_value_e:
-		return ml_value_copy(expr->data.value);
 	}
 
-	fprintf(stderr, "Invalid expression type.\n"), abort();
+	fatal("Invalid expression type.");
 }
 
 
 /**
- * Print an expression.
- *   @expr: The expression.
- *   @file: The file.
+ * Create an application.
+ *   @left: Consumed. The left or function expression.
+ *   @right: Consumed. The right or value expression.
+ *   &returns: The application.
  */
-void ml_expr_print(struct ml_expr_t *expr, FILE *file)
+struct ml_app_t *ml_app_new(struct ml_expr_t *left, struct ml_expr_t *right)
 {
-	switch(expr->type) {
-	case ml_expr_id_e:
-		fprintf(file, "id(%s)", expr->data.id);
-		break;
+	struct ml_app_t *app;
 
-	case ml_expr_set_e:
-		{
-			unsigned int i;
+	app = malloc(sizeof(struct ml_app_t));
+	*app = (struct ml_app_t){ left, right };
 
-			fprintf(file, "set(");
-			for(i = 0; i < expr->data.set.len; i++) {
-				if(i > 0)
-					fprintf(file, ",");
+	return app;
+}
 
-				ml_expr_print(expr->data.set.expr[i], file);
-			}
-			fprintf(file, ")");
-		}
-		break;
+/**
+ * Copy an application.
+ *   @app: The application.
+ *   &returns: The copy.
+ */
+struct ml_app_t *ml_app_copy(struct ml_app_t *app)
+{
+	return ml_app_new(ml_expr_copy(app->left), ml_expr_copy(app->right));
+}
 
-	case ml_expr_func_e:
-		ml_fprintf(file, "func(%Mp,%Me)", expr->data.func.pat, expr->data.func.expr);
-		break;
-
-	case ml_expr_app_e:
-		fprintf(file, "app(");
-		ml_expr_print(expr->data.app.func, file);
-		fprintf(file, ",");
-		ml_expr_print(expr->data.app.value, file);
-		fprintf(file, ")");
-		break;
-
-	case ml_expr_let_e:
-		fprintf(file, "let(");
-		ml_pat_print(expr->data.let.pat, file);
-		fprintf(file, ",");
-		ml_expr_print(expr->data.let.value, file);
-		fprintf(file, ",");
-		ml_expr_print(expr->data.let.expr, file);
-		fprintf(file, ")");
-		break;
-
-	case ml_expr_cond_e:
-		fprintf(file, "cond(");
-		ml_expr_print(expr->data.cond.eval, file);
-		fprintf(file, ",");
-		ml_expr_print(expr->data.cond.ontrue, file);
-		fprintf(file, ",");
-		ml_expr_print(expr->data.cond.onfalse, file);
-		fprintf(file, ")");
-		break;
-
-	case ml_expr_match_e:
-		ml_fprintf(file, "match(%Me)", expr->data.match->expr);
-		break;
-
-	case ml_expr_value_e:
-		ml_fprintf(file, "value(%Mv)", expr->data.value);
-		break;
-	}
+/**
+ * Delete an application.
+ *   @app: The application.
+ */
+void ml_app_delete(struct ml_app_t *app)
+{
+	ml_expr_delete(app->left);
+	ml_expr_delete(app->right);
+	free(app);
 }
 
 
 /**
- * Create a set.
- *   &returns: The set.
+ * Create a conditional.
+ *   @eval: Consumed. The evalution expression.
+ *   @ontrue: Consumed. The on true expression.
+ *   @onfalse: Consumed. The on false expression.
+ *   &returns: The conditional.
  */
-struct ml_set_t ml_set_new(void)
+struct ml_cond_t *ml_cond_new(struct ml_expr_t *eval, struct ml_expr_t *ontrue, struct ml_expr_t *onfalse)
 {
-	return (struct ml_set_t){ 0, malloc(0) };
+	struct ml_cond_t *cond;
+
+	cond = malloc(sizeof(struct ml_cond_t));
+	*cond = (struct ml_cond_t){ eval, ontrue, onfalse };
+
+	return cond;
 }
 
 /**
- * Create a set with two parameters.
- *   @left: The left expression.
- *   @right: The right expression.
- *   &returns: The set.
+ * Copy a conditional.
+ *   @cond: The original conditional.
+ *   &returns: The copied conditional.
  */
-struct ml_set_t ml_set_new2(struct ml_expr_t *left, struct ml_expr_t *right)
+struct ml_cond_t *ml_cond_copy(struct ml_cond_t *cond)
 {
-	struct ml_set_t set;
-
-	set.len = 2;
-	set.expr = malloc(2 * sizeof(void *));
-	set.expr[0] = left;
-	set.expr[1] = right;
-
-	return set;
+	return ml_cond_new(ml_expr_copy(cond->eval), ml_expr_copy(cond->ontrue), ml_expr_copy(cond->onfalse));
 }
 
 /**
- * Copy a set.
- *   @set: The original set.
- *   &returns: The copied set.
+ * Delete a conditional.
+ *   @cond: The conditional.
  */
-struct ml_set_t ml_set_copy(struct ml_set_t set)
+void ml_cond_delete(struct ml_cond_t *cond)
 {
-	unsigned int i;
-	struct ml_set_t copy;
+	ml_expr_delete(cond->eval);
+	ml_expr_delete(cond->ontrue);
+	ml_expr_delete(cond->onfalse);
+	free(cond);
+}
 
-	copy.len = set.len;
-	copy.expr = malloc(set.len * sizeof(void *));
-	for(i = 0; i < set.len; i++)
-		copy.expr[i] = ml_expr_copy(set.expr[i]);
 
-	return copy;
+/**
+ * Create a let.
+ *   @pat: Consumed. The pattern.
+ *   @value: Consumed. The value expression.
+ *   @expr: Consumed. The in expression.
+ *   &returns: The let.
+ */
+struct ml_let_t *ml_let_new(struct ml_pat_t *pat, struct ml_expr_t *value, struct ml_expr_t *expr)
+{
+	struct ml_let_t *let;
+
+	let = malloc(sizeof(struct ml_let_t));
+	*let = (struct ml_let_t){ pat, value, expr };
+
+	return let;
 }
 
 /**
- * Delete a set.
- *   @set: The set.
+ * Copy a let.
+ *   @let: The original let.
+ *   &returns: The copied let.
  */
-void ml_set_delete(struct ml_set_t set)
+struct ml_let_t *ml_let_copy(struct ml_let_t *let)
 {
-	unsigned int i;
-
-	for(i = 0; i < set.len; i++)
-		ml_expr_delete(set.expr[i]);
-
-	free(set.expr);
+	return ml_let_new(ml_pat_copy(let->pat), ml_expr_copy(let->value), ml_expr_copy(let->expr));
 }
 
 /**
- * Add an value to the set.
- *   @set: The set.
- *   @value: Consume The value.
+ * Delete a let.
+ *   @let: The let.
  */
-void ml_set_add(struct ml_set_t *set, struct ml_expr_t *expr)
+void ml_let_delete(struct ml_let_t *let)
 {
-	set->expr = realloc(set->expr, (set->len + 1) * sizeof(void *));
-	set->expr[set->len++] = expr;
+	ml_pat_delete(let->pat);
+	ml_expr_delete(let->value);
+	ml_expr_delete(let->expr);
+	free(let);
 }
 
 
@@ -559,25 +474,30 @@ struct ml_match_t *ml_match_new(struct ml_expr_t *expr)
 
 	match = malloc(sizeof(struct ml_match_t));
 	match->expr = expr;
-	match->head = match->tail = NULL;
+	match->with = NULL;
 
 	return match;
 }
 
 /**
  * Copy a match.
- *   @match: The match.
- *   &returns: The copy.
+ *   @match: The original match.
+ *   &returns: The copied match.
  */
 struct ml_match_t *ml_match_copy(struct ml_match_t *match)
 {
-	struct ml_with_t *with;
 	struct ml_match_t *copy;
+	struct ml_with_t *with, **ref;
 
 	copy = ml_match_new(ml_expr_copy(match->expr));
+	ref = &copy->with;
 
-	for(with = match->head; with != NULL; with = with->next)
-		ml_match_append(copy, ml_pat_copy(with->pat), ml_expr_copy(with->expr));
+	for(with = match->with; with != NULL; with = with->next) {
+		*ref = ml_with_new(ml_pat_copy(with->pat), ml_expr_copy(with->expr));
+		ref = &(*ref)->next;
+	}
+
+	*ref = NULL;
 
 	return copy;
 }
@@ -590,7 +510,7 @@ void ml_match_delete(struct ml_match_t *match)
 {
 	struct ml_with_t *cur, *next;
 
-	for(cur = match->head; cur != NULL; cur = next) {
+	for(cur = match->with; cur != NULL; cur = next) {
 		next = cur->next;
 
 		ml_pat_delete(cur->pat);
@@ -604,20 +524,135 @@ void ml_match_delete(struct ml_match_t *match)
 
 
 /**
- * Append to a match.
- *   @match: The match.
- *   @pat: Consumed. The pattern.
- *   @expr: Consumed. The expression.
+ * Create a new with.
+ *   @pat: Consuemd. The pattern.
+ *   @expr: Consuemd. The exprression.
+ *   &returns: The with.
  */
-void ml_match_append(struct ml_match_t *match, struct ml_pat_t *pat, struct ml_expr_t *expr)
+struct ml_with_t *ml_with_new(struct ml_pat_t *pat, struct ml_expr_t *expr)
 {
 	struct ml_with_t *with;
 
 	with = malloc(sizeof(struct ml_with_t));
 	with->pat = pat;
 	with->expr = expr;
-	with->prev = match->tail;
 	with->next = NULL;
-	*(match->tail ? &match->tail->next : &match->head) = with;
-	match->tail = with;
+
+	return with;
+}
+
+
+
+/**
+ * Create a new tuple.
+ *   &returns: The tuple.
+ */
+struct ml_tuple_t *ml_tuple_new(void)
+{
+	struct ml_tuple_t *tuple;
+
+	tuple = malloc(sizeof(struct ml_tuple_t));
+	tuple->head = tuple->tail = NULL;
+	tuple->len = 0;
+
+	return tuple;
+}
+
+/**
+ * Create a tuple from a list.
+ *   @expr, ...: The expression list.
+ *   &returns: The tuple.
+ */
+struct ml_tuple_t *ml_tuple_newl(struct ml_expr_t *expr, ...)
+{
+	va_list args;
+	struct ml_tuple_t *tuple;
+
+	tuple = ml_tuple_new();
+
+	va_start(args, expr);
+
+	while(expr != NULL) {
+		ml_tuple_append(tuple, expr);
+		expr = va_arg(args, struct ml_expr_t *);
+	}
+
+	va_end(args);
+
+	return tuple;
+}
+
+/**
+ * Copy a tuple.
+ *   @tuple: The tuple.
+ *   &returns: The copy.
+ */
+struct ml_tuple_t *ml_tuple_copy(struct ml_tuple_t *tuple)
+{
+	struct ml_tuple_t *copy;
+	struct ml_elem_t *elem;
+
+	copy = ml_tuple_new();
+
+	for(elem = tuple->head; elem != NULL; elem = elem->next)
+		ml_tuple_append(copy, ml_expr_copy(elem->expr));
+
+	return copy;
+}
+
+/**
+ * Delete a tuple.
+ *   @tuple: The tuple.
+ */
+void ml_tuple_delete(struct ml_tuple_t *tuple)
+{
+	struct ml_elem_t *cur, *next;
+
+	for(cur = tuple->head; cur != NULL; cur = next) {
+		next = cur->next;
+
+		ml_expr_delete(cur->expr);
+		free(cur);
+	}
+
+	free(tuple);
+}
+
+
+/**
+ * Prepend an expression onto the tuple.
+ *   @tuple: The tuple.
+ *   @expr: Consumed. The expression.
+ */
+void ml_tuple_prepend(struct ml_tuple_t *tuple, struct ml_expr_t *expr)
+{
+	struct ml_elem_t *elem;
+
+	elem = malloc(sizeof(struct ml_elem_t));
+	elem->expr = expr;
+	elem->next = tuple->head;
+	elem->prev = NULL;
+	*(tuple->head ? &tuple->head->prev : &tuple->tail) = elem;
+
+	tuple->len++;
+	tuple->head = elem;
+}
+
+/**
+ * Append an expression onto the tuple.
+ *   @tuple: The tuple.
+ *   @expr: Consumed. The expression.
+ */
+void ml_tuple_append(struct ml_tuple_t *tuple, struct ml_expr_t *expr)
+{
+	struct ml_elem_t *elem;
+
+	elem = malloc(sizeof(struct ml_elem_t));
+	elem->expr = expr;
+	elem->prev = tuple->tail;
+	elem->next = NULL;
+	*(tuple->tail ? &tuple->tail->next : &tuple->head) = elem;
+
+	tuple->len++;
+	tuple->tail = elem;
 }

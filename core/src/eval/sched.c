@@ -31,6 +31,7 @@ struct inst_t {
 /*
  * local declarations
  */
+/*
 static struct key_t *key_create(struct avltree_root_t *root, uint16_t dev, uint16_t keyid);
 static void key_delete(struct key_t *key);
 static int key_compare(const void *left, const void *right);
@@ -40,6 +41,7 @@ static struct inst_t *inst_first(struct avltree_root_t *root);
 static struct inst_t *inst_next(struct inst_t *inst);
 bool inst_near(struct inst_t *inst, struct amp_time_t time);
 struct inst_t *inst_add(struct avltree_root_t *root, struct amp_time_t time, struct amp_event_t event);
+*/
 
 
 struct ml_value_t *amp_eval_skyline0(struct ml_value_t *value, struct ml_env_t *env, char **err)
@@ -53,6 +55,7 @@ struct ml_value_t *amp_eval_skyline0(struct ml_value_t *value, struct ml_env_t *
 
 char *amp_eval_skyline(struct ml_value_t **result, struct ml_value_t *value, struct ml_env_t *env)
 {
+#if 0
 #define onexit ml_value_delete(value); avltree_root_destroy(&keys, offsetof(struct key_t, node), (delete_f)key_delete);
 	struct ml_link_t *link;
 	struct avltree_root_t keys;
@@ -132,9 +135,12 @@ char *amp_eval_skyline(struct ml_value_t **result, struct ml_value_t *value, str
 	*result = ml_value_nil(value->tag);
 	return NULL;
 #undef onexit
+#endif
+	fatal("stbu");
 }
 
 
+#if 0
 /**
  * Create a key.
  *   @root: The root.
@@ -258,3 +264,4 @@ struct inst_t *inst_add(struct avltree_root_t *root, struct amp_time_t time, str
 
 	return NULL;
 }
+#endif

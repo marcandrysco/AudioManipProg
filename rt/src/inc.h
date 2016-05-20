@@ -47,7 +47,7 @@ static inline struct amp_rt_t *amp_rt_get(struct amp_core_t *core)
 	if(value == NULL)
 		return NULL;
 
-	if(value->type != ml_value_box_e)
+	if(value->type != ml_value_box_v)
 		return NULL;
 
 	return value->data.box.ref;

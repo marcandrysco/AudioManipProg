@@ -28,7 +28,7 @@ struct amp_snap_inst_t {
 /*
  * local declarations
  */
-static bool make_time(struct amp_time_t *time, struct ml_value_t *value);
+//static bool make_time(struct amp_time_t *time, struct ml_value_t *value);
 
 /*
  * global variables
@@ -95,6 +95,7 @@ void amp_snap_delete(struct amp_snap_t *snap)
  */
 char *amp_snap_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+	/*
 #define onexit amp_snap_delete(snap);
 #define errstr "Type error. Snap expects type '((float,int,float),[(int,int)])'."
 	struct amp_snap_t *snap;
@@ -128,12 +129,15 @@ char *amp_snap_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 	*ret = amp_pack_seq((struct amp_seq_t){ snap, &amp_snap_iface });
 	return NULL;
 #undef onexit
+*/
+	fatal("stub");
 }
+/*
 static bool make_time(struct amp_time_t *time, struct ml_value_t *value)
 {
 	struct ml_tuple_t tuple;
 
-	if(value->type != ml_value_tuple_e)
+	if(value->type != ml_value_tuple_v)
 		return false;
 
 	tuple = value->data.tuple;
@@ -147,6 +151,7 @@ static bool make_time(struct amp_time_t *time, struct ml_value_t *value)
 
 	return true;
 }
+*/
 
 
 /**

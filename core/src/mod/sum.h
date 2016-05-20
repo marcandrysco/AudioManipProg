@@ -12,7 +12,7 @@ struct amp_sum_t *amp_sum_new(void);
 struct amp_sum_t *amp_sum_copy(struct amp_sum_t *sum);
 void amp_sum_delete(struct amp_sum_t *sum);
 
-struct ml_value_t *amp_sum_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_sum_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_sum_prepend(struct amp_sum_t *sum, struct amp_param_t *param);
 void amp_sum_append(struct amp_sum_t *sum, struct amp_param_t *param);

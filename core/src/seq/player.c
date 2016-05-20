@@ -108,10 +108,10 @@ char *amp_player_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 
 	player = amp_player_new();
 
-	if(value->type != ml_value_list_e)
+	if(value->type != ml_value_list_v)
 		fail("Type mismatch. Expected '[((Int,Float),Float,(Int,Int,Int))]'.");
 
-	for(link = value->data.list.head; link != NULL; link = link->next) {
+	for(link = value->data.list->head; link != NULL; link = link->next) {
 		double len;
 		struct amp_time_t time;
 		struct amp_event_t event;

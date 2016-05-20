@@ -60,8 +60,8 @@ char *amp_gain_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 	struct amp_param_t *scale;
 
 	chkfail(amp_match_unpack(value, "P", &scale));
-
 	*ret = amp_pack_effect((struct amp_effect_t){ amp_gain_new(scale), &amp_gain_iface });
+
 	return NULL;
 #undef onexit
 }

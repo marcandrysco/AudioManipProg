@@ -22,7 +22,6 @@ struct amp_seq_t amp_seq_null = { NULL, NULL };
  *   @type: The type.
  *   @data: The data.
  */
-
 struct amp_box_t *amp_box_new(enum amp_box_e type, union amp_box_u data)
 {
 	struct amp_box_t *box;
@@ -38,7 +37,6 @@ struct amp_box_t *amp_box_new(enum amp_box_e type, union amp_box_u data)
  *   @box: The boxed value.
  *   &returns: The copy.
  */
-
 struct amp_box_t *amp_box_copy(struct amp_box_t *box)
 {
 	switch(box->type) {
@@ -50,14 +48,13 @@ struct amp_box_t *amp_box_copy(struct amp_box_t *box)
 	case amp_box_seq_e: return amp_box_seq(amp_seq_copy(box->data.seq));
 	}
 
-	fprintf(stderr, "Invalid box type.\n"), abort();
+	fatal("Invalid box type. %d\n", box->type);
 }
 
 /**
  * Delete a boxed value.
  *   @box: The box.
  */
-
 void amp_box_delete(struct amp_box_t *box)
 {
 	switch(box->type) {
@@ -217,8 +214,10 @@ struct amp_param_t *amp_unbox_param(struct ml_value_t *value)
 {
 	struct amp_box_t *box;
 
-	if(value->type == ml_value_num_e)
+	if(value->type == ml_value_num_v)
 		return amp_param_flt(value->data.num);
+	else if(value->type == ml_value_flt_v)
+		return amp_param_flt(value->data.flt);
 	else if((box = amp_unbox_value(value, amp_box_ctrl_e)) != NULL)
 		return amp_param_ctrl(amp_ctrl_copy(box->data.ctrl));
 	else if((box = amp_unbox_value(value, amp_box_module_e)) != NULL)
@@ -233,14 +232,6 @@ void match_str(char **str, size_t *len, const char **format)
 	case 's': snprintf(*str, *len, "string"); break;
 	case 'd': snprintf(*str, *len, "int"); break;
 	case 'f': snprintf(*str, *len, "num"); break;
-	case 'e':
-		  (*format)++;
-		  switch(**format) {
-		  case 'O': snprintf(*str, *len, "osc-type"); break;
-		  }
-
-		  break;
-
 	case 'I': snprintf(*str, *len, "Instr"); break;
 	case 'E': snprintf(*str, *len, "Effect"); break;
 	case 'M': snprintf(*str, *len, "Module"); break;
@@ -277,17 +268,17 @@ void amp_match_str(char *str, size_t len, const char *format)
 
 /**
  * Create a type error message from the format.
+ *   @tag: The tag.
  *   @format: The format.
  *   &returns: The allocated error message.
  */
-
-char *amp_match_err(const char *format)
+char *amp_match_err(struct ml_tag_t *tag, const char *format)
 {
 	char msg[256];
 
 	amp_match_str(msg, sizeof(msg), format);
 
-	return amp_printf("Type error. Expected '%s'.", msg);
+	return amp_printf("%C: Type error. Expected '%s'.", ml_tag_chunk(tag), msg);
 }
 
 /**
@@ -297,7 +288,6 @@ char *amp_match_err(const char *format)
  *   @...: The arguments.
  *   &returns: The error on failure.
  */
-
 char *amp_match_unpack(struct ml_value_t *value, const char *format, ...)
 {
 	bool suc;
@@ -314,7 +304,7 @@ char *amp_match_unpack(struct ml_value_t *value, const char *format, ...)
 	suc = match_unpack(value, &copy, &args);
 	va_end(args);
 
-	ml_value_delete(value);
+	//ml_value_delete(value);
 
 	if(suc)
 		return NULL;
@@ -324,7 +314,7 @@ char *amp_match_unpack(struct ml_value_t *value, const char *format, ...)
 	match_clear(&copy, &args);
 	va_end(args);
 
-	return amp_match_err(format);
+	return amp_match_err(&value->tag, format);
 }
 
 /**
@@ -336,8 +326,6 @@ char *amp_match_unpack(struct ml_value_t *value, const char *format, ...)
 static void match_init(const char **format, va_list *args)
 {
 	switch(**format) {
-	case 'e':
-		(*format)++;
 	case 'd':
 		*va_arg(*args, int *) = 0;
 		break;
@@ -379,8 +367,6 @@ static void match_init(const char **format, va_list *args)
 static void match_clear(const char **format, va_list *args)
 {
 	switch(**format) {
-	case 'e':
-		(*format)++;
 	case 'd':
 		va_arg(*args, int *);
 		break;
@@ -427,30 +413,29 @@ static void match_clear(const char **format, va_list *args)
  *   @format: The format.
  *   @args: The arguments.
  */
-
 static bool match_unpack(struct ml_value_t *value, const char **format, va_list *args)
 {
 	if(**format == '(') {
-		unsigned int i = 0;
-		struct ml_tuple_t tuple;
+		struct ml_link_t *link;
 
-		if(value->type != ml_value_tuple_e)
-			return false;
-
-		tuple = value->data.tuple;
-		if(tuple.len == 0)
+		if(value->type != ml_value_tuple_v)
 			return false;
 
 		(*format)++;
-		if(!match_unpack(value->data.tuple.value[i++], format, args))
+		link = value->data.list->head;
+		if(link == NULL)
+			return false;
+
+		if(!match_unpack(link->value, format, args))
 			return false;
 
 		while(**format == ',') {
-			if(tuple.len == i)
+			if(link == NULL)
 				return false;
 
 			(*format)++;
-			if(!match_unpack(value->data.tuple.value[i++], format, args))
+			link = link->next;
+			if(!match_unpack(link->value, format, args))
 				return false;
 		}
 
@@ -463,8 +448,10 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		struct amp_box_t *box;
 		struct amp_param_t *param;
 
-		if(value->type == ml_value_num_e)
+		if(value->type == ml_value_num_v)
 			param = amp_param_flt(value->data.num);
+		else if(value->type == ml_value_flt_v)
+			param = amp_param_flt(value->data.flt);
 		else if((box = amp_unbox_value(value, amp_box_ctrl_e)) != NULL)
 			param = amp_param_ctrl(amp_ctrl_copy(box->data.ctrl));
 		else if((box = amp_unbox_value(value, amp_box_module_e)) != NULL)
@@ -477,25 +464,8 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 
 		return true;
 	}
-	else if(**format == 'e') {
-		int val;
-
-		if(value->type != ml_value_str_e)
-			return false;
-
-		(*format)++;
-		switch(**format) {
-		case 'O': val = amp_osc_type(value->data.str); break;
-		default: return false;
-		}
-
-		(*format)++;
-		*va_arg(*args, int *) = val;
-
-		return (val >= 0);
-	}
 	else if(**format == 'd') {
-		if(value->type == ml_value_num_e)
+		if(value->type == ml_value_num_v)
 			*va_arg(*args, int *) = value->data.num;
 		else
 			return false;
@@ -505,8 +475,10 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		return true;
 	}
 	else if(**format == 'f') {
-		if(value->type == ml_value_num_e)
+		if(value->type == ml_value_num_v)
 			*va_arg(*args, double *) = value->data.num;
+		else if(value->type == ml_value_flt_v)
+			*va_arg(*args, double *) = value->data.flt;
 		else
 			return false;
 
@@ -515,7 +487,7 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		return true;
 	}
 	else if(**format == 's') {
-		if(value->type == ml_value_str_e)
+		if(value->type == ml_value_str_v)
 			*va_arg(*args, char **) = strdup(value->data.str);
 		else
 			return false;
