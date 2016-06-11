@@ -4,7 +4,6 @@
 /*
  * local declarations
  */
-
 static struct amp_sect_inst_t *inst_new(struct amp_effect_t effect);
 static void inst_delete(struct amp_sect_inst_t *inst);
 
@@ -103,16 +102,15 @@ void amp_sect_append(struct amp_sect_t *sect, struct amp_effect_t effect)
 
 /**
  * Create a section from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_sect_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(...) do { amp_sect_delete(sect); ml_value_delete(value); *err = amp_printf(__VA_ARGS__); return NULL; } while(0)
-
+#define onexit amp_sect_delete(sect);
+#define error() fail("Type error. Sect requires a list of effects as input.");
 	struct ml_link_t *link;
 	struct amp_sect_t *sect;
 	struct amp_box_t *box;
@@ -120,19 +118,21 @@ struct ml_value_t *amp_sect_make(struct ml_value_t *value, struct ml_env_t *env,
 	sect = amp_sect_new();
 
 	if(value->type != ml_value_list_v)
-		fail("Type error. Section requires a list of effects as input.");
+		error();
 
 	for(link = value->data.list->head; link != NULL; link = link->next) {
 		box = amp_unbox_value(link->value, amp_box_effect_e);
 		if(box == NULL)
-			fail("Type error. Section instance must take the form 'Effect' or '(num,Effect)'.");
+			error();
 
 		amp_sect_append(sect, amp_effect_copy(box->data.effect));
 	}
 
-	ml_value_delete(value);
+	*ret = amp_pack_effect((struct amp_effect_t){ sect, &amp_sect_iface });
 
-	return amp_pack_effect((struct amp_effect_t){ sect, &amp_sect_iface });
+	return NULL;
+#undef error
+#undef onexit
 }
 
 

@@ -16,6 +16,8 @@ inc.h
 hax/hax.h
 dsp/libdsp.h
 core/amplib.h
+lang/muselang
+lang/test/muselang-test
 lang/muselang.h
 rt/amprt
 rt/amprt.h

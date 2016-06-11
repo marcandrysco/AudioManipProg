@@ -8,8 +8,9 @@
  *   @time: The time.
  *   @len: The length.
  *   @queue: Action queue.
+ *   &returns: The continuation flag.
  */
-typedef void (*amp_instr_f)(void *ref, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
+typedef bool (*amp_instr_f)(void *ref, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 /**
  * Instrument interface.
@@ -52,10 +53,11 @@ static inline void amp_instr_info(struct amp_instr_t instr, struct amp_info_t in
  *   @time: The time.
  *   @len: The length.
  *   @queue: Action queue.
+ *   &returns: The continuation flag.
  */
-static inline void amp_instr_proc(struct amp_instr_t instr, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+static inline bool amp_instr_proc(struct amp_instr_t instr, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	instr.iface->proc(instr.ref, buf, time, len, queue);
+	return instr.iface->proc(instr.ref, buf, time, len, queue);
 }
 
 /**

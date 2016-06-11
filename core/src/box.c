@@ -59,11 +59,11 @@ void amp_box_delete(struct amp_box_t *box)
 {
 	switch(box->type) {
 	case amp_box_clock_e: amp_clock_delete(box->data.clock); break;
-	case amp_box_ctrl_e: amp_ctrl_delete(box->data.ctrl); break;
-	case amp_box_effect_e: amp_effect_delete(box->data.effect); break;
 	case amp_box_instr_e: amp_instr_delete(box->data.instr); break;
+	case amp_box_effect_e: amp_effect_delete(box->data.effect); break;
 	case amp_box_module_e: amp_module_delete(box->data.module); break;
 	case amp_box_seq_e: amp_seq_delete(box->data.seq); break;
+	case amp_box_ctrl_e: amp_ctrl_delete(box->data.ctrl); break;
 	}
 
 	free(box);
@@ -75,32 +75,9 @@ void amp_box_delete(struct amp_box_t *box)
  *   @clock: The clock.
  *   &returns: The box.
  */
-
 struct amp_box_t *amp_box_clock(struct amp_clock_t clock)
 {
 	return amp_box_new(amp_box_clock_e, (union amp_box_u){ .clock = clock });
-}
-
-/**
- * Create a boxed control.
- *   @ctrl: The control.
- *   &returns: The box.
- */
-
-struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl)
-{
-	return amp_box_new(amp_box_ctrl_e, (union amp_box_u){ .ctrl = ctrl });
-}
-
-/**
- * Create a boxed effect.
- *   @effect: The effect.
- *   &returns: The box.
- */
-
-struct amp_box_t *amp_box_effect(struct amp_effect_t effect)
-{
-	return amp_box_new(amp_box_effect_e, (union amp_box_u){ .effect = effect });
 }
 
 /**
@@ -108,10 +85,19 @@ struct amp_box_t *amp_box_effect(struct amp_effect_t effect)
  *   @instr: The instrument.
  *   &returns: The box.
  */
-
 struct amp_box_t *amp_box_instr(struct amp_instr_t instr)
 {
 	return amp_box_new(amp_box_instr_e, (union amp_box_u){ .instr = instr });
+}
+
+/**
+ * Create a boxed effect.
+ *   @effect: The effect.
+ *   &returns: The box.
+ */
+struct amp_box_t *amp_box_effect(struct amp_effect_t effect)
+{
+	return amp_box_new(amp_box_effect_e, (union amp_box_u){ .effect = effect });
 }
 
 /**
@@ -119,7 +105,6 @@ struct amp_box_t *amp_box_instr(struct amp_instr_t instr)
  *   @module: The module.
  *   &returns: The box.
  */
-
 struct amp_box_t *amp_box_module(struct amp_module_t module)
 {
 	return amp_box_new(amp_box_module_e, (union amp_box_u){ .module = module });
@@ -136,13 +121,22 @@ struct amp_box_t *amp_box_seq(struct amp_seq_t seq)
 	return amp_box_new(amp_box_seq_e, (union amp_box_u){ .seq = seq });
 }
 
+/**
+ * Create a boxed control.
+ *   @ctrl: The control.
+ *   &returns: The box.
+ */
+struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl)
+{
+	return amp_box_new(amp_box_ctrl_e, (union amp_box_u){ .ctrl = ctrl });
+}
+
 
 /**
  * Pack a clock into a value.
  *   @clock: The clock.
  *   &returns: The value.
  */
-
 struct ml_value_t *amp_pack_clock(struct amp_clock_t clock)
 {
 	return amp_box_value(amp_box_clock(clock));
@@ -160,22 +154,10 @@ struct ml_value_t *amp_pack_effect(struct amp_effect_t effect)
 }
 
 /**
- * Pack a control into a value.
- *   @ctrl: The control.
- *   &returns: The value.
- */
-
-struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl)
-{
-	return amp_box_value(amp_box_ctrl(ctrl));
-}
-
-/**
  * Pack an instrument into a value.
  *   @instr: The instrument.
  *   &returns: The value.
  */
-
 struct ml_value_t *amp_pack_instr(struct amp_instr_t instr)
 {
 	return amp_box_value(amp_box_instr(instr));
@@ -186,7 +168,6 @@ struct ml_value_t *amp_pack_instr(struct amp_instr_t instr)
  *   @module: The module.
  *   &returns: The value.
  */
-
 struct ml_value_t *amp_pack_module(struct amp_module_t module)
 {
 	return amp_box_value(amp_box_module(module));
@@ -197,10 +178,19 @@ struct ml_value_t *amp_pack_module(struct amp_module_t module)
  *   @seq: The sequencer.
  *   &returns: The value.
  */
-
 struct ml_value_t *amp_pack_seq(struct amp_seq_t seq)
 {
 	return amp_box_value(amp_box_seq(seq));
+}
+
+/**
+ * Pack a control into a value.
+ *   @ctrl: The control.
+ *   &returns: The value.
+ */
+struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl)
+{
+	return amp_box_value(amp_box_ctrl(ctrl));
 }
 
 
@@ -335,6 +325,7 @@ static void match_init(const char **format, va_list *args)
 		break;
 
 	case 's': *va_arg(*args, char **) = NULL; break;
+	case '*': *va_arg(*args, struct amp_box_t **) = NULL; break;
 	case 'E': *va_arg(*args, struct amp_effect_t *) = amp_effect_null; break;
 	case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_null; break;
 	case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_null; break;
@@ -384,6 +375,7 @@ static void match_clear(const char **format, va_list *args)
 			break;
 		}
 
+	case '*': amp_box_erase(*va_arg(*args, struct amp_box_t **)); break;
 	case 'E': amp_effect_erase(*va_arg(*args, struct amp_effect_t *)); break;
 	case 'I': amp_instr_erase(*va_arg(*args, struct amp_instr_t *)); break;
 	case 'S': amp_seq_erase(*va_arg(*args, struct amp_seq_t *)); break;
@@ -440,6 +432,21 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		}
 
 		assert(**format == ')');
+		(*format)++;
+
+		return true;
+	}
+	else if(**format == '*') {
+		struct amp_box_t *box;
+
+		if(value->type != ml_value_box_v)
+			return false;
+
+		box = amp_box_unpack(value->data.box);
+		if(box == NULL)
+			return false;
+
+		*va_arg(*args, struct amp_box_t **) = amp_box_copy(box);
 		(*format)++;
 
 		return true;

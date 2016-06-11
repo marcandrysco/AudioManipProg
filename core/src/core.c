@@ -2,6 +2,17 @@
 #include <dlfcn.h>
 
 
+/**
+ * Evaluation pair structure.
+ *   @id: The identifier.
+ *   @func: The function.
+ */
+
+struct pair_t {
+	const char *id;
+	ml_eval_f func;
+};
+
 /*
  * local declarations
  */
@@ -16,6 +27,30 @@ static const struct ml_box_i ref_iface = { ref_copy, ref_delete };
 struct ml_box_i amp_box_iface = {
 	(void *(*)(void *))amp_box_copy,
 	(void (*)(void *))amp_box_delete
+};
+
+/*
+ * evaluation list
+ */
+static const struct pair_t list[] = {
+	/* filters */
+	{ "Lpf",   amp_lpf_make },
+	{ "Hpf",   amp_hpf_make },
+	{ "Moog",  amp_moog_make },
+	{ "Peak",  amp_peak_make },
+	{ "Res",   amp_res_make },
+	{ "Svlpf", amp_svlpf_make },
+	{ "Svhpf", amp_svhpf_make },
+	/* reverberators */
+	{ "Allpass", amp_allpass_make },
+	{ "Comb",    amp_comb_make },
+	{ "Delay",   amp_delay_make },
+	{ "Lpcf",    amp_lpcf_make },
+	/* standard functions */
+	{ "vel",    amp_eval_vel },
+	{ "amp2db", amp_eval_amp2db },
+	{ "db2amp", amp_eval_db2amp },
+	{ NULL    , NULL }
 };
 
 
@@ -39,6 +74,9 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("amp.core"), ml_value_box((struct ml_box_t){ core, &ref_iface }, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("amp.cache"), ml_value_box((struct ml_box_t){ core->cache, &ref_iface }, ml_tag_copy(ml_tag_null)));
 
+	/* polymorphic */
+	ml_env_add(&core->env, strdup("Shot"), ml_value_eval(amp_shot_make, ml_tag_copy(ml_tag_null)));
+
 	/* clocks */
 	//ml_env_add(&core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
 
@@ -56,7 +94,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Loop"), ml_value_eval(amp_loop_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Mix"), ml_value_eval(amp_mix_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Octave"), ml_value_eval(amp_octave_make, ml_tag_copy(ml_tag_null)));
-	//ml_env_add(&core->env, strdup("Sect"), ml_value_impl(amp_sect_make));
+	ml_env_add(&core->env, strdup("Sect"), ml_value_eval(amp_sect_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Scale"), ml_value_eval(amp_scale_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Synth"), ml_value_eval(amp_synth_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Wrap"), ml_value_eval(amp_wrap_make, ml_tag_copy(ml_tag_null)));
@@ -78,7 +116,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Patch"), ml_value_eval(amp_patch_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Ramp"), ml_value_eval(amp_ramp_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Sample"), ml_value_eval(amp_sample_make, ml_tag_copy(ml_tag_null)));
-	//ml_env_add(&core->env, strdup("Shot"), ml_value_impl(amp_shot_make));
 	ml_env_add(&core->env, strdup("Sum"), ml_value_eval(amp_sum_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Trig"), ml_value_eval(amp_trig_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Warp"), ml_value_eval(amp_warp_make, ml_tag_copy(ml_tag_null)));
@@ -96,15 +133,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Snap"), ml_value_eval(amp_snap_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Toggle"), ml_value_eval(amp_toggle_make, ml_tag_copy(ml_tag_null)));
 
-	/* filters */
-	ml_env_add(&core->env, strdup("Lpf"), ml_value_eval(amp_lpf_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Hpf"), ml_value_eval(amp_hpf_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Moog"), ml_value_eval(amp_moog_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Peak"), ml_value_eval(amp_peak_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Res"), ml_value_eval(amp_res_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Svhpf"), ml_value_eval(amp_svhpf_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Svlpf"), ml_value_eval(amp_svlpf_make, ml_tag_copy(ml_tag_null)));
-	
 	//ml_env_add(&core->env, strdup("Butter2low"), ml_value_impl(amp_butter2low_make));
 	//ml_env_add(&core->env, strdup("Butter2high"), ml_value_impl(amp_butter2high_make));
 	//ml_env_add(&core->env, strdup("Butter3low"), ml_value_impl(amp_butter3low_make));
@@ -112,17 +140,11 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	//ml_env_add(&core->env, strdup("Butter4low"), ml_value_impl(amp_butter4low_make));
 	//ml_env_add(&core->env, strdup("Butter4high"), ml_value_impl(amp_butter4high_make));
 
-	/* reverberators */
-	//ml_env_add(&core->env, strdup("Allpass"), ml_value_impl(amp_allpass_make));
-	//ml_env_add(&core->env, strdup("Comb"), ml_value_impl(amp_comb_make));
-	//ml_env_add(&core->env, strdup("Delay"), ml_value_impl(amp_delay_make));
-	//ml_env_add(&core->env, strdup("Lpcf"), ml_value_impl(amp_lpcf_make));
+	const struct pair_t *cur;
 
-	/* helper functions */
-	//ml_env_add(&core->env, strdup("str2key"), ml_value_impl(amp_key_eval));
-	//ml_env_add(&core->env, strdup("skyline"), ml_value_impl(amp_eval_skyline0));
-	ml_env_add(&core->env, strdup("vel"), ml_value_eval(amp_eval_vel, ml_tag_copy(ml_tag_null)));
-
+	for(cur = list; cur->id != NULL; cur++)
+		ml_env_add(&core->env, strdup(cur->id), ml_value_eval(cur->func, ml_tag_copy(ml_tag_null)));
+	
 	err = ml_parse_file(&core->env, SHAREDIR "/amp/core.ml");
 	if(err != NULL)
 		fprintf(stderr, "Failed to parse 'core.ml'. %s\n", err);

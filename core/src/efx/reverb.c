@@ -294,76 +294,80 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 
 /**
  * Create a pure delay reverb from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_delay_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_delay_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double len;
 	struct amp_param_t *gain;
 
-	*err = amp_match_unpack(value, "(f,P)", &len, &gain);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(f,P)", &len, &gain));
 
-	return amp_pack_effect(amp_reverb_effect(amp_reverb_delay(len, gain, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_delay(len, gain, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
- * Create an all-pass reverb from a value.
+ * Create a all-pass reverb from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_allpass_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_allpass_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double len;
 	struct amp_param_t *gain;
 
-	*err = amp_match_unpack(value, "(f,P)", &len, &gain);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(f,P)", &len, &gain));
 
-	return amp_pack_effect(amp_reverb_effect(amp_reverb_allpass(len, gain, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_allpass(len, gain, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a comb-feedback reverb from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_comb_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_comb_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double len;
 	struct amp_param_t *gain;
 
-	*err = amp_match_unpack(value, "(f,P)", &len, &gain);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(f,P)", &len, &gain));
 
-	return amp_pack_effect(amp_reverb_effect(amp_reverb_comb(len, gain, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_comb(len, gain, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
 
 /**
  * Create a low-pass comb-feedback reverb from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_lpcf_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_lpcf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double len;
 	struct amp_param_t *gain, *freq;
 
-	*err = amp_match_unpack(value, "(f,P,P)", &len, &gain, &freq);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(f,P)", &len, &gain, &freq));
 
-	return amp_pack_effect(amp_reverb_effect(amp_reverb_lpcf(len, gain, freq, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_lpcf(len, gain, freq, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }

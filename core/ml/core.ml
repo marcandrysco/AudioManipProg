@@ -1,35 +1,27 @@
-(* compute decibels from an amplitude *)
-let amp2db v = 20 * log v / log 10
-
-(* compute amplitude from decibels *)
-let db2amp v = pow 10 (v / 20)
-let db v = db2amp v
-let gain v = db2amp v
-let cut v = db2amp (-v)
-
-
-(* create a sequence from low to high *)
-let nat l h =
-  if l <= h
-    then l::(nat (l+1) h)
-    else []
-
-(* sequence using length *)
-let nat' start len = seq start (start+len-1)
-
-(*** Helper functions ***)
+(**
+ * Create panning instrument on a single channel.
+ *   @n (int):     The channel number.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
+ *)
+let Pan(n,v,d) = Single(n,Chain[Gain v,Delay d])
 
 (**
- * Compute a value from a velocity
- *   @v (float): The velocity.
- *   &ret (int): The value.
+ * Create panning instrument on the left channel.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
  *)
-let vel v =
-  if v >= 1.0
-    then 65535
-    else if v <= 0
-      then 0
-      else v * 65535
+let PanLeft(v,d) = Pan(0,v,d)
+
+(**
+ * Create panning instrument on the right channel.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
+ *)
+let PanRight(v,d) = Pan(1,v,d)
 
 
 (*** Attack-Decay-Sustain-Release variants ***)
@@ -48,6 +40,7 @@ let AtkRel1 (a,r) = AtkRel ((1,1),(a,r))
 let ASR ((l,h),(a,r)) = ADSR ((l,h),(a,0,1,r))
 let ASR' (a,r) = ASR((0,1),(a,r))
 let ASR1 (a,r) = ASR((1,1),(a,r))
+
 
 (*** Alternate constructors ***)
 
@@ -76,6 +69,73 @@ let Scale'(l,h) = Scale(-1,1,l,h)
  *   &returns (Effect): Scaling to (0,1) effect.
  *)
 let Scale1 = Scale'(0,1)
+
+
+(****)
+(* Module Components *)
+(****)
+
+
+(**** Samples ****)
+
+(**
+ * Load a sample with fast decay.
+ *   @p (List):     The file path list of lists.
+ *   &ret (Module): The sample module.
+ *)
+let Sample'(p) = Sample(3,0.01,p)
+
+(**
+ * Load a single sample.
+ *   @n (int):      The number of simultaneous executions.
+ *   @l (float):    The sustain length.
+ *   @p (string):   The file path.
+ *   &ret (Module): The sample module.
+ *)
+let Sample1(n,l,p) = Sample(n,l,[[p]])
+
+(**
+ * Load a single sample.
+ *   @p (string):   The file path.
+ *   &ret (Module): The sample module.
+ *)
+let Sample1'(p) = Sample1(3,0.01,p)
+
+(**
+ * Load a single-shot sample.
+ *   @n (int):      The number of simultaneous executions.
+ *   @l (float):    The sustain length.
+ *   @p (List):     The file path list of lists.
+ *   @k (Int,Int):  The key filter.
+ *   &ret (Module): The sample module.
+ *)
+let SampleShot1(n,l,p,k) = Shot(Sample(n,l,p),k)
+
+(**
+ * Load a single-shot sample with fast decay.
+ *   @n (int):      The number of simultaneous executions.
+ *   @k (Int,Int):  The key filter.
+ *   &ret (Module): The sample module.
+ *)
+let SampleShot'(p,k) = Shot(Sample(3,0.01,p),k)
+
+(**
+ * Load a single-shot single sample.
+ *   @n (int):      The number of simultaneous executions.
+ *   @l (float):    The sustain length.
+ *   @p (string):   The file path.
+ *   @k (Int,Int):  The key filter.
+ *   &ret (Module): The sample module.
+ *)
+let SampleShot1(n,l,p,k) = Shot(Sample(n,l,[[p]]),k)
+
+(**
+ * Load a single-shot single sample with fast decay.
+ *   @p (string):   The file path.
+ *   @k (Int,Int):  The key filter.
+ *   &ret (Module): The sample module.
+ *)
+let SampleShot1'(p,k) = Shot(Sample1(3,0.01,p),k)
 
 
 (**** Synthesizer Components ****)

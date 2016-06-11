@@ -35,7 +35,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			amp_clock_info(engine->clock, amp_info_init());
 		}
 		else
-			fprintf(stderr, "Type for 'seq' is not valid.\n");
+			fprintf(stderr, "Type for 'amp.clock' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.seq");
@@ -46,7 +46,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			amp_seq_info(engine->seq, amp_info_init());
 		}
 		else
-			fprintf(stderr, "Type for 'seq' is not valid.\n");
+			fprintf(stderr, "Type for 'amp.seq' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.instr");
@@ -57,7 +57,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			amp_instr_info(engine->instr, amp_info_init());
 		}
 		else
-			fprintf(stderr, "Type for 'instr' is not valid.\n");
+			fprintf(stderr, "Type for 'amp.instr' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.run");

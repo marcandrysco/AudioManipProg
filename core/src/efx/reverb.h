@@ -35,10 +35,10 @@ struct amp_reverb_t *amp_reverb_lpcf(double len, struct amp_param_t *gain, struc
 void amp_reverb_info(struct amp_reverb_t *reverb, struct amp_info_t info);
 bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
-struct ml_value_t *amp_delay_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_allpass_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_comb_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_lpcf_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_delay_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_allpass_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_comb_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_lpcf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 
 /**

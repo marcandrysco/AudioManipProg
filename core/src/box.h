@@ -4,36 +4,35 @@
 /**
  * Boxed type enumerator.
  *   @amp_box_clock_e: Clock.
- *   @amp_box_ctrl_e: Control
- *   @amp_box_ctrl_e: Control
- *   @amp_box_effect_e: Effect.
- *   @amp_box_instr_e: Instrument.
  *   @amp_box_seq_e: Sequencer.
+ *   @amp_box_instr_e: Instrument.
+ *   @amp_box_effect_e: Effect.
+ *   @amp_box_module_e: Module.
+ *   @amp_box_ctrl_e: Control
  */
 enum amp_box_e {
 	amp_box_clock_e,
-	amp_box_ctrl_e,
 	amp_box_effect_e,
 	amp_box_instr_e,
 	amp_box_module_e,
-	amp_box_seq_e
+	amp_box_seq_e,
+	amp_box_ctrl_e
 };
 
 /**
  * Boxed data union.
  *   @clock: The clock.
- *   @ctrl: Control.
- *   @effect: The effect.
  *   @instr: The instrument.
- *   @seq: The seq.
+ *   @seq: The sequencer.
+ *   @effect: The effect.
  */
 union amp_box_u {
 	struct amp_clock_t clock;
-	struct amp_ctrl_t *ctrl;
-	struct amp_effect_t effect;
 	struct amp_instr_t instr;
+	struct amp_effect_t effect;
 	struct amp_module_t module;
 	struct amp_seq_t seq;
+	struct amp_ctrl_t *ctrl;
 };
 
 /**
@@ -63,11 +62,11 @@ struct amp_box_t *amp_box_copy(struct amp_box_t *box);
 void amp_box_delete(struct amp_box_t *box);
 
 struct amp_box_t *amp_box_clock(struct amp_clock_t clock);
-struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl);
-struct amp_box_t *amp_box_effect(struct amp_effect_t effect);
 struct amp_box_t *amp_box_instr(struct amp_instr_t instr);
+struct amp_box_t *amp_box_effect(struct amp_effect_t effect);
 struct amp_box_t *amp_box_module(struct amp_module_t module);
 struct amp_box_t *amp_box_seq(struct amp_seq_t seq);
+struct amp_box_t *amp_box_ctrl(struct amp_ctrl_t *ctrl);
 
 /*
  * unbox declarations
@@ -78,15 +77,25 @@ struct amp_param_t *amp_unbox_param(struct ml_value_t *value);
  * packing declarations
  */
 struct ml_value_t *amp_pack_clock(struct amp_clock_t clock);
-struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl);
-struct ml_value_t *amp_pack_effect(struct amp_effect_t effect);
 struct ml_value_t *amp_pack_instr(struct amp_instr_t instr);
+struct ml_value_t *amp_pack_effect(struct amp_effect_t effect);
 struct ml_value_t *amp_pack_module(struct amp_module_t module);
 struct ml_value_t *amp_pack_seq(struct amp_seq_t seq);
+struct ml_value_t *amp_pack_ctrl(struct amp_ctrl_t *ctrl);
 
 void amp_match_str(char *str, size_t len, const char *format);
 char *amp_match_err(struct ml_tag_t *tag, const char *format);
 char *amp_match_unpack(struct ml_value_t *value, const char *format, ...);
+
+/**
+ * Erase a box, if non-null.
+ *   @box: The box.
+ */
+static inline void amp_box_erase(struct amp_box_t *box)
+{
+	if(box != NULL)
+		amp_box_delete(box);
+}
 
 /**
  * Pack a boxed value into a MuseLang value.

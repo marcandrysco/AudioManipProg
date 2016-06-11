@@ -63,4 +63,27 @@ necessary.
 ## Hello World
 
 Now that we know how to run AmpRT, we will write our first, "hello world"
-MuseLang file.
+MuseLang file. Our first program (show below) processes all incoming data
+through a low-pass filter with a cutoff frequency of 800Hz.
+
+    let amp.instr = Splice(Lpf(800))
+
+Save the code to a file called `hello.ml`. Execute the MuseLang file using
+AmpRT by following the commands in the previous section, replacing `dist.ml`
+with `hello.ml`. For example, use `amprt --alsa "hw:0" "hello.ml"` to process
+a low-pass filter on the ALSA device `hw:0`.
+
+Hopefully it's obvious that the piece `Lpf(800)` performs the low-pass
+filter, but what is with the `Splice` and `amp.instr`? Starting from the left,
+the variable `amp.instr` specifies the root instrument processor, which in
+this case, is a `Splice` component. You can think of this as your `public
+static void main` -- its the entry point for processing data.
+
+Next, we move onto the mysterious `Splice` component. Low-pass filters are
+designed to operate on a single stream (or channel) of data, but the root
+instrument assumes a multi-channel input. In order to apply the filter, we
+use the `Splice` component which merges all input channels into a single
+stream before processing it with the filter. Once processed, the output is
+copied to all output channels. If you only want to process the left channel,
+you can replace `Splice` with `Left`, and likewise with the right channel and
+`Right`.

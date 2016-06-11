@@ -71,7 +71,7 @@ char *amp_sched_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 		struct amp_time_t time;
 		struct amp_event_t event;
 
-		chkfail(amp_match_unpack(link->value, "((d,f),(d,d,d))", &time.bar, &time.beat, &event.dev, &event.key, &event.val));
+		chkfail(amp_match_unpack(link->value, "((d,f),(d,d),d)", &time.bar, &time.beat, &event.dev, &event.key, &event.val));
 
 		amp_sched_add(sched, time, event);
 	}
@@ -203,7 +203,6 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_time_t *time, unsigned
 				break;
 
 			for(j = 0; j < iter->len; j++)
-				printf("add %d %d %d\n", (int)iter->event[j].dev, (int)iter->event[j].key, (int)iter->event[j].val),
 				amp_queue_add(queue, (struct amp_action_t){ i, iter->event[j], queue });
 		} while((iter = iter->next) != cur);
 

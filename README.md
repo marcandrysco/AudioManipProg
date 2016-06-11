@@ -22,7 +22,8 @@ into five components:
     program in real time using an audio device as input and output.
 
 The [Tutorial](tut/README.md) provides a way to started using the Audio
-Manipulation Program software stack.
+Manipulation Program software stack. Documented [Examples](ex/README.md) are
+complete, high-level program that demonstrate features a variety of features.
 
 ## Licensing
 
@@ -41,9 +42,9 @@ provided examples.
 ### Default Build
 
 The root directory contains a `configure` script for performing a "default"
-build. Running `make` will recusively build and locally all subdirectories.
-The libraries are installed into `lib` and `include`, and the AmpRT binary is
-installed into `bin` and executed with the command `bin/amprt`.
+build. Running `make` will recusively build all subdirectories. The libraries
+are locally  installed into `lib` and `include`, and the AmpRT binary is
+installed into `bin` and is executed with the command `bin/amprt`.
 
 ### Manual Build
 
@@ -82,7 +83,7 @@ set of low-level building blocks. The library is built using heavily optimized
 C code to ensure both low latency and high throughput. The "hot" path that
 processes audio is carefully written to eliminate sources of slowdowns such as
 memory allocation or system calls. Much of the code is directly exported in
-headers as static inline functions to prevent function call overhead.
+headers as static inline functions to eliminate function call overhead.
 
 ### MuseLang
 
@@ -99,10 +100,10 @@ very efficient music or signal processing function. Bindings for AmpCore
 include multi-track recording, distortion, reverberation, equalization, and
 more.
 
-Additional functionality may be loaded through the use of plugins, extending
-the base set of AmpCore primitives. Plugins can expose their components
-through MuseLang so that they may be used directly in the high-level,
-functional programs.
+Additional functionality may be loaded through the use of plugins that extend
+the base set of AmpCore primitives. Plugins should expose their components
+through MuseLang so that they may be used directly in high-level, functional
+programs.
 
 ### AmpRT
 

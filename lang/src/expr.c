@@ -194,6 +194,8 @@ struct ml_expr_t *ml_expr_tuple(struct ml_tuple_t *tuple, struct ml_tag_t tag)
  */
 char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_env_t *env)
 {
+	*ret = NULL;
+
 	switch(expr->type) {
 	case ml_expr_value_v:
 		*ret = ml_value_copy(expr->data.value);
@@ -210,7 +212,7 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 			else if((*ret = ml_eval_closure(expr->data.var)) != NULL)
 				ml_tag_replace(&(*ret)->tag, ml_tag_copy(expr->tag));
 			else
-				fatal("%C: Unknown variable '%s'.", ml_tag_chunk(&expr->tag), expr->data.var);
+				return mprintf("%C: Unknown variable '%s'.", ml_tag_chunk(&expr->tag), expr->data.var);
 		}
 		else
 			*ret = ml_value_copy(*ret);
@@ -261,15 +263,15 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 	case ml_expr_let_v:
 		{
-#define onexit ml_value_erase(value); ml_env_delete(env);
-			struct ml_value_t *value;
+#define onexit ml_value_erase(value); ml_env_delete(env); *ret = NULL;
+			struct ml_value_t *value = NULL;
 
 			env = ml_env_copy(env);
 			chkfail(ml_expr_eval(&value, expr->data.let->value, env));
 			if(!ml_pat_match(expr->data.let->pat, value, &env))
 				fail("%C: Pattern match between '%C' and '%C' failed.", ml_tag_chunk(&expr->tag), ml_pat_chunk(expr->data.let->pat), ml_value_chunk(value));
 
-			ml_expr_eval(ret, expr->data.let->expr, env);
+			chkfail(ml_expr_eval(ret, expr->data.let->expr, env));
 
 			ml_value_delete(value);
 			ml_env_delete(env);

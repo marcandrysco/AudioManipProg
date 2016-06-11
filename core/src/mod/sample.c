@@ -140,37 +140,37 @@ void amp_sample_delete(struct amp_sample_t *sample)
  */
 char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	/*
-#define onexit ml_value_delete(value); if(sample != NULL) amp_sample_delete(sample);
+#define onexit if(sample != NULL) amp_sample_delete(sample);
 #define error() fail("%C: Type error. Expected (Int,Float,[[String]]).", ml_tag_chunk(&value->tag))
-	struct ml_tuple_t tuple;
+	struct ml_list_t *list;
 	struct ml_link_t *link, *inst;
 	struct amp_sample_t *sample = NULL;
 	struct amp_cache_t *cache = amp_core_cache(env);
 
-	if(value->type != ml_value_tuple_e)
+	if(value->type != ml_value_tuple_v)
 		error();
 
-	tuple = value->data.tuple;
-	if(tuple.len != 3)
+	list = value->data.list;
+	if(list->len != 3)
 		error();
 
-	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_list_e))
+	if((ml_list_getv(list, 0)->type != ml_value_num_v) || (ml_list_getv(list, 1)->type != ml_value_num_v) || (ml_list_getv(list, 2)->type != ml_value_list_v))
 		error();
 
-	sample = amp_sample_new(tuple.value[0]->data.num, tuple.value[1]->data.num);
+	sample = amp_sample_new(ml_list_getv(list, 0)->data.num, ml_list_getv(list, 1)->data.num);
+	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
 
-	for(link = tuple.value[2]->data.list.head; link != NULL; link = link->next) {
+	for(link = ml_list_getv(list, 2)->data.list->head; link != NULL; link = link->next) {
 		struct amp_file_t *file;
 		struct amp_sample_vel_t *vel;
 
-		if(link->value->type != ml_value_list_e)
+		if(link->value->type != ml_value_list_v)
 			error();
 
 		vel = amp_sample_vel(sample);
 
-		for(inst = link->value->data.list.head; inst != NULL; inst = inst->next) {
-			if(inst->value->type != ml_value_str_e)
+		for(inst = link->value->data.list->head; inst != NULL; inst = inst->next) {
+			if(inst->value->type != ml_value_str_v)
 				error();
 
 			file = amp_cache_open(cache, inst->value->data.str, 0, amp_core_rate(env));
@@ -181,15 +181,8 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 		}
 	}
 
-	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
-	ml_value_delete(value);
-
 	return NULL;
-#undef error
 #undef onexit
-*/
-
-	fatal("stub");
 }
 
 
@@ -200,6 +193,7 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
  */
 void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 {
+	/*
 	if(info.type == amp_info_note_e) {
 		unsigned int n;
 		struct amp_sample_vel_t *vel;
@@ -220,6 +214,7 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 		sample->i = (sample->i + 1) % sample->n;
 		vel->rr = (vel->rr + 1) % vel->len;
 	}
+	*/
 }
 
 /**
@@ -233,34 +228,45 @@ void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
  */
 bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	int idx;
-	unsigned int i, j;
 	bool cont = false;
+	unsigned int i, j, n = 0;
+	struct amp_event_t *event;
 
-	dsp_zero_d(buf, len);
+	for(i = 0; i < len; i++) {
+		while((event = amp_queue_event(queue, &n, i)) != NULL) {
+			unsigned int n;
+			struct amp_sample_vel_t *vel;
 
-	for(j = 0; j < sample->n; j++) {
-		struct play_t *play = &sample->play[j];
-
-		if(play->idx == INT_MAX)
-			continue;
-
-		cont = true;
-		idx = play->idx;
-
-		for(i = 0; i < len; i++, idx++) {
-			if(idx >= (int)play->buf->len)
-				break;
-			else if(idx < 0)
+			if(event->val == 0)
 				continue;
 
-			buf[i] += play->vol * play->buf->arr[idx];
+			n = ((float)event->val / (float)UINT16_MAX) * sample->len;
+			vel = &sample->vel[(n >= sample->len) ? (sample->len - 1) : n];
+
+			sample->play[sample->i].buf = vel->inst[vel->rr].buf;
+			sample->play[sample->i].vol = 1.0;
+			sample->play[sample->i].idx = 0;
+			sample->play[(sample->i + sample->n - 1) % sample->n].vol *= sample->decay;
+
+			sample->i = (sample->i + 1) % sample->n;
+			vel->rr = (vel->rr + 1) % vel->len;
+		}
+
+		buf[i] = 0.0;
+
+		for(j = 0; j < sample->n; j++) {
+			struct play_t *play = &sample->play[j];
+
+			if((play->idx == INT_MAX) || (play->idx >= play->buf->len))
+				break;
+
+			cont = true;
+			buf[i] += play->vol * play->buf->arr[play->idx];
+			play->idx++;
 
 			if(play->vol < 1.0)
 				play->vol *= sample->decay;
 		}
-
-		play->idx = (idx < (int)play->buf->len) ? idx : INT_MAX;
 	}
 
 	return cont;

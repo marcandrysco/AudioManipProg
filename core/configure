@@ -70,11 +70,12 @@ setconf()
   c_src "src/mod/patch.c"
   c_src "src/mod/ramp.c"
   c_src "src/mod/sample.c"
-  c_src "src/mod/shot.c"
   c_src "src/mod/sum.c"
   c_src "src/mod/synth.c"
   c_src "src/mod/trig.c"
   c_src "src/mod/warp.c"
+
+  c_src "src/poly/shot.c"
 
   c_src "src/seq/enable.c"
   c_src "src/seq/merge.c"

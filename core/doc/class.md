@@ -28,6 +28,17 @@ AmpCore provides the following set of `Clock` instances:
 
   * [Basic](clk/basic.md) generates a basic clock.
 
+## Wrapper
+
+Wrapper objects do not fall into any individual class; instead, wrapper
+objects take on the class of their internal objects.
+
+    Wrapper = Shot (Object)
+
+AmpCore provides the following set of `Wrapper` instances:
+
+  * [Shot](wrap/shot.md)
+
 ## Effect
 
 The `Effect` class performs simple processing of a mono signal. Most effects
