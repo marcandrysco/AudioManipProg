@@ -59,20 +59,21 @@ void amp_expcrush_delete(struct amp_expcrush_t *crush)
 
 /**
  * Create a expcrusher from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_expcrush_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_expcrush_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *bits;
 
-	*err = amp_match_unpack(value, "P", &bits);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &bits));
 
-	return amp_pack_effect((struct amp_effect_t){ amp_expcrush_new(bits), &amp_expcrush_iface });
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_expcrush_new(bits), &amp_expcrush_iface });
+	return NULL;
+#undef onexit
 }
 
 

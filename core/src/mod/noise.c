@@ -57,23 +57,19 @@ void amp_noise_delete(struct amp_noise_t *noise)
 
 /**
  * Create a noise from a value.
+ *   @ret: Ref. The return value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error
  */
-struct ml_value_t *amp_noise_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_noise_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	enum ml_value_e type = value->type;
+	if(value->type != ml_value_nil_v)
+		return mprintf("%C: Expected '()'.", ml_tag_chunk(&value->tag));
 
-	ml_value_delete(value);
+	*ret = amp_pack_module((struct amp_module_t){ amp_noise_new(), &amp_noise_iface });
 
-	if(type != ml_value_nil_v) {
-		*err = amp_printf("Type error. Expected '()'.");
-		return NULL;
-	}
-
-	return amp_pack_module((struct amp_module_t){ amp_noise_new(), &amp_noise_iface });
+	return NULL;
 }
 
 

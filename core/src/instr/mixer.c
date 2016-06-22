@@ -72,18 +72,18 @@ void amp_mixer_delete(struct amp_mixer_t *mixer)
  */
 char *amp_mixer_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#define onexit ml_value_delete(value); amp_mixer_delete(mixer);
+#define onexit amp_mixer_delete(mixer);
 	struct amp_mixer_t *mixer;
 	struct ml_link_t *link;
 
 	mixer = amp_mixer_new();
 
 	if(value->type != ml_value_list_v)
-		fail("Type error. Instrument mixer requires a list of instrument as input.");
+		fail("%C: Type error. Instrument mixer requires a list of instrument as input.", ml_tag_chunk(&value->tag));
 
 	for(link = value->data.list->head; link != NULL; link = link->next) {
 		if(amp_unbox_value(link->value, amp_box_instr_e) == NULL)
-			fail("Type error. Instrument mixer requires a list of instrument as input.");
+			fail("%C: Type error. Instrument mixer requires a list of instrument as input.", ml_tag_chunk(&value->tag));
 	}
 
 	for(link = value->data.list->head; link != NULL; link = link->next)

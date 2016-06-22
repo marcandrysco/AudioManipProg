@@ -24,16 +24,6 @@ struct ml_box_t {
 
 
 /**
- * Evaluator function.
- *   @ret: Ref. The returned value.
- *   @value: Consumed. The input value.
- *   @env: The environment.
- *   &returns: Error.
- */
-typedef char *(*ml_eval_f)(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
-
-
-/**
  * Value enumerator.
  *   @ml_value_nil_v: Nil.
  *   @ml_value_bool_v: Boolean.
@@ -167,6 +157,7 @@ struct ml_value_t *ml_list_getv(struct ml_list_t *list, unsigned int idx);
 
 void ml_list_prepend(struct ml_list_t *list, struct ml_value_t *value);
 void ml_list_append(struct ml_list_t *list, struct ml_value_t *value);
+void ml_list_remove(struct ml_list_t *list, struct ml_link_t *link);
 
 /*
  * closure declarations
@@ -191,6 +182,32 @@ static inline void ml_value_erase(struct ml_value_t *value)
 {
 	if(value != NULL)
 		ml_value_delete(value);
+}
+
+
+/**
+ * Check if a value is numeric (int or float).
+ *   @value: The value.
+ *   &returns: True if numeric, false otherwise.
+ */
+static inline bool ml_value_isnum(struct ml_value_t *value)
+{
+	return (value->type == ml_value_num_v) || (value->type == ml_value_flt_v);
+}
+
+/**
+ * Retrieve the floating-point value from a numeric value.
+ *   @value: The value. Must be numeric.
+ *   &returns: The value as a double-precision float.
+ */
+static inline double ml_value_getflt(struct ml_value_t *value)
+{
+	if(value->type == ml_value_num_v)
+		return value->data.num;
+	else if(value->type == ml_value_flt_v)
+		return value->data.flt;
+	else
+		fatal("Not a numeric type.");
 }
 
 #endif

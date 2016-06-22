@@ -19,6 +19,7 @@ struct ml_symbol_t {
  *   @ml_token_flt_v: Floating-point value.
  *   @ml_token_str_v: String value.
  *   @ml_token_nil_v: Nil.
+ *   @ml_token_empty_v: Empty list.
  *   @ml_token_true_v: True.
  *   @ml_token_false_v: False.
  *   @ml_token_let_v: Let.
@@ -28,6 +29,7 @@ struct ml_symbol_t {
  *   @ml_token_else_v: Else.
  *   @ml_token_match_v: Match.
  *   @ml_token_with_v: With.
+ *   @ml_token_fun_v: Function.
  *   @ml_token_import_v: Import.
  *   @ml_token_eq_v: Equality.
  *   @ml_token_lte_v: Less than or equal.
@@ -43,16 +45,18 @@ enum ml_token_e {
 	ml_token_num_v = 0x102,
 	ml_token_flt_v = 0x103,
 	ml_token_nil_v = 0x0200,
-	ml_token_true_v = 0x0201,
-	ml_token_false_v = 0x0202,
-	ml_token_let_v = 0x203,
-	ml_token_in_v = 0x204,
-	ml_token_if_v = 0x205,
-	ml_token_then_v = 0x206,
-	ml_token_else_v = 0x207,
-	ml_token_match_v = 0x208,
-	ml_token_with_v = 0x209,
-	ml_token_import_v = 0x20a,
+	ml_token_empty_v = 0x0201,
+	ml_token_true_v = 0x0202,
+	ml_token_false_v = 0x0203,
+	ml_token_let_v = 0x204,
+	ml_token_in_v = 0x205,
+	ml_token_if_v = 0x206,
+	ml_token_then_v = 0x207,
+	ml_token_else_v = 0x208,
+	ml_token_match_v = 0x209,
+	ml_token_with_v = 0x20a,
+	ml_token_fun_v = 0x20b,
+	ml_token_import_v = 0x20c,
 	ml_token_eq_v = 0x300,
 	ml_token_lte_v = 0x301,
 	ml_token_gte_v = 0x302,

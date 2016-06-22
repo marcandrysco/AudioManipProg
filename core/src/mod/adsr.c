@@ -3,10 +3,12 @@
 
 /**
  * ADSR structure.
- *   @min: The minimum and maximum.
+ *   @on: The note on flag.
+ *   @min, ax: The minimum and maximum.
  *   @v, atk, decay, sus, rel, target: The paramaters.
  */
 struct amp_adsr_t {
+	bool on;
 	double min, max;
 	double v, atk, decay, sus, rel, target[2];
 };
@@ -25,6 +27,13 @@ const struct amp_module_i amp_adsr_iface = {
 
 /**
  * Create an ADSR.
+ *   @min: The minimum.
+ *   @max: The maximum.
+ *   @atk: The attack.
+ *   @decay: The decay length.
+ *   @sus: The sustain level.
+ *   @rel: The release length.
+ *   @rate: The sample rate.
  *   &returns: The ADSR.
  */
 struct amp_adsr_t *amp_adsr_new(double min, double max, double atk, double decay, double sus, double rel, unsigned int rate)
@@ -36,6 +45,7 @@ struct amp_adsr_t *amp_adsr_new(double min, double max, double atk, double decay
 	adsr = malloc(sizeof(struct amp_adsr_t));
 	adsr->min = min;
 	adsr->max = max;
+	adsr->on = false;
 	adsr->v = 0.01;
 	adsr->atk = pow(100.0, 1.0 / (atk * rate));
 	adsr->decay = pow(sus, 1.0 / (decay * rate));
@@ -102,10 +112,14 @@ void amp_adsr_info(struct amp_adsr_t *adsr, struct amp_info_t info)
 	if(info.type == amp_info_note_e) {
 		double vel;
 		
-		if(info.data.note->vel > 0.0)
+		if(info.data.note->vel > 0.0) {
 			vel = adsr->min + (adsr->max - adsr->min) * info.data.note->vel;
-		else
+			adsr->on = false;
+		}
+		else {
 			vel = 0.0;
+			adsr->on = true;
+		}
 
 		adsr->target[0] = fmax(vel, 0.01);
 		adsr->target[1] = fmax(vel * adsr->sus, 0.01);
@@ -137,7 +151,7 @@ bool amp_adsr_proc(struct amp_adsr_t *adsr, double *buf, struct amp_time_t *time
 			}
 		}
 		else if(v > adsr->target[0]) {
-			v *= (adsr->target[0] == 0.01) ? adsr->rel : adsr->decay;
+			v *= adsr->on ? adsr->rel : adsr->decay;
 			if(v <= adsr->target[0]) {
 				v = adsr->target[0];
 				adsr->target[0] = adsr->target[1];

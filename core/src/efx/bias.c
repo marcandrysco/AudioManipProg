@@ -89,12 +89,21 @@ void amp_bias_info(struct amp_bias_t *bias, struct amp_info_t info)
 bool amp_bias_proc(struct amp_bias_t *bias, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
-	double val[len];
 
-	amp_param_proc(bias->value, val, time, len, queue);
+	if(amp_param_isfast(bias->value)) {
+		double val = bias->value->flt;
 
-	for(i = 0; i < len; i++)
-		buf[i] += val[i];
+		for(i = 0; i < len; i++)
+			buf[i] += val;
+	}
+	else {
+		double val[len];
+
+		amp_param_proc(bias->value, val, time, len, queue);
+
+		for(i = 0; i < len; i++)
+			buf[i] += val[i];
+	}
 
 	return false;
 }

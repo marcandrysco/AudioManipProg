@@ -546,6 +546,28 @@ void ml_list_append(struct ml_list_t *list, struct ml_value_t *value)
 	list->tail = link;
 }
 
+/**
+ * Remove a link from the list.
+ *   @list: The list.
+ *   &link: The link.
+ */
+void ml_list_remove(struct ml_list_t *list, struct ml_link_t *link)
+{
+	if(link->next == NULL)
+		list->tail = link->prev;
+	else
+		link->next->prev = link->prev;
+
+	if(link->prev == NULL)
+		list->head = link->next;
+	else
+		link->prev->next = link->next;
+
+	list->len--;
+	ml_value_delete(link->value);
+	free(link);
+}
+
 
 /**
  * Create a closure.

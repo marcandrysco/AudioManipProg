@@ -145,6 +145,7 @@ bool amp_osc_proc(struct amp_osc_t *osc, double *buf, struct amp_time_t *time, u
 	unsigned int i;
 
 	cont = amp_module_proc(osc->phase, phase, time, len, queue);
+	printf("sine: %.2f\n", phase[0]);
 
 	switch(osc->type) {
 	case amp_osc_sine_e:

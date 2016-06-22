@@ -8,7 +8,7 @@ ml-install:
 # run rules
 
 run: install
-	$(MAKE) run -C ../sin
+	$(MAKE) run -C ..
 
 debug: install
-	$(MAKE) debug -C ../sin
+	$(MAKE) debug -C ..

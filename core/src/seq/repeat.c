@@ -67,26 +67,25 @@ void amp_repeat_delete(struct amp_repeat_t *repeat)
 
 /**
  * Create a repeat from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_repeat_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_repeat_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#undef fail
-#define fail(format, ...) do { amp_seq_delete(seq); *err = amp_printf(format, ##__VA_ARGS__); NULL; } while(0)
+#define onexit
 	int off, len;
 	struct amp_seq_t seq;
 
-	*err = amp_match_unpack(value, "(d,d,S)", &off, &len, &seq);
-	if(*err != NULL)
-		return NULL;
-
+	chkfail(amp_match_unpack(value, "(d,d,S)", &off, &len, &seq));
 	if(len <= 0)
 		fail("Repeaat length must be positive.");
 
-	return amp_pack_seq((struct amp_seq_t){ amp_repeat_new(off, len, seq), &amp_repeat_iface });
+	*ret = amp_pack_seq((struct amp_seq_t){ amp_repeat_new(off, len, seq), &amp_repeat_iface });
+
+	return NULL;
+#undef onexit
 }
 
 

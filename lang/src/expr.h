@@ -10,6 +10,7 @@
  *   @ml_expr_cond_v: Conditional.
  *   @ml_expr_match_v: Match.
  *   @ml_expr_tuple_v: Tuple.
+ *   @ml_expr_fun_v: Function.
  */
 enum ml_expr_e {
 	ml_expr_value_v,
@@ -18,7 +19,8 @@ enum ml_expr_e {
 	ml_expr_let_v,
 	ml_expr_cond_v,
 	ml_expr_match_v,
-	ml_expr_tuple_v
+	ml_expr_tuple_v,
+	ml_expr_fun_v
 };
 
 /**
@@ -30,6 +32,7 @@ enum ml_expr_e {
  *   @cond: Conditional.
  *   @match: Match.
  *   @tuple: Tuple expression.
+ *   @fun: Function.
  */
 union ml_expr_u {
 	struct ml_value_t *value;
@@ -39,6 +42,7 @@ union ml_expr_u {
 	struct ml_cond_t *cond;
 	struct ml_match_t *match;
 	struct ml_tuple_t *tuple;
+	struct ml_fun_t *fun;
 };
 
 /**
@@ -79,6 +83,16 @@ struct ml_cond_t {
 struct ml_let_t {
 	struct ml_pat_t *pat;
 	struct ml_expr_t *value, *expr;
+};
+
+/**
+ * Function structure.
+ *   @pat: The pattern.
+ *   @expr: The expression.
+ */
+struct ml_fun_t {
+	struct ml_pat_t *pat;
+	struct ml_expr_t *expr;
 };
 
 
@@ -141,6 +155,7 @@ struct ml_expr_t *ml_expr_let(struct ml_let_t *let, struct ml_tag_t tag);
 struct ml_expr_t *ml_expr_cond(struct ml_cond_t *cond, struct ml_tag_t tag);
 struct ml_expr_t *ml_expr_match(struct ml_match_t *match, struct ml_tag_t tag);
 struct ml_expr_t *ml_expr_tuple(struct ml_tuple_t *tuple, struct ml_tag_t tag);
+struct ml_expr_t *ml_expr_fun(struct ml_fun_t *fun, struct ml_tag_t tag);
 
 char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_env_t *env);
 
@@ -183,6 +198,13 @@ void ml_tuple_delete(struct ml_tuple_t *tuple);
 
 void ml_tuple_prepend(struct ml_tuple_t *tuple, struct ml_expr_t *expr);
 void ml_tuple_append(struct ml_tuple_t *tuple, struct ml_expr_t *expr);
+
+/*
+ * function declarations
+ */
+struct ml_fun_t *ml_fun_new(struct ml_pat_t *pat, struct ml_expr_t *expr);
+struct ml_fun_t *ml_fun_copy(struct ml_fun_t *fun);
+void ml_fun_delete(struct ml_fun_t *fun);
 
 
 /**

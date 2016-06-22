@@ -20,6 +20,7 @@ setconf()
   c_src "src/eval/conv.c"
   c_src "src/eval/io.c"
   c_src "src/eval/list.c"
+  c_src "src/eval/str.c"
   c_src "src/eval/table.c"
 }
 ## end configuration options ##

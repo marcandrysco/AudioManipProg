@@ -275,6 +275,8 @@ char *ml_token_load(struct ml_token_t **res, const char *path)
 				*token = ml_token_simple(ml_token_match_v, tag);
 			else if(strcmp(str, "with") == 0)
 				*token = ml_token_simple(ml_token_with_v, tag);
+			else if(strcmp(str, "fun") == 0)
+				*token = ml_token_simple(ml_token_fun_v, tag);
 			else if(strcmp(str, "import") == 0)
 				*token = ml_token_simple(ml_token_import_v, tag);
 			else
@@ -335,6 +337,9 @@ char *ml_token_load(struct ml_token_t **res, const char *path)
 				if(read->ch == 'e') {
 					strbuf_addch(&buf, read->ch), read_next(read);
 
+					if(read->ch == '-')
+						strbuf_addch(&buf, read->ch), read_next(read);
+
 					while(isdigit(read->ch))
 						strbuf_addch(&buf, read->ch), read_next(read);
 				}
@@ -365,6 +370,7 @@ char *ml_token_load(struct ml_token_t **res, const char *path)
 				{ ">=",  ml_token_gte_v },
 				{ "->",  ml_token_arrow_v },
 				{ "()",  ml_token_nil_v },
+				{ "[]",  ml_token_empty_v },
 				{ "(*",  ml_token_comment_v },
 				{ "(+)",  ml_token_id_v },
 				{ "(-)",  ml_token_id_v },

@@ -5,7 +5,7 @@
  *   @d (float):   The delay in second.
  *   &ret (Instr): The instrument
  *)
-let Pan(n,v,d) = Single(n,Chain[Gain v,Delay d])
+let Pan(n,v,d) = Single(n,Delay(d,v))
 
 (**
  * Create panning instrument on the left channel.
@@ -14,6 +14,7 @@ let Pan(n,v,d) = Single(n,Chain[Gain v,Delay d])
  *   &ret (Instr): The instrument
  *)
 let PanLeft(v,d) = Pan(0,v,d)
+let PanLeftSplice(e,v,d) = Series[Splice e,PanLeft(v,d)]
 
 (**
  * Create panning instrument on the right channel.
@@ -35,11 +36,23 @@ let AtkRel ((l,h),(a,r)) = ADSR ((l,h),(a,r,0,r))
 let AtkRel' (a,r) = AtkRel ((0,1),(a,r))
 let AtkRel1 (a,r) = AtkRel ((1,1),(a,r))
 
-(* ASR (attack:Num, release:Num)
- *   ASDR without any decay, sustained at 1 *)
+(* Attack-Sustain-Release constructor where sustain is held at 1.
+ *   @l,h (float,float): The low and high vlaue pair.
+ *   @a,r (float,float): The attack and release lengths.
+ *   &ret (Module): The ADSR module.
+ *)
 let ASR ((l,h),(a,r)) = ADSR ((l,h),(a,0,1,r))
 let ASR' (a,r) = ASR((0,1),(a,r))
 let ASR1 (a,r) = ASR((1,1),(a,r))
+
+
+(*** Reverb variants ***)
+
+(* Pure delay constructor.
+ *   @l (float): Delay length.
+ *   &ret (Effect): The delay effect.
+ *)
+let Delay1 l = Delay(l,1)
 
 
 (*** Alternate constructors ***)
@@ -109,7 +122,7 @@ let Sample1'(p) = Sample1(3,0.01,p)
  *   @k (Int,Int):  The key filter.
  *   &ret (Module): The sample module.
  *)
-let SampleShot1(n,l,p,k) = Shot(Sample(n,l,p),k)
+let SampleShot(n,l,p,k) = Shot(Sample(n,l,p),k)
 
 (**
  * Load a single-shot sample with fast decay.
@@ -148,7 +161,10 @@ let SampleShot1'(p,k) = Shot(Sample1(3,0.01,p),k)
 let Sine'(f) = Sine(Ramp(f))
 let SineW(f,w) = Sine(Warp(Ramp(f),w))
 let Tri'(f) = Tri(Ramp(f))
+let TriW(f,w) = Tri(Warp(Ramp(f),w))
 let Square'(f) = Square(Ramp(f))
+let SineScale(w,l,h) = Patch(Sine(w),Scale'(l,h))
+let SineScale'(f,l,h) = SineScale(Ramp(f),l,h)
 
 (*
 let Sine(f,w) = Osc("sine",f,w)

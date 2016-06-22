@@ -1,6 +1,17 @@
 #ifndef MOD_RAMP_H
 #define MOD_RAMP_H
 
+/**
+ * Ramp type enumerator.
+ *   @amp_ramp_sec_v: Seconds.
+ *   @amp_ramp_beat_v: Beats.
+ */
+enum amp_ramp_e {
+	amp_ramp_sec_v,
+	amp_ramp_beat_v
+};
+
+
 /*
  * ramp declarations
  */
@@ -8,11 +19,12 @@ struct amp_ramp_t;
 
 extern const struct amp_module_i amp_ramp_iface;
 
-struct amp_ramp_t *amp_ramp_new(struct amp_param_t *freq, unsigned int rate);
+struct amp_ramp_t *amp_ramp_new(enum amp_ramp_e type, struct amp_param_t *freq, unsigned int rate);
 struct amp_ramp_t *amp_ramp_copy(struct amp_ramp_t *ramp);
 void amp_ramp_delete(struct amp_ramp_t *ramp);
 
 char *amp_ramp_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_beat_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 void amp_ramp_info(struct amp_ramp_t *ramp, struct amp_info_t info);
 bool amp_ramp_proc(struct amp_ramp_t *ramp, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);

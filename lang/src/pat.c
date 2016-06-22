@@ -49,6 +49,10 @@ struct ml_pat_t *ml_pat_copy(struct ml_pat_t *pat)
 		case ml_pat_tuple_v:
 			*copy = ml_pat_tuple(ml_pat_copy(pat->data.tuple), ml_tag_copy(pat->tag));
 			break;
+
+		case ml_pat_cons_v:
+			*copy = ml_pat_cons(ml_pat_copy(pat->data.tuple), ml_tag_copy(pat->tag));
+			break;
 		}
 
 		pat = pat->next;
@@ -81,6 +85,7 @@ void ml_pat_delete(struct ml_pat_t *pat)
 			break;
 
 		case ml_pat_tuple_v:
+		case ml_pat_cons_v:
 			ml_pat_delete(pat->data.tuple);
 			break;
 		}
@@ -126,6 +131,17 @@ struct ml_pat_t *ml_pat_tuple(struct ml_pat_t *tuple, struct ml_tag_t tag)
 	return ml_pat_new(ml_pat_tuple_v, (union ml_pat_u){ .tuple = tuple }, tag);
 }
 
+/**
+ * Create an cons pattern.
+ *   @pat: Consumed. The tuple.
+ *   @tag: Consumed. The tag.
+ *   &returns: The pattern.
+ */
+struct ml_pat_t *ml_pat_cons(struct ml_pat_t *tuple, struct ml_tag_t tag)
+{
+	return ml_pat_new(ml_pat_cons_v, (union ml_pat_u){ .tuple = tuple }, tag);
+}
+
 
 /**
  * Patterm match, adding values to the environment.
@@ -138,11 +154,12 @@ bool ml_pat_match(struct ml_pat_t *pat, struct ml_value_t *value, struct ml_env_
 {
 	switch(pat->type) {
 	case ml_pat_value_v:
-		return ml_value_cmp(pat->data.value, value);
+		return ml_value_cmp(pat->data.value, value) == 0;
 
 	case ml_pat_var_v:
 		ml_env_add(env, strdup(pat->data.var), ml_value_copy(value));
-		break;
+
+		return true;
 
 	case ml_pat_tuple_v:
 		if(value->type != ml_value_tuple_v)
@@ -168,10 +185,31 @@ bool ml_pat_match(struct ml_pat_t *pat, struct ml_value_t *value, struct ml_env_
 				return false;
 		}
 
-		break;
+		return true;
+
+	case ml_pat_cons_v:
+		if(value->type != ml_value_list_v)
+			return false;
+		else if(value->data.list->len == 0)
+			return false;
+
+		if(!ml_pat_match(pat->data.tuple, value->data.list->head->value, env))
+			return false;
+
+		{
+			bool suc;
+			struct ml_value_t *copy;
+
+			copy = ml_value_copy(value);
+			ml_list_remove(copy->data.list, copy->data.list->head);
+			suc = ml_pat_match(pat->data.tuple->next, copy, env);
+			ml_value_delete(copy);
+
+			return suc;
+		}
 	}
 
-	return true;
+	fatal("Invalid pattern type.");
 }
 
 
@@ -226,6 +264,10 @@ void ml_pat_print1(const struct ml_pat_t *pat, struct io_file_t file)
 
 			hprintf(file, ")");
 		}
+		break;
+
+	case ml_pat_cons_v:
+		hprintf(file, "Cons(%C)", ml_pat_chunk(pat->data.tuple));
 		break;
 	}
 }

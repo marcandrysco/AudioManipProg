@@ -54,21 +54,22 @@ void amp_chorus_delete(struct amp_chorus_t *chorus)
 
 /**
  * Create a chorus from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_chorus_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_chorus_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	double len;
 	struct amp_param_t *osc, *feedback;
 
-	*err = amp_match_unpack(value, "(f,P,P)", &len, &osc, &feedback);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "(f,P,P)", &len, &osc, &feedback));
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_chorus_new(len * amp_core_rate(env), osc, feedback), &amp_chorus_iface });
 
-	return amp_pack_effect((struct amp_effect_t){ amp_chorus_new(len * amp_core_rate(env), osc, feedback), &amp_chorus_iface });
+	return NULL;
+#undef onexit
 }
 
 
@@ -108,7 +109,7 @@ bool amp_chorus_proc(struct amp_chorus_t *chorus, double *buf, struct amp_time_t
 		v = dsp_ring_getf(ring, dsp_clamp(delay[i], 0.0, 1.0));
 		x = buf[i] + dsp_clamp(feedback[i], 0.0, 0.999) * v;
 		dsp_ring_put(ring, x);
-		buf[i] = 0.5 * (v + x);
+		buf[i] = v;
 	}
 
 	return cont;

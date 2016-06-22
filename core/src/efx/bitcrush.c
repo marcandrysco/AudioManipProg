@@ -59,20 +59,21 @@ void amp_bitcrush_delete(struct amp_bitcrush_t *crush)
 
 /**
  * Create a bitcrusher from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-struct ml_value_t *amp_bitcrush_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_bitcrush_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
+#define onexit
 	struct amp_param_t *bits;
 
-	*err = amp_match_unpack(value, "P", &bits);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &bits));
 
-	return amp_pack_effect((struct amp_effect_t){ amp_bitcrush_new(bits), &amp_bitcrush_iface });
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_bitcrush_new(bits), &amp_bitcrush_iface });
+	return NULL;
+#undef onexit
 }
 
 

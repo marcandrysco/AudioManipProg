@@ -11,6 +11,11 @@ const struct amp_effect_i amp_filt_iface = {
 	(amp_delete_f)amp_filt_delete
 };
 
+/*
+ * constructor definitions
+ */
+typedef struct amp_filt_t *amp_butter_f(struct amp_param_t *, double);
+
 
 /**
  * Create a blank filter.
@@ -699,112 +704,48 @@ char *amp_moog_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 #undef onexit
 }
 
+
 /**
- * Create a 2nd-order butterworth low-pass fitler from a value.
+ * Create a butterworth filter from a value.
  *   @value: The value.
  *   @env: The environment.
  *   @err: The error.
  *   &returns: The value or null.
  */
-struct ml_value_t *amp_butter2low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env, amp_butter_f func)
 {
+#define onexit
 	struct amp_param_t *freq;
 
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
+	chkfail(amp_match_unpack(value, "P", &freq));
 
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter2low(freq, amp_core_rate(env))));
+	*ret = amp_pack_effect(amp_filt_effect(func(freq, amp_core_rate(env))));
+	return NULL;
+#undef onexit
 }
-
-/**
- * Create a 2nd-order butterworth high-pass fitler from a value.
- *   @value: The value.
- *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
- */
-struct ml_value_t *amp_butter2high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter2low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	struct amp_param_t *freq;
-
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
-
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter2high(freq, amp_core_rate(env))));
+	return amp_butter_make(ret, value, env, amp_filt_butter2low);
 }
-
-/**
- * Create a 3rd-order butterworth low-pass fitler from a value.
- *   @value: The value.
- *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
- */
-struct ml_value_t *amp_butter3low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter2high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	struct amp_param_t *freq;
-
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
-
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter3low(freq, amp_core_rate(env))));
+	return amp_butter_make(ret, value, env, amp_filt_butter2high);
 }
-
-/**
- * Create a 3rd-order butterworth high-pass fitler from a value.
- *   @value: The value.
- *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
- */
-struct ml_value_t *amp_butter3high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter3low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	struct amp_param_t *freq;
-
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
-
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter3high(freq, amp_core_rate(env))));
+	return amp_butter_make(ret, value, env, amp_filt_butter3low);
 }
-
-/**
- * Create a 4th-order butterworth low-pass fitler from a value.
- *   @value: The value.
- *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
- */
-struct ml_value_t *amp_butter4low_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter3high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	struct amp_param_t *freq;
-
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
-
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter4low(freq, amp_core_rate(env))));
+	return amp_butter_make(ret, value, env, amp_filt_butter3high);
 }
-
-/**
- * Create a 4th-order butterworth high-pass fitler from a value.
- *   @value: The value.
- *   @env: The environment.
- *   @err: The error.
- *   &returns: The value or null.
- */
-struct ml_value_t *amp_butter4high_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_butter4low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	struct amp_param_t *freq;
-
-	*err = amp_match_unpack(value, "P", &freq);
-	if(*err != NULL)
-		return NULL;
-
-	return amp_pack_effect(amp_filt_effect(amp_filt_butter4high(freq, amp_core_rate(env))));
+	return amp_butter_make(ret, value, env, amp_filt_butter4low);
+}
+char *amp_butter4high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_butter_make(ret, value, env, amp_filt_butter4high);
 }
 
 

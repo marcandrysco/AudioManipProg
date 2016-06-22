@@ -64,15 +64,74 @@ char *ml_eval_concat(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	tuple = value->data.list;
 	if(tuple->len != 2)
 		error();
-	else if((tuple->head->value->type != ml_value_list_v) || (tuple->tail->value->type != ml_value_list_v))
-		error();
 
-	list = ml_list_merge(ml_list_copy(tuple->head->value->data.list), ml_list_copy(tuple->tail->value->data.list));
-	*ret = ml_value_list(list, ml_tag_copy(value->tag));
+	if((tuple->head->value->type == ml_value_list_v) && (tuple->tail->value->type == ml_value_list_v)) {
+		list = ml_list_merge(ml_list_copy(tuple->head->value->data.list), ml_list_copy(tuple->tail->value->data.list));
+		*ret = ml_value_list(list, ml_tag_copy(value->tag));
+	}
+	else if((tuple->head->value->type == ml_value_str_v) && (tuple->tail->value->type == ml_value_str_v))
+		*ret = ml_value_str(mprintf("%s%s", tuple->head->value->data.str, tuple->tail->value->data.str), ml_tag_copy(value->tag));
+	else 
+		error();
 
 	return NULL;
 #undef onexit
 #undef error
+}
+
+
+/**
+ * Evaluate a sequence.
+ *   @ret: The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *ml_eval_seq(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	unsigned int i;
+	struct ml_list_t *list;
+
+	if(value->type != ml_value_num_v)
+		return mprintf("%C: Function 'seq' expected type 'Int'.", ml_tag_chunk(&value->tag));
+	else if(value->data.num < 0)
+		return mprintf("%C: Function 'seq' requires positive integer.", ml_tag_chunk(&value->tag));
+
+	list = ml_list_new();
+
+	for(i = 0; i < value->data.num; i++)
+		ml_list_append(list, ml_value_num(i, ml_tag_copy(value->tag)));
+
+	*ret = ml_value_list(list, ml_tag_copy(value->tag));
+
+	return NULL;
+}
+
+/**
+ * Evaluate a floating-point sequence.
+ *   @ret: The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *ml_eval_seqf(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	double flt[2];
+	unsigned int i;
+	struct ml_list_t *list;
+
+	if(!ml_get_flt(flt, value, 2))
+		return mprintf("%C: Function 'seqf' expected type '(float,float)'.", ml_tag_chunk(&value->tag));
+
+	list = ml_list_new();
+
+	flt[1] -= 0.01 * flt[0];
+	for(i = 0; i * flt[0] < flt[1]; i++)
+		ml_list_append(list, ml_value_flt(i * flt[0], ml_tag_copy(value->tag)));
+
+	*ret = ml_value_list(list, ml_tag_copy(value->tag));
+
+	return NULL;
 }
 
 
@@ -182,7 +241,8 @@ char *ml_eval_foldr(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 	}
 
 	*ret = accum;
+
+	return NULL;
 #undef onexit
 #undef error
-	return NULL;
 }

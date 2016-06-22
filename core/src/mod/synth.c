@@ -118,6 +118,7 @@ char *amp_synth_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
  */
 void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 {
+	/*
 	if(info.type == amp_info_action_e) {
 		bool init;
 		unsigned int i;
@@ -157,6 +158,7 @@ void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 
 		amp_module_info(synth->inst[i].module, amp_info_note(&synth->inst[i].note));
 	}
+	*/
 }
 
 /**

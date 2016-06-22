@@ -214,6 +214,9 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 	bool cont = false;
 	struct dsp_ring_t *ring = reverb->ring;
 
+	if(ring->len == 0)
+		return false;
+
 	switch(reverb->type) {
 	case amp_reverb_delay_e:
 		if(!reverb->fast) {
@@ -365,7 +368,7 @@ char *amp_lpcf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 	double len;
 	struct amp_param_t *gain, *freq;
 
-	chkfail(amp_match_unpack(value, "(f,P)", &len, &gain, &freq));
+	chkfail(amp_match_unpack(value, "(f,P,P)", &len, &gain, &freq));
 
 	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_lpcf(len, gain, freq, amp_core_rate(env))));
 	return NULL;

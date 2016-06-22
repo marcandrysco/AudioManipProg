@@ -104,7 +104,7 @@ char *amp_merge_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	for(link = value->data.list->head; link != NULL; link = link->next) {
 		struct amp_seq_t seq;
 
-		chkfail(amp_match_unpack(ml_value_copy(link->value), "S", &seq));
+		chkfail(amp_match_unpack(link->value, "S", &seq));
 		amp_merge_append(merge, seq);
 	}
 

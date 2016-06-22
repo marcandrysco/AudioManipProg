@@ -111,7 +111,7 @@ void amp_chain_append(struct amp_chain_t *chain, struct amp_effect_t effect)
 char *amp_chain_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 #define onexit amp_chain_delete(chain);
-#define error() fail("Type error. Chain requires a list of effects as input.");
+#define error() fail("%C: Type error. Chain requires a list of effects as input.", ml_tag_chunk(&value->tag));
 	struct ml_link_t *link;
 	struct amp_chain_t *chain;
 	struct amp_box_t *box;

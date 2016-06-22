@@ -154,11 +154,10 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 	if(list->len != 3)
 		error();
 
-	if((ml_list_getv(list, 0)->type != ml_value_num_v) || (ml_list_getv(list, 1)->type != ml_value_num_v) || (ml_list_getv(list, 2)->type != ml_value_list_v))
+	if((ml_list_getv(list, 0)->type != ml_value_num_v) || !ml_value_isnum(ml_list_getv(list, 1)) || (ml_list_getv(list, 2)->type != ml_value_list_v))
 		error();
 
-	sample = amp_sample_new(ml_list_getv(list, 0)->data.num, ml_list_getv(list, 1)->data.num);
-	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
+	sample = amp_sample_new(ml_list_getv(list, 0)->data.num, ml_value_getflt(ml_list_getv(list, 1)));
 
 	for(link = ml_list_getv(list, 2)->data.list->head; link != NULL; link = link->next) {
 		struct amp_file_t *file;
@@ -181,6 +180,8 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 		}
 	}
 
+	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
+
 	return NULL;
 #undef onexit
 }
@@ -193,28 +194,6 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
  */
 void amp_sample_info(struct amp_sample_t *sample, struct amp_info_t info)
 {
-	/*
-	if(info.type == amp_info_note_e) {
-		unsigned int n;
-		struct amp_sample_vel_t *vel;
-
-		if(info.data.note->vel == 0.0)
-			return;
-
-		n = info.data.note->vel * sample->len;
-		printf("n: %d\n", n);
-		vel = &sample->vel[(n >= sample->len) ? (sample->len - 1) : n];
-
-		sample->play[sample->i].buf = vel->inst[vel->rr].buf;
-		sample->play[sample->i].vol = 1.0;
-		sample->play[sample->i].idx = -info.data.note->delay;
-
-		sample->play[(sample->i + sample->n - 1) % sample->n].vol *= sample->decay;
-
-		sample->i = (sample->i + 1) % sample->n;
-		vel->rr = (vel->rr + 1) % vel->len;
-	}
-	*/
 }
 
 /**
@@ -258,7 +237,7 @@ bool amp_sample_proc(struct amp_sample_t *sample, double *buf, struct amp_time_t
 			struct play_t *play = &sample->play[j];
 
 			if((play->idx == INT_MAX) || (play->idx >= play->buf->len))
-				break;
+				continue;
 
 			cont = true;
 			buf[i] += play->vol * play->buf->arr[play->idx];

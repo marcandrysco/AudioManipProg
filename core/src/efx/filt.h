@@ -106,12 +106,13 @@ char *amp_svhpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 char *amp_peak_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_res_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_moog_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
-struct ml_value_t *amp_butter2low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_butter2high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_butter3low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_butter3high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_butter4low_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
-struct ml_value_t *amp_butter4high_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+
+char *amp_butter2low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_butter2high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_butter3low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_butter3high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_butter4low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_butter4high_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 const char *amp_filt_name(enum amp_filt_e type);
 

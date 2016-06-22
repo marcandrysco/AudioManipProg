@@ -10,7 +10,7 @@ Example](../ex/synth.ml).
 To start, let's see an entire program for a very basic synthesizer. The
 following program creates a synthesizer that outputs a sine wave that is
 activated on the MIDI device number 1. To set up a MIDI device, see the
-section [#midi-setup](MIDI Setup)
+section [MIDI Setup](#midi-setup)
 
     let amp.instr =
       let osc = Sine'(Trig()) in

@@ -61,6 +61,10 @@ struct ml_expr_t *ml_expr_copy(struct ml_expr_t *expr)
 	case ml_expr_tuple_v:
 		copy->data.tuple = ml_tuple_copy(expr->data.tuple);
 		break;
+
+	case ml_expr_fun_v:
+		copy->data.fun = ml_fun_copy(expr->data.fun);
+		break;
 	}
 
 	return copy;
@@ -99,6 +103,10 @@ void ml_expr_delete(struct ml_expr_t *expr)
 
 	case ml_expr_tuple_v:
 		ml_tuple_delete(expr->data.tuple);
+		break;
+
+	case ml_expr_fun_v:
+		ml_fun_delete(expr->data.fun);
 		break;
 	}
 
@@ -184,6 +192,17 @@ struct ml_expr_t *ml_expr_tuple(struct ml_tuple_t *tuple, struct ml_tag_t tag)
 	return ml_expr_new(ml_expr_tuple_v, (union ml_expr_u){ .tuple = tuple }, tag);
 }
 
+/**
+ * Create a function expression.
+ *   @fun: Consumed. The function.
+ *   @tag: Consumed. The tag.
+ *   &returns: The expression.
+ */
+struct ml_expr_t *ml_expr_fun(struct ml_fun_t *fun, struct ml_tag_t tag)
+{
+	return ml_expr_new(ml_expr_fun_v, (union ml_expr_u){ .fun = fun }, tag);
+}
+
 
 /**
  * Evaluate an expression.
@@ -221,7 +240,7 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 	case ml_expr_app_v:
 		{
-#define onexit ml_value_erase(func); ml_value_erase(value); ml_env_erase(sub);
+#define onexit ml_value_erase(func); ml_value_erase(value); ml_env_erase(sub); *ret = NULL;
 			struct ml_env_t *sub = NULL;
 			struct ml_value_t *func = NULL, *value = NULL;
 
@@ -265,15 +284,28 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 		{
 #define onexit ml_value_erase(value); ml_env_delete(env); *ret = NULL;
 			struct ml_value_t *value = NULL;
+			struct ml_pat_t *pat = expr->data.let->pat;
 
 			env = ml_env_copy(env);
-			chkfail(ml_expr_eval(&value, expr->data.let->value, env));
-			if(!ml_pat_match(expr->data.let->pat, value, &env))
-				fail("%C: Pattern match between '%C' and '%C' failed.", ml_tag_chunk(&expr->tag), ml_pat_chunk(expr->data.let->pat), ml_value_chunk(value));
+
+			if(pat->next != NULL) {
+				struct ml_closure_t *closure;
+
+				if(pat->type != ml_pat_var_v)
+					fail("%C: Invalid function declaration.", ml_tag_chunk(&pat->tag));
+
+				closure = ml_closure_new(strdup(pat->data.var), ml_env_copy(env), ml_pat_copy(pat->next), ml_expr_copy(expr->data.let->value));
+				ml_env_add(&env, strdup(pat->data.var), ml_value_closure(closure, ml_tag_copy(pat->tag)));
+			}
+			else {
+				chkfail(ml_expr_eval(&value, expr->data.let->value, env));
+				if(!ml_pat_match(expr->data.let->pat, value, &env))
+					fail("%C: Pattern match between '%C' and '%C' failed.", ml_tag_chunk(&expr->tag), ml_pat_chunk(expr->data.let->pat), ml_value_chunk(value));
+			}
 
 			chkfail(ml_expr_eval(ret, expr->data.let->expr, env));
 
-			ml_value_delete(value);
+			ml_value_erase(value);
 			ml_env_delete(env);
 
 			return NULL;
@@ -340,6 +372,16 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 			return NULL;
 #undef onexit
+		}
+
+	case ml_expr_fun_v:
+		{
+			struct ml_closure_t *closure;
+
+			closure = ml_closure_new(NULL, ml_env_copy(env), ml_pat_copy(expr->data.fun->pat), ml_expr_copy(expr->data.fun->expr));
+			*ret = ml_value_closure(closure, ml_tag_copy(expr->tag));
+
+			return NULL;
 		}
 	}
 
@@ -657,4 +699,42 @@ void ml_tuple_append(struct ml_tuple_t *tuple, struct ml_expr_t *expr)
 
 	tuple->len++;
 	tuple->tail = elem;
+}
+
+
+/**
+ * Create a function.
+ *   @pat: Consumed. The pattern.
+ *   @expr: Consumed. The in expression.
+ *   &returns: The function.
+ */
+struct ml_fun_t *ml_fun_new(struct ml_pat_t *pat, struct ml_expr_t *expr)
+{
+	struct ml_fun_t *fun;
+
+	fun = malloc(sizeof(struct ml_fun_t));
+	*fun = (struct ml_fun_t){ pat, expr };
+
+	return fun;
+}
+
+/**
+ * Copy a function.
+ *   @fun: The original function.
+ *   &returns: The copied function.
+ */
+struct ml_fun_t *ml_fun_copy(struct ml_fun_t *fun)
+{
+	return ml_fun_new(ml_pat_copy(fun->pat), ml_expr_copy(fun->expr));
+}
+
+/**
+ * Defune a function.
+ *   @fun: The function.
+ */
+void ml_fun_delete(struct ml_fun_t *fun)
+{
+	ml_pat_delete(fun->pat);
+	ml_expr_delete(fun->expr);
+	free(fun);
 }
