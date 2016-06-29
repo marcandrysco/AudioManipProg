@@ -91,7 +91,7 @@ void amp_vol_info(struct amp_vol_t *vol, struct amp_info_t info)
  */
 bool amp_vol_proc(struct amp_vol_t *vol, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	bool cont;
+	bool cont = false;
 	unsigned int i;
 
 	if(amp_param_isfast(vol->lpf)) {

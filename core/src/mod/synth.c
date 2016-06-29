@@ -118,47 +118,10 @@ char *amp_synth_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
  */
 void amp_synth_info(struct amp_synth_t *synth, struct amp_info_t info)
 {
-	/*
-	if(info.type == amp_info_action_e) {
-		bool init;
-		unsigned int i;
-		struct amp_action_t action = *info.data.action;
+	unsigned int i;
 
-		if(action.event.dev != synth->dev)
-			return;
-
-		for(i = 0; i < synth->n; i++) {
-			if(synth->inst[i].note.key == action.event.key)
-				break;
-		}
-
-		if(i == synth->n) {
-			init = true;
-
-			for(i = 0; i < synth->n; i++) {
-				if(synth->inst[i].delay < 0)
-					break;
-			}
-
-			if(i == synth->n)
-				return;
-		}
-		else
-			init = false;
-
-		if(i == synth->n)
-			return;
-
-		synth->inst[i].delay = init ? action.delay : 0;
-		synth->inst[i].note.delay = init ? 0 : action.delay;
-		synth->inst[i].note.init = init;
-		synth->inst[i].note.key = action.event.key;
-		synth->inst[i].note.vel = (double)action.event.val / (double)UINT16_MAX;
-		synth->inst[i].note.freq = amp_key_freq_f(action.event.key);
-
-		amp_module_info(synth->inst[i].module, amp_info_note(&synth->inst[i].note));
-	}
-	*/
+	for(i = 0; i < synth->n; i++)
+		amp_module_info(synth->inst[i].module, info);
 }
 
 /**
@@ -228,9 +191,12 @@ bool amp_synth_proc(struct amp_synth_t *synth, double *buf, struct amp_time_t *t
 		if(synth->inst[i].delay < 0)
 			continue;
 
+		struct amp_queue_t queue;
+		amp_queue_init(&queue);
+
 		delay = synth->inst[i].delay;
 		if(delay < len) {
-			cont = amp_module_proc(synth->inst[i].module, tmp, time + delay, len - delay, queue);
+			cont = amp_module_proc(synth->inst[i].module, tmp, time + delay, len - delay, &queue);
 			synth->inst[i].delay = cont ? 0 : -1;
 
 			dsp_add_d(buf + delay, tmp, len - delay);

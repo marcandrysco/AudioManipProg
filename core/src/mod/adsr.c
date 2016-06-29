@@ -138,11 +138,28 @@ void amp_adsr_info(struct amp_adsr_t *adsr, struct amp_info_t info)
 bool amp_adsr_proc(struct amp_adsr_t *adsr, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	double v;
-	unsigned int i;
+	unsigned int i, n = 0;
+	struct amp_event_t *event;
 
 	v = adsr->v;
 
 	for(i = 0; i < len; i++) {
+		while((event = amp_queue_event(queue, &n, i)) != NULL) {
+			double vel;
+
+			if(event->val > 0) {
+				vel = adsr->min + (adsr->max - adsr->min) * amp_event_vel(event->val);
+				adsr->on = true;
+			}
+			else {
+				vel = 0.0;
+				adsr->on = false;
+			}
+
+			adsr->target[0] = fmax(vel, 0.01);
+			adsr->target[1] = fmax(vel * adsr->sus, 0.01);
+		}
+
 		if(v < adsr->target[0]) {
 			v *= adsr->atk;
 			if(v >= adsr->target[0]) {

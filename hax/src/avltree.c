@@ -471,6 +471,7 @@ void avltree_destroy(struct avltree_t *tree)
 static void inst_delete(struct avltree_inst_t *inst)
 {
 	inst->tree->delete(inst->val);
+	free(inst);
 }
 
 
@@ -506,6 +507,29 @@ struct avltree_inst_t *avltree_insert(struct avltree_t *tree, const void *key, v
 	avltree_root_insert(&tree->root, &inst->node);
 
 	return inst;
+}
+
+/**
+ * Remove a key-value pair from the AVL tree.
+ *   @tree: The tree.
+ *   @key: The key.
+ *   &returns: The removed value.
+ */
+void *avltree_remove(struct avltree_t *tree, const void *key)
+{
+	void *val;
+	struct avltree_inst_t *inst;
+	struct avltree_node_t *node;
+
+	node = avltree_root_remove(&tree->root, key);
+	if(node == NULL)
+		return NULL;
+
+	inst = getparent(node, struct avltree_inst_t, node);
+	val = inst->val;
+	free(inst);
+
+	return val;
 }
 
 

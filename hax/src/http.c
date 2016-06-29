@@ -88,7 +88,6 @@ void http_server_close(struct http_server_t *server)
 	for(cur = server->client; cur != NULL; cur = next) {
 		next = cur->next;
 		http_client_delete(cur);
-		printf("del?\n");
 	}
 
 	tcp_server_close(server->tcp);

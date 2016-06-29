@@ -115,7 +115,7 @@ void hax_vhprintf(struct io_file_t file, const char *restrict format, va_list ar
 			{
 				size_t len;
 				va_list copy;
-				char tmp[ptr - format + 2];
+				char tmp[ptr-format+2];
 
 				memcpy(tmp, format, ptr-format+1);
 				tmp[ptr-format+1] = '\0';

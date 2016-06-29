@@ -6,7 +6,7 @@ reverberator. Note that all reverberator effects do not let pass through the
 original signal -- complete reverberators should manually mix the clean input
 with the reverb output.
 
-## All-Pass Filter
+## Allpass
 
 Allpass filter reverberator section. The allpass reverberator generates a a
 "colorless" sequence of decaying echoes. Allpass sections are ideal for very
@@ -33,13 +33,21 @@ delayed. The `gain` specifies the amount of gain applied to the output. The
 special constructor `Delay1` creates a pure delay without apply a gain to the
 output.
 
-## Comb Filter
+## Comb
 
-MuseLang constructor
+The comb filter is a feedback-based reverberator component that generates an
+infinite sequency of decaying echoes. Unlike the allpass section, the comb
+feedback creates peaks and troughs in the frequency response, coloring the
+resulting. Multiply comb filters should be used on the signal to prevent the
+reverberator from resonanting too sympathetically with a single frequency.
 
     Comb (len:float, gain:Param)
 
-## Lpcf
+The `len` value specifies the amount of time in seconds between each echo. The
+`gain` specifies the amount of gain applied to each echo. The first echo has
+a signal strength of `gain`; the second echo is `gain*gain`; etc.
+
+## Low-Pass Comb-Feedback
 
 MuseLang constructor
 

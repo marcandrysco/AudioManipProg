@@ -1,0 +1,290 @@
+#!/bin/sh
+
+
+## begin configuration options ##
+setconf()
+{
+  ldflags="-L../ -Wl,-rpath=../"
+
+  bin_target "hax-test"
+
+  lib_dep "hax"
+  lib_dep "pthread"
+
+  c_src "src/main.c"
+
+  c_src "src/avltree.c"
+}
+## end configuration options ##
+
+
+##### marc_andrysco configure script, rev 2 #####
+
+# special characters
+nl="`printf '\nX'`" ; nl="${nl%X}"
+tab="`printf '\tX'`" ; tab="${tab%X}"
+
+# Check if a string has a space
+#   @str: The string.
+#   &returns: Non-zero if space found, zero otherwise.
+chk_space()
+{
+  for __chk_space in "$@" ; do
+    test -z "${__chk_space%%* *}" && return 1
+    test -z "${__chk_space%%*	*}" && return 1
+  done
+  return 0
+}
+
+# Set the binary target
+#   @path: The target path.
+bin_target()
+{
+  test $# -ne 1 && fail "bin_target function takes 1 argument"
+  chk_space "$1" || fail "bin_target parameter '$1' has spaces"
+
+  target="$1"
+}
+
+# Set the library target
+#   @path: The target path.
+lib_target()
+{
+  test $# -ne 1 && fail "lib_target function takes 1 argument"
+  chk_space "$1" || fail "lib_target parameter '$1' has spaces"
+  test ${1##*.} != "so" && fail "lib_target argument has invalid extension '.${1##*.}'"
+  ldflags="$ldflags -shared"
+
+  target="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(LIBDIR)/$1"
+}
+
+# Set the header target
+#   @path: The target path.
+hdr_target()
+{
+  test $# -ne 1 && fail "hdr_target function takes 1 argument"
+  chk_space "$1" || fail "hdr_target parameter '$1' has spaces"
+
+  hdr="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(INCDIR)/$1"
+}
+
+# Add a C source file to the Makefile.
+#   @path: The source path.
+c_src()
+{
+  test $# -ne 1 && fail "c_src function takes 1 argument"
+  chk_space "$1" || fail "c_src parameter '$1' has spaces"
+  test ${1##*.} != "c" && fail "c_src argument has invalid extension '.${1##*.}'"
+
+  obj="$obj ${1%.*}.o"
+  deps="$deps ${1%.*}.d"
+  test -z "$noinc" && inc="$inc ${1%.*}.h"
+}
+
+# Add a header source file to the Makefile.
+#   @path: The source path.
+h_src()
+{
+  test $# -ne 1 && fail "h_src function takes 1 argument"
+  chk_space "$1" || fail "h_src parameter '$1' has spaces"
+  test ${1##*.} != "h" && fail "h_src argument has invalid extension '.${1##*.}'"
+
+  inc="$inc $1"
+}
+
+# Add an asset to the share directory.
+#   @path: The source path.
+share_src()
+{
+  test $# -ne 2 && fail "share_src function takes 2 arguments"
+  chk_space "$1" || fail "share_src parameter '$1' has spaces"
+  chk_space "$2" || fail "share_src parameter '$2' has spaces"
+
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(SHAREDIR)/$2"
+}
+
+
+# Add a library as dependency
+#   @lib: The library name without prefix 'lib' or postfix '.so'.
+lib_dep()
+{
+  test $# -ne 1 && fail "lib_dep function takes 1 argument"
+  chk_space "$1" || fail "lib_dep parameter '$1' has spaces"
+
+  ldflags="$ldflags -l$1"
+}
+
+
+##
+# quote Function
+#   Given the input string, it places it within single quotes, making sure that
+#   any single quotes within the string are properly escaped.
+# Version
+#   1.2
+# Parameters
+#   string input
+#     The input text.
+# Printed
+#   Prints out the quoted string.
+#.
+quote()
+{
+	__quote_str="$*"
+
+	while [ 1 ]
+	do
+		__quote_piece="${__quote_str%%\'*}"
+		test "$__quote_piece" = "$__quote_str" && break
+		printf "'%s'\\'" "$__quote_piece"
+		__quote_str="${__quote_str#*\'}"
+	done
+
+	printf %s "'$__quote_str'"
+}
+
+##
+# fail Function
+#   Print an error message and terminate. The function does not return.
+# Version
+#   1.0
+# Parameters
+#   string err
+#     The error string.
+#.
+fail()
+{
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+
+# build arguments list
+args=""
+for opt in "$@" ; do
+  args="$args`quote "$opt"` "
+done
+
+# append config.args file
+test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
+
+#initialize options
+toolchain="" #toolchain
+release=""   #release flag
+debug=""     #debug flag
+rpath=""     #rpath build
+obj=""       #object files
+windows=""   #windows build
+noinc=""     #disable automated include
+
+prefix='/usr/local'
+bindir='$(PREFIX)/bin'
+libdir='$(PREFIX)/lib'
+incdir='$(PREFIX)/include'
+sharedir='$(PREFIX)/share'
+cflags='-g -fpic -std=gnu11 -Wall -I$(INCDIR) -MD'
+ldflags='-L$(LIBDIR)'
+
+# parse options
+while [ "$#" -gt 0 ] ; do
+  case "$1" in 
+    --release | --debug | --rpath | --windows)
+      eval "${1#--}=1" ; shift
+      ;;
+    --toolchain=* | --prefix=*)
+      name="${1#--}" ; name="${name%%=*}" ; val="${1#*=}" ; shift
+      eval "$name=`quote "$val"`"
+      ;;
+    *)
+      printf "unknown option '%s'\n" "$1" >&2 ; exit 1
+      ;;
+  esac
+done
+
+# sanity check
+test "$release" && test "$debug" && fail "cannot use both --debug and --release"
+
+# delayed options
+test "$rpath" && ldflags="$ldflags -Wl,-rpath=\$(LIBDIR)"
+test "$debug" && cflags="$cflags -Werror"
+
+# build tools
+test "$toolchain" && toolchain="$toolchain-"
+cc="${toolchain}gcc"
+ld="${toolchain}gcc"
+
+# process configuration information
+target="" ; obj="" ; hdr="" ; inc="" ; deps="" ; install=""
+setconf
+
+test -z "$target" && fail "missing target"
+test -z "$obj" && fail "missing object files"
+
+# build makefile
+mkfile="Makefile"
+rm -f "$mkfile"
+cat <<EOF >> "$mkfile"
+CC       = $cc
+LD       = $ld
+
+CFLAGS   = $cflags
+LDFLAGS  = $ldflags
+
+ARGS     = ${args}
+PREFIX   = ${prefix}
+BINDIR   = ${bindir}
+LIBDIR   = ${libdir}
+INCDIR   = ${incdir}
+SHAREDIR = ${sharedir}
+
+all: $target $hdr
+
+$target:$obj
+	\$(CC)  $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
+
+%.o: %.c Makefile configure
+	\$(CC) -c $< -o \$@ \$(CFLAGS)
+
+Makefile: configure \$(wildcard config.args)
+	./configure \$(ARGS)
+
+clean:
+	rm -f $target $obj
+
+install: all$install
+
+EOF
+
+if [ "$hdr" ] ; then
+  guard="`printf 'LIB%s_H' "${hdr%%.*}" | tr '[a-z]' '[A-Z]'`"
+  cat <<EOF >> "$mkfile"
+$hdr:$inc Makefile
+	rm -f \$@
+	printf '#ifndef $guard\n#define $guard\n' >> \$@
+	for inc in $inc ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
+	printf '#endif\n' >> \$@
+EOF
+fi
+
+echo "" >> "$mkfile"
+echo "-include Makefile.user Makefile.proj" >> "$mkfile"
+echo "" >> "$mkfile"
+
+for dep in $deps ; do
+  echo "-include $dep" >> "$mkfile"
+  rm -f "$dep"
+done
+
+# build config.h
+cfg="src/config.h"
+rm -f "$cfg"
+
+echo "#ifndef CONFIG_H" >> "$cfg"
+echo "#define CONFIG_H" >> "$cfg"
+test "$debug" && echo "#define DEBUG 1" >> "$cfg"
+test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
+echo "#define SHAREDIR \"${prefix}/share"\" >> "$cfg"
+echo "#endif" >> "$cfg"
+
+exit 0

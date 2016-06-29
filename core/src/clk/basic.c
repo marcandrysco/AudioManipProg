@@ -9,7 +9,6 @@
  *   @rate: The sample rate.
  *   @bpm, nbeats: The beats-per-minutes and beats-per-measure.
  */
-
 struct amp_basic_t {
 	bool run;
 
@@ -24,7 +23,6 @@ struct amp_basic_t {
 /*
  * global variables
  */
-
 const struct amp_clock_i amp_basic_iface = {
 	(amp_info_f)amp_basic_info,
 	(amp_clock_f)amp_basic_proc,
@@ -40,7 +38,6 @@ const struct amp_clock_i amp_basic_iface = {
  *   @rate: The sample rate.
  *   &returns: The basic clock.
  */
-
 struct amp_basic_t *amp_basic_new(double bpm, double nbeats, unsigned int rate)
 {
 	struct amp_basic_t *basic;
@@ -61,7 +58,6 @@ struct amp_basic_t *amp_basic_new(double bpm, double nbeats, unsigned int rate)
  *   @basic: The original basic clock.
  *   &returns: The copied basic clock.
  */
-
 struct amp_basic_t *amp_basic_copy(struct amp_basic_t *basic)
 {
 	return amp_basic_new(basic->bpm, basic->nbeats, basic->rate);
@@ -71,7 +67,6 @@ struct amp_basic_t *amp_basic_copy(struct amp_basic_t *basic)
  * Delete a basic clock.
  *   @basic: The basic clock.
  */
-
 void amp_basic_delete(struct amp_basic_t *basic)
 {
 	free(basic);
@@ -83,7 +78,6 @@ void amp_basic_delete(struct amp_basic_t *basic)
  *   @basic: The basic clock.
  *   @bar: The bar.
  */
-
 void amp_basic_seek(struct amp_basic_t *basic, double bar)
 {
 	basic->idx = bar / basic->bpm * basic->nbeats * 60 * basic->rate;
@@ -92,37 +86,38 @@ void amp_basic_seek(struct amp_basic_t *basic, double bar)
 
 /**
  * Create a basic clock from a value.
+ *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
- *   @err: The rror.
- *   &returns: The value or null.
+ *   &returns: Error.
  */
-
-struct ml_value_t *amp_basic_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_basic_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	/*
-#undef fail
-#define fail() do { ml_value_delete(value); *err = amp_printf("Type error. Expected '(Num,Num,[])'."); return NULL; } while(0);
-
+#define onexit
+#define error() fail("%C: Expected '(Num,Num,[int])'.", ml_tag_chunk(&value->tag))
+	struct ml_list_t *tuple;
 	struct amp_basic_t *basic;
-	struct ml_tuple_t tuple;
+	double bpm, nbeats;
 
-	if(value->type != ml_value_tuple_e)
-		fail();
+	if(value->type != ml_value_tuple_v)
+		error();
 
-	tuple = value->data.tuple;
-	if(tuple.len != 3)
-		fail();
+	tuple = value->data.list;
+	if(tuple->len != 3)
+		error();
 
-	if((tuple.value[0]->type != ml_value_num_e) || (tuple.value[1]->type != ml_value_num_e) || (tuple.value[2]->type != ml_value_list_e))
-		fail();
+	if(!ml_value_isnum(ml_list_get(tuple, 0)->value) || !ml_value_isnum(ml_list_get(tuple, 1)->value))
+		error();
 
-	basic = amp_basic_new(tuple.value[0]->data.num, tuple.value[1]->data.num, amp_core_rate(env));
-	ml_value_delete(value);
+	bpm = ml_value_getflt(ml_list_get(tuple, 0)->value);
+	nbeats = ml_value_getflt(ml_list_get(tuple, 1)->value);
 
-	return amp_pack_clock(amp_basic_clock(basic));
-	*/
-	fatal("stub");
+	basic = amp_basic_new(bpm, nbeats, amp_core_rate(env));
+	*ret = amp_pack_clock(amp_basic_clock(basic));
+
+	return NULL;
+#undef error
+#undef onexit
 }
 
 
@@ -131,7 +126,6 @@ struct ml_value_t *amp_basic_make(struct ml_value_t *value, struct ml_env_t *env
  *   @basic: The basic clock.
  *   @info: The info.
  */
-
 void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
 {
 	switch(info.type) {
@@ -162,7 +156,6 @@ void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
  *   @time: The time.
  *   @len: The length.
  */
-
 void amp_basic_proc(struct amp_basic_t *basic, struct amp_time_t *time, unsigned int len)
 {
 	unsigned int i;

@@ -253,7 +253,7 @@ bindir='$(PREFIX)/bin'
 libdir='$(PREFIX)/lib'
 incdir='$(PREFIX)/include'
 sharedir='$(PREFIX)/share'
-cflags='-g -fpic -std=gnu11 -Wall -I$(INCDIR) -MD'
+cflags='-g -O2 -fpic -std=gnu11 -Wall -I$(INCDIR) -MD'
 ldflags='-L$(LIBDIR)'
 
 # parse options

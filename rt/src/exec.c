@@ -162,7 +162,7 @@ static void callback(double **buf, unsigned int len, void *arg)
 	struct amp_time_t time[len+1];
 
 	if(len == 0) {
-		//printf("xrun\n");
+		printf("xrun\n");
 		return;
 	}
 

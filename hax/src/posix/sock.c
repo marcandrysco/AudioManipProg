@@ -36,6 +36,54 @@ void sys_closesocket(sys_sock_t sock)
 	close(sock);
 }
 
+/**
+ * Connect a socket to a host and port.
+ *   @sock: Ref. The output socket.
+ *   @type: The socke type.
+ *   @host: The host.
+ *   @port: The port.
+ *   &returns: Error.
+ */
+char *sys_connect(sys_sock_t *sock, int type, const char *host, uint16_t port)
+{
+	int err;
+	char name[6];
+	struct addrinfo hints, *res, *cur;
+
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = type;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = 0;
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	sprintf(name, "%u", port);
+	err = getaddrinfo(host, name, &hints, &res);
+	if(err != 0)
+		return mprintf("Failed to connect to %s:%u.", host, port);
+
+	for(cur = res; cur != NULL; cur = cur->ai_next) {
+		*sock = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol);
+		if(*sock < 0)
+			continue;
+
+		if(connect(*sock, cur->ai_addr, cur->ai_addrlen) == 0)
+			break;
+
+		close(*sock);
+	}
+
+	freeaddrinfo(res);
+
+	if(cur == NULL)
+		return mprintf("Failed to connect to %s:%u.", host, port);
+
+	return NULL;
+}
+
 
 /**
  * Receive data on a socket.
@@ -45,7 +93,7 @@ void sys_closesocket(sys_sock_t sock)
  *   @flags: The flags.
  *   &returns: The number of bytes read.
  */
-size_t sys_recv(sys_sock_t sock, void *buf, size_t nbytes, int flags)
+ssize_t sys_recv(sys_sock_t sock, void *buf, size_t nbytes, int flags)
 {
 	ssize_t ret;
 
@@ -54,7 +102,9 @@ size_t sys_recv(sys_sock_t sock, void *buf, size_t nbytes, int flags)
 	while((ret < 0) && (errno == EINTR));
 
 	if(ret < 0) {
-		if((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		if(errno == EBADF)
+			return -1;
+		else if((errno != EAGAIN) && (errno != EWOULDBLOCK))
 			fatal("Failed to read data on socket. %s.", strerror(errno));
 		else
 			return 0;
@@ -71,7 +121,7 @@ size_t sys_recv(sys_sock_t sock, void *buf, size_t nbytes, int flags)
  *   @flags: The flags.
  *   &returns: The number of bytes written.
  */
-size_t sys_send(sys_sock_t sock, const void *buf, size_t nbytes, int flags)
+ssize_t sys_send(sys_sock_t sock, const void *buf, size_t nbytes, int flags)
 {
 	ssize_t ret;
 
@@ -80,7 +130,9 @@ size_t sys_send(sys_sock_t sock, const void *buf, size_t nbytes, int flags)
 	while((ret < 0) && (errno == EINTR));
 
 	if(ret < 0) {
-		if((errno != EAGAIN) && (errno != EWOULDBLOCK))
+		if(errno == EBADF)
+			return -1;
+		else if((errno != EAGAIN) && (errno != EWOULDBLOCK))
 			fatal("Failed to write data on socket. %s.", strerror(errno));
 		else
 			return 0;
@@ -97,7 +149,7 @@ size_t sys_send(sys_sock_t sock, const void *buf, size_t nbytes, int flags)
  *   @len: The length.
  *   &returns: Error.
  */
-char *sys_bind(sys_sock_t sock, const struct sockaddr *addr, socklen_t len)
+char *sys_bind(sys_sock_t sock, void *addr, socklen_t len)
 {
 	if(bind(sock, addr, len) < 0)
 		return mprintf("Failed to set socket option. %s.", strerror(errno));

@@ -145,8 +145,8 @@ bool amp_gain_proc(struct amp_gain_t *gain, double *buf, struct amp_time_t *time
 		if(amp_param_isfast(gain->scale)) {
 			double scale = gain->scale->flt;
 
-			for(i = 0; i < len; i++)
-				buf[i] *= scale;
+				for(i = 0; i < len; i++)
+					buf[i] *= scale;
 		}
 		else {
 			double scale[len];

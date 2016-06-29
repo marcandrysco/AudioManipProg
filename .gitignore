@@ -14,9 +14,10 @@ inc.h
 *.swo
 
 hax/hax.h
+hax/test/hax-test
 dsp/libdsp.h
 core/amplib.h
-lang/muselang
+lang/cli/muselang
 lang/test/muselang-test
 lang/muselang.h
 rt/amprt

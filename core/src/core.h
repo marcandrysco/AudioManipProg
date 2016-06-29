@@ -42,6 +42,7 @@ void amp_core_delete(struct amp_core_t *core);
 struct ml_env_t *amp_core_eval(struct amp_core_t *core, const char *path, char **err);
 char *amp_core_plugin(struct amp_core_t *core, const char *path);
 
+struct amp_core_t *amp_core_get(struct ml_env_t *env);
 unsigned int amp_core_rate(struct ml_env_t *env);
 struct amp_cache_t *amp_core_cache(struct ml_env_t *env);
 

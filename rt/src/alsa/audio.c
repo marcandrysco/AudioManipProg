@@ -104,7 +104,6 @@ void unquote(const char **ptr, char *dest, unsigned int len)
  *   @conf: The configuration.
  *   &returns: The device or null on error.
  */
-
 struct alsa_audio_t *alsa_audio_open(const char *conf)
 {
 	int err;
@@ -142,7 +141,6 @@ struct alsa_audio_t *alsa_audio_open(const char *conf)
  * Close an audio device.
  *   @audio: The audio.
  */
-
 void alsa_audio_close(struct alsa_audio_t *audio)
 {
 	if(audio->capture != NULL)
@@ -160,7 +158,6 @@ void alsa_audio_close(struct alsa_audio_t *audio)
  *   @id: The identifier.
  *   &returns: The client number if found, negative otherwise.
  */
-
 static int audio_find(const char *id)
 {
 	char *name;
@@ -188,7 +185,6 @@ static int audio_find(const char *id)
  *   @conf: The configure.
  *   @str: The string.
  */
-
 static void audio_conf(struct alsa_conf_t *conf, const char *str)
 {
 	int id;
@@ -300,6 +296,7 @@ void alsa_audio_exec(struct alsa_audio_t *audio, amp_audio_f func, void *arg)
 
 	err = pthread_create(&audio->thread, &attr, pcm_thread, audio);
 	if(err != 0) {
+		printf("no RT\n");
 		err = pthread_create(&audio->thread, NULL, pcm_thread, audio);
 		if(err != 0)
 			fprintf(stderr, "Failed to start thread. %s.\n", strerror(err)), exit(1);

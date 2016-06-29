@@ -311,7 +311,6 @@ static void conn_state(pa_context *context, void *arg)
  *   @nbytes: The number of bytes available.
  *   @arg: The argument.
  */
-
 static void conn_record(pa_stream *stream, size_t nbytes, void *arg)
 {
 	struct pulse_conn_t *conn = arg;
@@ -346,7 +345,6 @@ static void conn_record(pa_stream *stream, size_t nbytes, void *arg)
  *   @nbytes: The number of bytes available.
  *   @arg: The argument.
  */
-
 static void conn_playback(pa_stream *stream, size_t nbytes, void *arg)
 {
 	struct pulse_conn_t *conn = arg;
@@ -394,11 +392,11 @@ static void conn_playback(pa_stream *stream, size_t nbytes, void *arg)
  *   @stream: The stream.
  *   @arg: The argument.
  */
-
 static void conn_overflow(pa_stream *stream, void *arg)
 {
 	struct pulse_conn_t *conn = arg;
 
+	printf("overflow\n");
 	conn->func(NULL, 0, conn->arg);
 }
 
@@ -412,5 +410,6 @@ static void conn_underflow(pa_stream *stream, void *arg)
 {
 	struct pulse_conn_t *conn = arg;
 
+	printf("underflow\n");
 	conn->func(NULL, 0, conn->arg);
 }

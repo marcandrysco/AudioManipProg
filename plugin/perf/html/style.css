@@ -1,0 +1,63 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.amp-inst {
+  border-bottom: 1px solid black;
+}
+
+  .amp-inst > .amp-name {
+
+  }
+
+  .amp-inst > .amp-body {
+    border-top: 1px solid grey;
+    display: none;
+  }
+  .amp-inst > .amp-body.amp-expand {
+    display: block;
+  }
+
+    /* control parameter */
+    .amp-inst > .amp-body > .amp-param {
+      display: flex;
+      flex-direction: row;
+    }
+      .amp-inst > .amp-body > .amp-param > div {
+      }
+      .amp-inst > .amp-body > .amp-param > .amp-spacer {
+        width: 5px;
+      }
+
+    /* graph */
+    .amp-inst > .amp-body > .amp-graph {
+    }
+
+      .amp-inst > .amp-body > .amp-graph > .amp-name {
+      }
+
+      .amp-inst > .amp-body > .amp-graph > .amp-body {
+        display: none;
+      }
+      .amp-inst > .amp-body > .amp-graph > .amp-body.amp-expand {
+        display: block;
+      }
+
+        .amp-inst > .amp-body > .amp-graph > .amp-body > .amp-plots {
+          height: 200px;
+          display: flex;
+          flex-direction: row;
+        }
+
+          .amp-inst > .amp-body > .amp-graph > .amp-body > .amp-plots > .amp-plot {
+            display: block;
+            width: 100%;
+            border: 1px solid black;
+            margin: 3px;
+          }

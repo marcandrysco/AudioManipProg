@@ -33,9 +33,12 @@ struct ml_box_i amp_box_iface = {
  * evaluation list
  */
 static const struct pair_t list[] = {
+	/* clocks */
+	{ "BasicClock", amp_basic_make },
 	/* effects */
 	{ "Bias",     amp_bias_make },
 	{ "Bitcrush", amp_bitcrush_make },
+	{ "Chain",   amp_chain_make },
 	{ "Chorus",   amp_chorus_make },
 	{ "Expcrush", amp_expcrush_make },
 	/* filters */
@@ -57,11 +60,17 @@ static const struct pair_t list[] = {
 	{ "Beat",  amp_beat_make },
 	{ "Noise", amp_noise_make },
 	{ "Ramp",  amp_ramp_make },
+	/* modules - oscillators */
+	{ "Sine",   amp_sine_make },
+	{ "Tri",    amp_tri_make },
+	{ "Square", amp_square_make },
 	/* reverberators */
 	{ "Allpass", amp_allpass_make },
 	{ "Comb",    amp_comb_make },
 	{ "Delay",   amp_delay_make },
 	{ "Lpcf",    amp_lpcf_make },
+	/* polymorphic */
+	{ "Shot", amp_shot_make },
 	/* standard functions */
 	{ "vel",    amp_eval_vel },
 	{ "val",    amp_eval_val },
@@ -92,18 +101,9 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("amp.core"), ml_value_box((struct ml_box_t){ core, &ref_iface }, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("amp.cache"), ml_value_box((struct ml_box_t){ core->cache, &ref_iface }, ml_tag_copy(ml_tag_null)));
 
-	/* polymorphic */
-	ml_env_add(&core->env, strdup("Shot"), ml_value_eval(amp_shot_make, ml_tag_copy(ml_tag_null)));
-
-	/* clocks */
-	//ml_env_add(&core->env, strdup("Basic"), ml_value_impl(amp_basic_make));
-
 	/* effects */
-	//ml_env_add(&core->env, strdup("Bitcrush"), ml_value_impl(amp_bitcrush_make));
-	ml_env_add(&core->env, strdup("Chain"), ml_value_eval(amp_chain_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Clip"), ml_value_eval(amp_clip_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Comp"), ml_value_eval(amp_comp_make, ml_tag_copy(ml_tag_null)));
-	//ml_env_add(&core->env, strdup("Expcrush"), ml_value_impl(amp_expcrush_make));
 	ml_env_add(&core->env, strdup("Gain"), ml_value_eval(amp_gain_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Gate"), ml_value_eval(amp_gate_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Gen"), ml_value_eval(amp_gen_make, ml_tag_copy(ml_tag_null)));
@@ -133,10 +133,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Synth"), ml_value_eval(amp_synth_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Trig"), ml_value_eval(amp_trig_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Warp"), ml_value_eval(amp_warp_make, ml_tag_copy(ml_tag_null)));
-
-	ml_env_add(&core->env, strdup("Sine"), ml_value_eval(amp_sine_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Tri"), ml_value_eval(amp_tri_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Square"), ml_value_eval(amp_square_make, ml_tag_copy(ml_tag_null)));
 
 	/* sequencers */
 	ml_env_add(&core->env, strdup("Enable"), ml_value_eval(amp_enable_make, ml_tag_copy(ml_tag_null)));
@@ -192,6 +188,25 @@ void amp_core_delete(struct amp_core_t *core)
 	free(core);
 }
 
+
+/**
+ * Retrieve the core from the environment.
+ *   @env: The environment.
+ *   &returns: The core.
+ */
+struct amp_core_t *amp_core_get(struct ml_env_t *env)
+{
+	struct ml_value_t *value;
+
+	value = ml_env_lookup(env, "amp.core");
+	if(value == NULL)
+		fprintf(stderr, "Missing 'amp.core' variable.\n"), abort();
+
+	if((value->type != ml_value_box_v) || (value->data.box.iface != &ref_iface))
+		fprintf(stderr, "Variable 'amp.core' rebound.\n"), abort();
+
+	return value->data.box.ref;
+}
 
 /**
  * Retrieve the rate from the environment.

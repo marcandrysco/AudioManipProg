@@ -152,7 +152,6 @@ bool amp_ramp_proc(struct amp_ramp_t *ramp, double *buf, struct amp_time_t *time
 				double freq[len];
 
 				cont |= amp_param_proc(ramp->freq, freq, time, len, queue);
-			printf("freq %f\n", freq[0]);
 
 				for(i = 0; i < len; i++)
 					buf[i] = v = dsp_osc_inc(v, dsp_osc_step(freq[i], rate));

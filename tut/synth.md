@@ -10,15 +10,15 @@ Example](../ex/synth.ml).
 To start, let's see an entire program for a very basic synthesizer. The
 following program creates a synthesizer that outputs a sine wave that is
 activated on the MIDI device number 1. To set up a MIDI device, see the
-section [MIDI Setup](#midi-setup)
+section [MIDI Setup](#midi-setup).
 
     let amp.instr =
       let osc = Sine'(Trig()) in
       let asr = ASR1(0.01,0.1) in
         Splice(SynthGen'(1,8,Mul(asr,osc)))
 
-Using the above program and a configured MIDI input, you should be able
-produce (boring) sine waves using the MIDI controller. If not, double check
+Using the above program and a configured MIDI input, you should be able to
+produce a (boring) sine waves using the MIDI controller. If not, double check
 that the device is configured correctly.
 
 Before moving on, we'll try to tackle what exactly is happening in the above
@@ -33,11 +33,17 @@ expects a single-channel processor (aka, an `Effect`), but synthesizers have
 no inputs (they are `Module`s). The `Gen` effect bridges the gap: it allows us
 to insert a `Module` as an `Effect`. Second, what's with the apostrophe after
 `Gen`? Normally, the `Gen` effect adds the module output to the stream, but
-the `Gen'` effect first zeroes the input, effectively removing the input before
-writing; without zeroing, the input (e.g. the microphone) would pass through
-the generator. Combining all these attributes results in the synthesizer constructor
-`SynthGen'` -- we want a synthesizer inserted as an effect that discards the
-input stream.
+the `Gen'` effect first zeroes the input, effectively removing the input
+before writing; without zeroing, the input (e.g. the microphone) would pass
+through the generator. Combining all these attributes results in the
+synthesizer constructor `SynthGen'` -- we want a synthesizer inserted as an
+effect that discards the input stream. Alternatively, we could more verbosely
+write the program using only explicit constructors.
+
+    let amp.instr =
+      let osc = Sine'(Trig()) in
+      let asr = ASR1(0.01,0.1) in
+        Splice(Chain[Gain 0,Gen((1,8,Mul(asr,osc))))
 
 ## MIDI Setup
 

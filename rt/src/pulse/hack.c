@@ -46,11 +46,10 @@ static void bufwrite(struct buf_t *hack, double **buf, unsigned int len);
  *   @rate: The sample rate.
  *   &returns: The hack.
  */
-
 struct pulse_hack_t *pulse_hack_new(unsigned int rate)
 {
 	struct pulse_hack_t *hack;
-	struct pulse_conf_t conf = { 2, 2, rate, 150.0f };
+	struct pulse_conf_t conf = { 2, 2, rate, 200.0f };
 
 	hack = malloc(sizeof(struct pulse_hack_t));
 	hack->conn = pulse_conn_open("default", onaudio, hack, &conf);
@@ -68,7 +67,6 @@ struct pulse_hack_t *pulse_hack_new(unsigned int rate)
  * Delete a hack.
  *   @hack: The hack.
  */
-
 void pulse_hack_delete(struct pulse_hack_t *hack)
 {
 	pulse_conn_close(hack->conn);
@@ -80,7 +78,6 @@ void pulse_hack_delete(struct pulse_hack_t *hack)
  * Reset the hack.
  *   @hack: The hack.
  */
-
 void pulse_hack_reset(struct pulse_hack_t *hack)
 {
 	// ha! I should do this :"(
@@ -92,7 +89,6 @@ void pulse_hack_reset(struct pulse_hack_t *hack)
  *   @buf: The buffer.
  *   @len: The length.
  */
-
 void pulse_hack_proc(struct pulse_hack_t *hack, double **buf, unsigned int len)
 {
 	double data[2][len], *tmp[2];
@@ -115,7 +111,6 @@ void pulse_hack_proc(struct pulse_hack_t *hack, double **buf, unsigned int len)
  *   @len: The length.
  *   @arg: The argument.
  */
-
 static void onaudio(double **buf, unsigned int len, void *arg)
 {
 	struct pulse_hack_t *hack = arg;
@@ -138,7 +133,6 @@ static void onaudio(double **buf, unsigned int len, void *arg)
  *   @buf: The input buffer.
  *   @len: The number of samples.
  */
-
 static void bufread(struct buf_t *hack, double **buf, unsigned int len)
 {
 	unsigned int i, rd, wr;
@@ -173,7 +167,6 @@ static void bufread(struct buf_t *hack, double **buf, unsigned int len)
  *   @buf: The write buffer.
  *   @len: The number of samples.
  */
-
 static void bufwrite(struct buf_t *hack, double **buf, unsigned int len)
 {
 	unsigned int i, wr, rd;

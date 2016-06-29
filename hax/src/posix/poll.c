@@ -23,7 +23,7 @@ bool sys_poll(struct sys_poll_t *list, unsigned int n, int timeout)
 	}
 
 	do
-		err = poll(fds, n, -1);
+		err = poll(fds, n, timeout);
 	while((err < 0) && (errno == EINTR));
 
 	if(err < 0)

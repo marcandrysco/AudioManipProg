@@ -46,6 +46,34 @@ let ASR' (a,r) = ASR((0,1),(a,r))
 let ASR1 (a,r) = ASR((1,1),(a,r))
 
 
+(*** Distortion Variants ***)
+
+(* Symmetric clipping.
+ *   @s (float): Saturation point.
+ *   @m (float): Maximum point.
+ *   &ret (Effect): Clipping effect.
+ *)
+let Clip'(s,m) = Clip(-m,-s,s,m)
+
+(* Soft clipping with no linear range.
+ *   @l (float): The minimum.
+ *   @h (float): The maximum.
+ *   @v (float): Limiting value.
+ *   &ret (Effect): Clipping effect.
+ *)
+let SoftClip(l,h) = Clip(2*l,0,0,2*h)
+let SoftClip' v = SoftClip(-v,v)
+
+(* Hard clipping.
+ *   @l (float): The minimum.
+ *   @h (float): The maximum.
+ *   @v (float): Limiting value.
+ *   &ret (Effect): Clipping effect.
+ *)
+let HardClip(l,h) = Clip(2*l,2*l,2*h,2*h)
+let HardClip' v = HardClip(-v,v)
+
+
 (*** Reverb variants ***)
 
 (* Pure delay constructor.
@@ -156,27 +184,29 @@ let SampleShot1'(p,k) = Shot(Sample1(3,0.01,p),k)
 (**
  * Create an oscillator with a frequency.
  *   @f (Module): The frequency.
+ *   @w (Module): The warping.
  *   &ret (Module): The oscillator module.
  *)
 let Sine'(f) = Sine(Ramp(f))
 let SineW(f,w) = Sine(Warp(Ramp(f),w))
-let Tri'(f) = Tri(Ramp(f))
-let TriW(f,w) = Tri(Warp(Ramp(f),w))
-let Square'(f) = Square(Ramp(f))
 let SineScale(w,l,h) = Patch(Sine(w),Scale'(l,h))
 let SineScale'(f,l,h) = SineScale(Ramp(f),l,h)
+let SineScaleW(f,w,l,h) = SineScale(Warp(Ramp(f),w),l,h)
+let Sine1(w) = SineScale(w,0,1)
+let Sine1'(f) = SineScale(f,0,1)
+let Sine1W(f,w) = SineScaleW(f,w,0,1)
+let Tri'(f) = Tri(Ramp(f))
+let TriW(f,w) = Tri(Warp(Ramp(f),w))
+let TriScale(w,l,h) = Patch(Tri(w),Scale'(l,h))
+let TriScale'(f,l,h) = TriScale(Ramp(f),l,h)
+let Tri1(w) = TriScale(w,0,1)
+let Tri1'(f) = TriScale(f,0,1)
+let Tri1W(f,w) = TriScaleW(f,w,0,1)
+let Square'(f) = Square(Ramp(f))
+let SquareW(f,w) = Square(Warp(Ramp(f),w))
+let SquareScale(w,l,h) = Patch(Square(w),Scale'(l,h))
+let SquareScale'(f,l,h) = SquareScale(Ramp(f),l,h)
 
-(*
-let Sine(f,w) = Osc("sine",f,w)
-let Sine'(f,w,l,h)  = Patch(Sine(f,w),Scale'(l,h))
-let Sine1(f,w) = Patch(Sine(f,w),Scale1)
-
-let Saw(f,w) = Osc("tri",f,w)
-let Saw1(f,w) = Patch(Saw(f,w),Scale1)
-
-let Pulse(f,w) = Osc("square",f,w)
-let Pulse1(f,w) = Patch(Pulse(f,w),Scale1)
-*)
 
 (**
  * Create a muted generator.
@@ -194,6 +224,8 @@ let Gen' m  = Chain[Mute,Gen(m)]
  *)
 let SynthGen (d,n,m) = Gen(Synth(d,n,m))
 let SynthGen' (d,n,m) = Gen'(Synth(d,n,m))
+let SynthGenShot (d,n,m,k) = Shot(Gen(Synth(d,n,m)),k)
+let SynthGenShot' (d,n,m,k) = Shot(Gen'(Synth(d,n,m)),k)
 
 (**
  * Process an effect on the left channel.

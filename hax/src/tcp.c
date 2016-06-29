@@ -47,8 +47,8 @@ struct data_t {
 
 /**
  * Create a client from a socket.
- *   @client: Ref. The client.
  *   @sock: The socket.
+ *   &returns: The client.
  */
 struct tcp_client_t *tcp_client_new(sys_sock_t sock)
 {
@@ -83,6 +83,36 @@ void tcp_client_delete(struct tcp_client_t *client)
 
 
 /**
+ * Open a connection to a server.
+ *   @client: Ref. The client.
+ *   @host: The host.
+ *   @port: The port.
+ *   &returns: Error.
+ */
+char *tcp_client_open(struct tcp_client_t **client, const char *host, uint16_t port)
+{
+#define onexit
+	sys_sock_t sock;
+
+	chkfail(sys_connect(&sock, SOCK_STREAM, host, port));
+	*client = tcp_client_new(sock);
+
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Close a connection.
+ *   @client: The client.
+ */
+void tcp_client_close(struct tcp_client_t *client)
+{
+	sys_closesocket(client->sock);
+	tcp_client_delete(client);
+}
+
+
+/**
  * Retrieve the file descriptor of the client.
  *   @client: The client.
  *   &returns: The file descriptor.
@@ -99,7 +129,7 @@ sys_sock_t tcp_client_sock(struct tcp_client_t *client)
  */
 struct sys_poll_t tcp_client_poll(struct tcp_client_t *client)
 {
-	return sys_poll_sock(client->sock, client->events);
+	return sys_poll_sock(client->sock, sys_poll_in_e | sys_poll_err_e | (client->out ? sys_poll_out_e : 0));
 }
 
 /**
@@ -191,6 +221,7 @@ void tcp_client_write(struct tcp_client_t *client, const void *restrict buf, siz
 	*data = malloc(sizeof(struct data_t) + nbytes);
 	(*data)->idx = 0;
 	(*data)->len = nbytes;
+	(*data)->next = NULL;
 	memcpy((*data)->buf, buf, nbytes);
 
 	client->events |= sys_poll_out_e;
@@ -200,16 +231,25 @@ void tcp_client_write(struct tcp_client_t *client, const void *restrict buf, siz
  * Process data on a client.
  *   @client: The client.
  *   @events: The events.
+ *   &returns: The success flag.
  */
-void tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
+bool tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
 {
 	if(events & sys_poll_in_e) {
+		ssize_t ret;
 		struct data_t **ref, *data;
 
 		data = malloc(sizeof(struct data_t) + DEFSIZE);
+
+		ret = sys_recv(client->sock, data->buf, DEFSIZE, 0);
+		if(ret <= 0) {
+			free(data);
+			return false;
+		}
+
 		data->next = NULL;
 		data->idx = 0;
-		data->len = sys_recv(client->sock, data->buf, DEFSIZE, 0);
+		data->len = ret;
 
 		ref = &client->in;
 		while(*ref != NULL)
@@ -225,8 +265,14 @@ void tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
 		struct data_t *data;
 
 		while(client->out != NULL) {
+			ssize_t ret;
+
 			data = client->out;
-			data->idx += sys_send(client->sock, data->buf + data->idx, data->len - data->idx, 0);
+			ret = sys_send(client->sock, data->buf + data->idx, data->len - data->idx, 0);
+			if(ret <= 0)
+				return false;
+
+			data->idx += ret;
 			if(data->idx != data->len)
 				break;
 
@@ -236,6 +282,8 @@ void tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
 
 		client->events &= ~sys_poll_out_e;
 	}
+
+	return true;
 }
 
 

@@ -340,4 +340,15 @@ static inline int8_t ml_key_octave(int16_t key)
 }
 */
 
+
+/**
+ * Compute a velocity from a value.
+ *   @val: The value.
+ *   &returns: The velocity.
+ */
+static inline double amp_event_vel(uint16_t val)
+{
+	return (double)val / (double)UINT16_MAX;
+}
+
 #endif

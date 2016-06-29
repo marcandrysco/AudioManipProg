@@ -79,6 +79,7 @@ void avltree_destroy(struct avltree_t *tree);
 
 void *avltree_lookup(struct avltree_t *tree, const void *key);
 struct avltree_inst_t *avltree_insert(struct avltree_t *tree, const void *key, void *val);
+void *avltree_remove(struct avltree_t *tree, const void *key);
 
 struct avltree_inst_t *avltree_first(struct avltree_t *tree);
 struct avltree_inst_t *avltree_prev(struct avltree_inst_t *inst);
