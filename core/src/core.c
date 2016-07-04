@@ -38,9 +38,23 @@ static const struct pair_t list[] = {
 	/* effects */
 	{ "Bias",     amp_bias_make },
 	{ "Bitcrush", amp_bitcrush_make },
-	{ "Chain",   amp_chain_make },
+	{ "Chain",    amp_chain_make },
 	{ "Chorus",   amp_chorus_make },
+	{ "Cont",     amp_cont_make },
 	{ "Expcrush", amp_expcrush_make },
+	/* effects - clipper */
+	{ "HardClipP", amp_hardclip_pos },
+	{ "HardClipS", amp_hardclip_sym },
+	{ "HardClipN", amp_hardclip_neg },
+	{ "PolyClipP", amp_polyclip_pos },
+	{ "PolyClipS", amp_polyclip_sym },
+	{ "PolyClipN", amp_polyclip_neg },
+	{ "RootClipP", amp_rootclip_pos },
+	{ "RootClipS", amp_rootclip_sym },
+	{ "RootClipN", amp_rootclip_neg },
+	{ "LogClipP", amp_logclip_pos },
+	{ "LogClipS", amp_logclip_sym },
+	{ "LogClipN", amp_logclip_neg },
 	/* filters */
 	{ "Lpf",   amp_lpf_make },
 	{ "Hpf",   amp_hpf_make },
@@ -65,10 +79,11 @@ static const struct pair_t list[] = {
 	{ "Tri",    amp_tri_make },
 	{ "Square", amp_square_make },
 	/* reverberators */
-	{ "Allpass", amp_allpass_make },
-	{ "Comb",    amp_comb_make },
-	{ "Delay",   amp_delay_make },
-	{ "Lpcf",    amp_lpcf_make },
+	{ "AllpassV", amp_allpass_make },
+	{ "BpcfV",    amp_bpcf_make },
+	{ "CombV",    amp_comb_make },
+	{ "DelayV",   amp_delay_make },
+	{ "LpcfV",    amp_lpcf_make },
 	/* polymorphic */
 	{ "Shot", amp_shot_make },
 	/* standard functions */
@@ -91,6 +106,13 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	char *err;
 	struct amp_core_t *core;
 
+	for(double x = 0; x < 3; x += 0.125) {
+		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_poly(x, 0.5, 0.3), amp_clip_poly(x, 0.5, 1), amp_clip_poly(x, 0.5, 3));
+		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_root(x, 0.5, 0.3), amp_clip_root(x, 0.5, 1), amp_clip_root(x, 0.5, 3));
+		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_log(x, 0.5, 0.3), amp_clip_log(x, 0.5, 1), amp_clip_log(x, 0.5, 3));
+	}
+
+	//exit(0);
 	core = malloc(sizeof(struct amp_core_t));
 	core->env = ml_env_new();
 	core->io = amp_io_new();
@@ -102,7 +124,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("amp.cache"), ml_value_box((struct ml_box_t){ core->cache, &ref_iface }, ml_tag_copy(ml_tag_null)));
 
 	/* effects */
-	ml_env_add(&core->env, strdup("Clip"), ml_value_eval(amp_clip_make, ml_tag_copy(ml_tag_null)));
+	//ml_env_add(&core->env, strdup("Clip"), ml_value_eval(amp_clip_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Comp"), ml_value_eval(amp_comp_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Gain"), ml_value_eval(amp_gain_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Gate"), ml_value_eval(amp_gate_make, ml_tag_copy(ml_tag_null)));
@@ -200,10 +222,10 @@ struct amp_core_t *amp_core_get(struct ml_env_t *env)
 
 	value = ml_env_lookup(env, "amp.core");
 	if(value == NULL)
-		fprintf(stderr, "Missing 'amp.core' variable.\n"), abort();
+		fatal("Missing 'amp.core' variable.\n");
 
 	if((value->type != ml_value_box_v) || (value->data.box.iface != &ref_iface))
-		fprintf(stderr, "Variable 'amp.core' rebound.\n"), abort();
+		fatal("Variable 'amp.core' rebound.\n");
 
 	return value->data.box.ref;
 }

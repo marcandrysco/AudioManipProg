@@ -1,12 +1,16 @@
 #include "../common.h"
 
-
 /**
- * Clip structure.
- *   @maxlo, satlo, sathi, maxhi: Clip parameters.
+ * Clipping structure.
+ *   @dir: The direction, with 1 as positive, -1 as negative, 0 is symmetric.
+ *   @type: The type.
+ *   @pos, neg: The positive and negative flags.
+ *   @sat, dist: The saturation and distortion parameters.
  */
-struct amp_clip_t {
-	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
+struct amp_clipt {
+	int dir;
+	enum amp_clip_e type;
+	struct amp_param_t *sat, *dist;
 };
 
 
@@ -14,120 +18,156 @@ struct amp_clip_t {
  * global variables
  */
 const struct amp_effect_i amp_clip_iface = {
-	(amp_info_f)amp_clip_info,
-	(amp_effect_f)amp_clip_proc,
+	(amp_info_f)amp_clipinfo,
+	(amp_effect_f)amp_clipproc,
 	(amp_copy_f)amp_clip_copy,
 	(amp_delete_f)amp_clip_delete
 };
 
 
 /**
- * Create a clip effect.
- *   @maxlo: Maximum low.
- *   @satlo: Saturation low.
- *   @sathi: Saturation high.
- *   @maxhi: Maximum high.
- *   &returns: The clip.
+ * Create a clipper.
+ *   @dir: The direction.
+ *   @type: The type.
+ *   @sat: The saturation parameter.
+ *   @dist: The distortion parameter.
+ *   &returns: The clipper.
  */
-struct amp_clip_t *amp_clip_new(struct amp_param_t *maxlo, struct amp_param_t *satlo, struct amp_param_t *sathi, struct amp_param_t *maxhi)
+struct amp_clipt *amp_clip_new(int dir, enum amp_clip_e type, struct amp_param_t *sat, struct amp_param_t *dist)
 {
-	struct amp_clip_t *clip;
+	struct amp_clipt *clip;
 
-	clip = malloc(sizeof(struct amp_clip_t));
-	clip->maxlo = maxlo;
-	clip->satlo = satlo;
-	clip->sathi = sathi;
-	clip->maxhi = maxhi;
+	clip = malloc(sizeof(struct amp_clipt));
+	clip->dir = dir;
+	clip->type = type;
+	clip->sat = sat;
+	clip->dist = dist;
 
 	return clip;
 }
 
 /**
- * Copy a clip effect.
- *   @clip: The original clip.
- *   &returns: The copied clip.
+ * Copy a cliper.
+ *   @clip: The original clippe.
+ *   &returns: The copied clipper.
  */
-struct amp_clip_t *amp_clip_copy(struct amp_clip_t *clip)
+struct amp_clipt *amp_clip_copy(struct amp_clipt *clip)
 {
-	return amp_clip_new(amp_param_copy(clip->maxlo), amp_param_copy(clip->satlo), amp_param_copy(clip->sathi), amp_param_copy(clip->maxhi));
+	return amp_clip_new(clip->dir, clip->type, amp_param_copy(clip->sat), amp_param_copy(clip->dist));
 }
 
 /**
- * Delete a clip effect.
- *   @clip: The clip.
+ * Delete a clipper.
+ *   @clip: The clipper.
  */
-void amp_clip_delete(struct amp_clip_t *clip)
+void amp_clip_delete(struct amp_clipt *clip)
 {
-	amp_param_delete(clip->maxlo);
-	amp_param_delete(clip->satlo);
-	amp_param_delete(clip->sathi);
-	amp_param_delete(clip->maxhi);
+	amp_param_delete(clip->sat);
+	amp_param_delete(clip->dist);
 	free(clip);
 }
 
 
 /**
- * Create a clip from a value.
+ * Create a one parameter clip from a value.
  *   @ret: Ref. The returned value.
  *   @value: The value.
  *   @env: The environment.
  *   &returns: Error.
  */
-char *amp_clip_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+char *amp_clip_make1(struct ml_value_t **ret, int dir, enum amp_clip_e type, struct ml_value_t *value)
 {
 #define onexit
-	struct amp_param_t *maxlo, *satlo, *sathi, *maxhi;
+	struct amp_param_t *sat;
 
-	chkfail(amp_match_unpack(value, "(P,P,P,P)", &maxlo, &satlo, &sathi, &maxhi));
+	chkfail(amp_match_unpack(value, "P", &sat));
 
-	*ret = amp_pack_effect((struct amp_effect_t){ amp_clip_new(maxlo, satlo, sathi, maxhi), &amp_clip_iface });
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_clip_new(dir, type, sat, amp_param_flt(1.0)), &amp_clip_iface });
 	return NULL;
 #undef onexit
 }
+char *amp_hardclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make1(ret, 1, amp_clip_hard_v, value);
+}
+char *amp_hardclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make1(ret, 0, amp_clip_hard_v, value);
+}
+char *amp_hardclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make1(ret, -1, amp_clip_hard_v, value);
+}
+
+/**
+ * Create a two parameter clip from a value.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *amp_clip_make2(struct ml_value_t **ret, int dir, enum amp_clip_e type, struct ml_value_t *value)
+{
+#define onexit
+	struct amp_param_t *sat, *dist;
+
+	chkfail(amp_match_unpack(value, "(P,P)", &sat, &dist));
+
+	*ret = amp_pack_effect((struct amp_effect_t){ amp_clip_new(dir, type, sat, dist), &amp_clip_iface });
+	return NULL;
+#undef onexit
+}
+char *amp_polyclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 1, amp_clip_poly_v, value);
+}
+char *amp_polyclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 0, amp_clip_poly_v, value);
+}
+char *amp_polyclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, -1, amp_clip_poly_v, value);
+}
+char *amp_rootclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 1, amp_clip_root_v, value);
+}
+char *amp_rootclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 0, amp_clip_root_v, value);
+}
+char *amp_rootclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, -1, amp_clip_root_v, value);
+}
+char *amp_logclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 1, amp_clip_log_v, value);
+}
+char *amp_logclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 0, amp_clip_log_v, value);
+}
+char *amp_logclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, -1, amp_clip_log_v, value);
+}
 
 
 /**
- * Handle information on a clip.
- *   @clip: The clip.
+ * Handle information on a cliper.
+ *   @clip: The cliper.
  *   @info: The info.
  */
-void amp_clip_info(struct amp_clip_t *clip, struct amp_info_t info)
+void amp_clipinfo(struct amp_clipt *clip, struct amp_info_t info)
 {
-	amp_param_info(clip->maxlo, info);
-	amp_param_info(clip->satlo, info);
-	amp_param_info(clip->sathi, info);
-	amp_param_info(clip->maxhi, info);
+	amp_param_info(clip->sat, info);
+	amp_param_info(clip->dist, info);
 }
 
 /**
- * Perform clipping with quadratic saturation. The inequality
- * 'maxlo <= satlo <= 0.0 <= sathi <= maxhi' must hold.
- *   @val: The input.
- *   @maxlo: The low maximum level.
- *   @satlo: The low saturation level.
- *   @sathi: The high saturation level.
- *   @maxhi: The high maximum level.
- *   &returns: The clipped output.
- */
-static inline double dsp_clip_d(double val, double maxlo, double satlo, double sathi, double maxhi)
-{
-	if(val >= satlo) {
-		double h = 2.0 * maxhi - sathi;
-		double a = 1.0 / (4.0 * (sathi - maxhi));
-
-		if(val > h)
-			return maxhi;
-		else if(val > sathi)
-			return a * (val - h) * (val - h) + maxhi;
-		else 
-			return val;
-	}
-	else
-		return -dsp_clip_d(-val, 0.0, 0.0, -satlo, -maxlo);
-}
-
-/**
- * Process a clip.
+ * Process a cliper.
  *   @clip: The clip.
  *   @buf: The buffer.
  *   @time: The time.
@@ -135,18 +175,119 @@ static inline double dsp_clip_d(double val, double maxlo, double satlo, double s
  *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_clip_proc(struct amp_clip_t *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+bool amp_clipproc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
-	double maxlo, satlo, sathi, maxhi;
+	bool cont = false;
 
-	maxlo = clip->maxlo->flt;
-	satlo = clip->satlo->flt;
-	sathi = clip->sathi->flt;
-	maxhi = clip->maxhi->flt;
+	switch(clip->type) {
+	case amp_clip_hard_v:
+		if(amp_param_isfast(clip->sat) && amp_param_isfast(clip->dist)) {
+			double sat = clip->sat->flt;
 
-	for(i = 0; i < len; i++)
-		buf[i] = dsp_clip_d(buf[i], maxlo, satlo, sathi, maxhi);
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_hard(buf[i], sat);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_hard(-buf[i], sat);
+			}
+		}
+		else {
+			double sat[len];
 
-	return false;
+			cont |= amp_param_proc(clip->sat, sat, time, len, queue);
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_hard(buf[i], sat[i]);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_hard(-buf[i], sat[i]);
+			}
+		}
+
+		break;
+
+	case amp_clip_poly_v:
+		if(amp_param_isfast(clip->sat) && amp_param_isfast(clip->dist)) {
+			double sat = clip->sat->flt, dist = clip->dist->flt;
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_poly(buf[i], sat, dist);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_poly(-buf[i], sat, dist);
+			}
+		}
+		else {
+			double sat[len], dist[len];
+
+			cont |= amp_param_proc(clip->sat, sat, time, len, queue);
+			cont |= amp_param_proc(clip->dist, dist, time, len, queue);
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_poly(buf[i], sat[i], dist[i]);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_poly(-buf[i], sat[i], dist[i]);
+			}
+		}
+
+		break;
+
+	case amp_clip_root_v:
+		if(amp_param_isfast(clip->sat) && amp_param_isfast(clip->dist)) {
+			double sat = clip->sat->flt, dist = clip->dist->flt;
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_root(buf[i], sat, dist);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_root(-buf[i], sat, dist);
+			}
+		}
+		else {
+			double sat[len], dist[len];
+
+			cont |= amp_param_proc(clip->sat, sat, time, len, queue);
+			cont |= amp_param_proc(clip->dist, dist, time, len, queue);
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_root(buf[i], sat[i], dist[i]);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_root(-buf[i], sat[i], dist[i]);
+			}
+		}
+
+		break;
+
+	case amp_clip_log_v:
+		if(amp_param_isfast(clip->sat) && amp_param_isfast(clip->dist)) {
+			double sat = clip->sat->flt, dist = clip->dist->flt;
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_log(buf[i], sat, dist);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_log(-buf[i], sat, dist);
+			}
+		}
+		else {
+			double sat[len], dist[len];
+
+			cont |= amp_param_proc(clip->sat, sat, time, len, queue);
+			cont |= amp_param_proc(clip->dist, dist, time, len, queue);
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_log(buf[i], sat[i], dist[i]);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_log(-buf[i], sat[i], dist[i]);
+			}
+		}
+
+		break;
+	}
+
+	return cont;
 }

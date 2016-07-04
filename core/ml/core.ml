@@ -80,6 +80,11 @@ let HardClip' v = HardClip(-v,v)
  *   @l (float): Delay length.
  *   &ret (Effect): The delay effect.
  *)
+let Delay (l,g) = DelayV(l,l,g)
+let Delay' (l,v,g) = DelayV(l,Mul(l,v),g)
+let Comb (l,g) = CombV(l,l,g)
+let Allpass (l,g) = AllpassV(l,l,g)
+let Lpcf (l,g,f) = LpcfV(l,l,g,f)
 let Delay1 l = Delay(l,1)
 
 

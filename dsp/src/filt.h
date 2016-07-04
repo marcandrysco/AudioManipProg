@@ -88,6 +88,42 @@ static inline double dsp_hpf_proc(double x, struct dsp_hpf_t c, double *s)
 
 
 /**
+ * Band-pass constant structure.
+ *   @hi: The high-pass (low frequency) filter.
+ *   @lo: The low-pass (high frequency) filter.
+ */
+struct dsp_bpf_t {
+	struct dsp_hpf_t hi;
+	struct dsp_lpf_t lo;
+};
+
+/**
+ * Initialize the band-pass constant.
+ *   @freq: The frequency.
+ *   &returns: The constant.
+ */
+static inline struct dsp_bpf_t dsp_bpf_init(double freqlo, double freqhi, double rate)
+{
+	return (struct dsp_bpf_t){ dsp_hpf_init(freqlo, rate), dsp_lpf_init(freqhi, rate) };
+}
+
+/**
+ * Process a band-pass filter.
+ *   @x: The input.
+ *   @c: The constant.
+ *   @s: The state. Must have at least two variables.
+ *   &returns: The output.
+ */
+static inline double dsp_bpf_proc(double x, struct dsp_bpf_t c, double *s)
+{
+	x = dsp_hpf_proc(x, c.hi, &s[0]);
+	x = dsp_lpf_proc(x, c.lo, &s[1]);
+
+	return x;
+}
+
+
+/**
  * Moog filter structure.
  *   @g: The gain element.
  *   @r: The resonance.

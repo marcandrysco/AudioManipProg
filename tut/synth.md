@@ -41,7 +41,7 @@ effect that discards the input stream. Alternatively, we could more verbosely
 write the program using only explicit constructors.
 
     let amp.instr =
-      let osc = Sine'(Trig()) in
+      let osc = Sine(Ramp(Trig())) in
       let asr = ASR1(0.01,0.1) in
         Splice(Chain[Gain 0,Gen((1,8,Mul(asr,osc))))
 

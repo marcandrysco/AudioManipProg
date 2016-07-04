@@ -1,6 +1,12 @@
 #include "common.h"
 
 
+/*
+ * local definitions
+ */
+#define prev(idx) (((idx) - 1 + AMP_PERF_LEN) % AMP_PERF_LEN)
+
+
 /**
  * Initialize the performance structure.
  *   @perf: The performance structure.
@@ -17,8 +23,6 @@ struct amp_perf_t amp_perf_init(void)
 
 	return perf;
 }
-
-#define prev(idx) (((idx) - 1 + AMP_PERF_LEN) % AMP_PERF_LEN)
 
 /**
  * Obtain the worst case over the last second.

@@ -378,6 +378,13 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 	case amp_filt_svlpf_e:
 		if(!filt->fast) {
+			double freq[len], res[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_res_e], res, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_svf_low(buf[i], dsp_svf_init(freq[i], res[i], filt->rate), filt->s);
 		}
 		else {
 			struct dsp_svf_t c = dsp_svf_init(filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_res_e]->flt, filt->rate);
@@ -390,6 +397,13 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 	case amp_filt_svhpf_e:
 		if(!filt->fast) {
+			double freq[len], res[len];
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_res_e], res, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_svf_high(buf[i], dsp_svf_init(freq[i], res[i], filt->rate), filt->s);
 		}
 		else {
 			struct dsp_svf_t c = dsp_svf_init(filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_res_e]->flt, filt->rate);

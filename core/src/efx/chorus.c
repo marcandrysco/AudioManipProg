@@ -48,6 +48,7 @@ void amp_chorus_delete(struct amp_chorus_t *chorus)
 {
 	amp_param_delete(chorus->osc);
 	amp_param_delete(chorus->feedback);
+	dsp_ring_delete(chorus->ring);
 	free(chorus);
 }
 
