@@ -10,5 +10,6 @@ char *amp_eval_amp2db(struct ml_value_t **ret, struct ml_value_t *value, struct 
 char *amp_eval_db2amp(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 char *amp_eval_human(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_eval_human4(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 #endif

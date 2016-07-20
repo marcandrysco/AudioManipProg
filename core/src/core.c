@@ -46,15 +46,18 @@ static const struct pair_t list[] = {
 	{ "HardClipP", amp_hardclip_pos },
 	{ "HardClipS", amp_hardclip_sym },
 	{ "HardClipN", amp_hardclip_neg },
+	{ "LinClipP",  amp_linclip_pos },
+	{ "LinClipS",  amp_linclip_sym },
+	{ "LinClipN",  amp_linclip_neg },
 	{ "PolyClipP", amp_polyclip_pos },
 	{ "PolyClipS", amp_polyclip_sym },
 	{ "PolyClipN", amp_polyclip_neg },
 	{ "RootClipP", amp_rootclip_pos },
 	{ "RootClipS", amp_rootclip_sym },
 	{ "RootClipN", amp_rootclip_neg },
-	{ "LogClipP", amp_logclip_pos },
-	{ "LogClipS", amp_logclip_sym },
-	{ "LogClipN", amp_logclip_neg },
+	{ "LogClipP",  amp_logclip_pos },
+	{ "LogClipS",  amp_logclip_sym },
+	{ "LogClipN",  amp_logclip_neg },
 	/* filters */
 	{ "Lpf",   amp_lpf_make },
 	{ "Hpf",   amp_hpf_make },
@@ -81,6 +84,7 @@ static const struct pair_t list[] = {
 	/* reverberators */
 	{ "AllpassV", amp_allpass_make },
 	{ "BpcfV",    amp_bpcf_make },
+	{ "Bpcf2V",   amp_bpcf2_make },
 	{ "CombV",    amp_comb_make },
 	{ "DelayV",   amp_delay_make },
 	{ "LpcfV",    amp_lpcf_make },
@@ -92,8 +96,16 @@ static const struct pair_t list[] = {
 	{ "amp2db", amp_eval_amp2db },
 	{ "db2amp", amp_eval_db2amp },
 	{ "human",  amp_eval_human },
-	{ NULL    , NULL }
+	{ "human4", amp_eval_human4 },
+	{ "keyN",   amp_key_note },
+	{ "keyS",   amp_key_str },
+	{ "keyF",   amp_key_freq },
+	{ "modeI",  amp_mode_ival },
+	{ "modeS",  amp_mode_scale },
+	/* end of list */
+	{ NULL, NULL }
 };
+
 
 
 /**
@@ -106,13 +118,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	char *err;
 	struct amp_core_t *core;
 
-	for(double x = 0; x < 3; x += 0.125) {
-		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_poly(x, 0.5, 0.3), amp_clip_poly(x, 0.5, 1), amp_clip_poly(x, 0.5, 3));
-		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_root(x, 0.5, 0.3), amp_clip_root(x, 0.5, 1), amp_clip_root(x, 0.5, 3));
-		//printf("%.3f -> %.3f : %.3f : %.3f\n", x, amp_clip_log(x, 0.5, 0.3), amp_clip_log(x, 0.5, 1), amp_clip_log(x, 0.5, 3));
-	}
-
-	//exit(0);
 	core = malloc(sizeof(struct amp_core_t));
 	core->env = ml_env_new();
 	core->io = amp_io_new();

@@ -384,6 +384,25 @@ char *ml_eval_gte(struct ml_value_t **ret, struct ml_value_t *value, struct ml_e
 
 
 /**
+ * Evaluate a floor.
+ *   @ret: Ref. The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *ml_eval_floor(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	if(value->type == ml_value_num_v)
+		*ret = ml_value_num(floor(value->data.num), ml_tag_copy(ml_tag_null));
+	else if(value->type == ml_value_flt_v)
+		*ret = ml_value_num(value->data.flt, ml_tag_copy(ml_tag_null));
+	else
+		return mprintf("%C: Type error. Expected 'Num'.", ml_tag_chunk(&value->tag));
+
+	return NULL;
+}
+
+/**
  * Evaluate a rounding.
  *   @ret: Ref. The return value.
  *   @value: The value.
@@ -393,9 +412,9 @@ char *ml_eval_gte(struct ml_value_t **ret, struct ml_value_t *value, struct ml_e
 char *ml_eval_round(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 	if(value->type == ml_value_num_v)
-		*ret = ml_value_flt(round(value->data.num), ml_tag_copy(ml_tag_null));
+		*ret = ml_value_num(round(value->data.num), ml_tag_copy(ml_tag_null));
 	else if(value->type == ml_value_flt_v)
-		*ret = ml_value_flt(value->data.flt, ml_tag_copy(ml_tag_null));
+		*ret = ml_value_num(value->data.flt, ml_tag_copy(ml_tag_null));
 	else
 		return mprintf("%C: Type error. Expected 'Num'.", ml_tag_chunk(&value->tag));
 

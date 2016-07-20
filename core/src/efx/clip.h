@@ -4,12 +4,14 @@
 /**
  * Clipping type enumerator.
  *   @amp_clip_hard_v: Hard clipping.
+ *   @amp_clip_lin_v: Linear clipping
  *   @amp_clip_poly_v: Polynomial clipping.
  *   @amp_clip_root_v: Root clipping.
  *   @amp_clip_log_v: Logarithmic clipping.
  */
 enum amp_clip_e {
 	amp_clip_hard_v,
+	amp_clip_lin_v,
 	amp_clip_poly_v,
 	amp_clip_root_v,
 	amp_clip_log_v
@@ -31,6 +33,9 @@ char *amp_hardclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct
 char *amp_hardclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 char *amp_clip_make2(struct ml_value_t **ret, int dir, enum amp_clip_e type, struct ml_value_t *value);
+char *amp_linclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_linclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_linclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_polyclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_polyclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_polyclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
@@ -41,8 +46,8 @@ char *amp_logclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct 
 char *amp_logclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_logclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
-void amp_clipinfo(struct amp_clipt *clip, struct amp_info_t info);
-bool amp_clipproc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
+void amp_clip_info(struct amp_clipt *clip, struct amp_info_t info);
+bool amp_clip_proc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 
 /**
@@ -62,7 +67,7 @@ static inline double amp_clip_hard(double val, double max)
  *   @max: The maximum level.
  *   &returns: The clipped output.
  */
-static inline double amp_clip_line(double val, double sat, double dist)
+static inline double amp_clip_lin(double val, double sat, double dist)
 {
 	dist = 1.0 / (1.0 + dist);
 
@@ -105,7 +110,7 @@ static inline double amp_clip_root(double val, double sat, double dist)
 	if(val <= sat)
 		return val;
 	else
-		return 2 * (sqrtf(dist * (val - sat + dist)) - dist) + sat;
+		return 2.0 * (sqrtf(dist * (val - sat + dist)) - dist) + sat;
 }
 
 /**

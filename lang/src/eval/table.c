@@ -5,10 +5,11 @@
  * global variables
  */
 struct ml_eval_t ml_eval_table[] = {
-	/* airht */
+	/* arith */
 	{ "exp",    ml_eval_exp },
 	{ "log",    ml_eval_log },
 	{ "powT",   ml_eval_pow },
+	{ "floor",  ml_eval_floor },
 	{ "round",  ml_eval_round },
 	{ "minT",   ml_eval_min },
 	{ "maxT",   ml_eval_max },
@@ -25,9 +26,11 @@ struct ml_eval_t ml_eval_table[] = {
 	{ "print",   ml_eval_print },
 	{ "println", ml_eval_println },
 	/* list */
+	{ "concat",  ml_eval_concat },
 	{ "seq",     ml_eval_seq },
 	{ "seqfT",   ml_eval_seqf },
 	{ "mapT",    ml_eval_map },
+	{ "mapiT",   ml_eval_mapi },
 	{ "foldrT",  ml_eval_foldr },
 	/* string */
 	{ "strlen", ml_eval_strlen },
@@ -42,7 +45,9 @@ struct ml_curry_t {
 };
 
 struct ml_curry_t ml_curry_table[] = {
+	/* list */
 	{ "map",   2, ml_eval_map },
+	{ "mapi",  2, ml_eval_mapi },
 	{ "foldr", 3, ml_eval_foldr },
 	{ "seqf",  2, ml_eval_seqf },
 	/* end of list */
@@ -73,6 +78,8 @@ struct ml_value_t *ml_eval_closure(const char *id)
 		return ml_eval_value(ml_eval_pow, 2);
 	else if(strcmp(id, "map") == 0)
 		return ml_eval_value(ml_eval_map, 2);
+	else if(strcmp(id, "mapi") == 0)
+		return ml_eval_value(ml_eval_mapi, 2);
 	else if(strcmp(id, "foldr") == 0)
 		return ml_eval_value(ml_eval_foldr, 3);
 	else if(strcmp(id, "seqf") == 0)

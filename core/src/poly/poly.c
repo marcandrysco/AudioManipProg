@@ -115,6 +115,8 @@ struct ml_value_t *amp_poly_make(struct amp_box_t *box, void *ref, const struct 
  */
 void amp_poly_info(struct amp_poly_t *poly, struct amp_info_t info)
 {
+	poly->iface->info(poly->ref, info);
+
 	switch(poly->box->type) {
 	case amp_box_clock_e: amp_clock_info(poly->box->data.clock, info); break;
 	case amp_box_instr_e: amp_instr_info(poly->box->data.instr, info); break;
@@ -132,13 +134,13 @@ bool amp_poly_proc(struct amp_poly_t *poly, struct amp_polyinfo_t *info)
 	case amp_box_clock_e: break;
 
 	case amp_box_instr_e:
-		return amp_instr_proc(poly->box->data.instr, info->data.instr.buf, info->data.instr.time, info->data.instr.len, info->queue);
+		return amp_instr_proc(poly->box->data.instr, info->data.instr.buf, info->time, info->len, info->queue);
 
 	case amp_box_effect_e:
-		return amp_effect_proc(poly->box->data.effect, info->data.effect.buf, info->data.effect.time, info->data.effect.len, info->queue);
+		return amp_effect_proc(poly->box->data.effect, info->data.effect.buf, info->time, info->len, info->queue);
 
 	case amp_box_module_e:
-		return amp_module_proc(poly->box->data.module, info->data.module.buf, info->data.module.time, info->data.module.len, info->queue);
+		return amp_module_proc(poly->box->data.module, info->data.module.buf, info->time, info->len, info->queue);
 
 	case amp_box_seq_e: break;
 	case amp_box_ctrl_e: break;
@@ -152,19 +154,19 @@ bool amp_poly_proc(struct amp_poly_t *poly, struct amp_polyinfo_t *info)
  */
 bool amp_poly_proc_instr(struct amp_poly_t *poly, double **buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	struct amp_polyinfo_t info = { { .instr = { buf, time, len } }, queue };
+	struct amp_polyinfo_t info = { len, time, queue, { .instr = { buf } } };
 
 	return poly->iface->proc(poly->ref, poly, &info);
 }
 bool amp_poly_proc_effect(struct amp_poly_t *poly, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	struct amp_polyinfo_t info = { { .effect = { buf, time, len } }, queue };
+	struct amp_polyinfo_t info = { len, time, queue, { .effect = { buf } } };
 
 	return poly->iface->proc(poly->ref, poly, &info);
 }
 bool amp_poly_proc_module(struct amp_poly_t *poly, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	struct amp_polyinfo_t info = { { .module = { buf, time, len } }, queue };
+	struct amp_polyinfo_t info = { len, time, queue, { .module = { buf } } };
 
 	return poly->iface->proc(poly->ref, poly, &info);
 }

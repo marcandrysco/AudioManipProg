@@ -21,16 +21,6 @@
 #include <hax.h>
 
 #include "debug.h"
-#include "defs.h"
-#include "buf.h"
-#include "math.h"
-#include "mem.h"
-
-#include "algo.h"
-#include "comp.h"
-#include "filt.h"
-#include "osc.h"
-#include "reverb.h"
-#include "vol.h"
+#include "inc.h"
 
 #endif

@@ -6,6 +6,7 @@ commonly added to guitar signals to provide a grittier signal. For a complete
 and documented use of distortion, see the [Distortion
 Example](../ex/dist.ml).
 
+
 ## Clipping
 
 The first and most basic form of distortion covered is clipping. All clipping
@@ -26,25 +27,18 @@ Symmetric clipping performs the exact same clipping procedure on both positive
 and negative values. Lastly, asymmetric clipping uses unique parameters to
 clip the positive and negative values, producing an asymmetric output with
 added even harmonics. For hard clipping, the four constructors are
-`HardClipP`, `HardClipN`, HardClipS`, and `HardClipA` for positive, negative,
+`HardClipP`, `HardClipN`, `HardClipS`, and `HardClipA` for positive, negative,
 symmetric, and asymmetric clipping, respectively.
 
-Additionally, every clipper (except hard clipping) has the two parameters
-`sat` for saturation and `dist` for distortion. The `sat` parameter specifies
-the range in which the clipper is linear -- i.e. any values smaller than `sat`
-will not be affected. The `dist` parameter specifies the amount of distortion
-to be applied above the saturation point. Starting from a value of `0.0`
-meaning no distortion, higher values increase the rate and amount of
+Additionally, every clipper (except `HardClip` and `SoftClip`) has the two
+parameters `sat` for saturation and `dist` for distortion. The `sat` parameter
+specifies the range in which the clipper is linear -- i.e. any values smaller
+than `sat` will not be affected. The `dist` parameter specifies the amount of
+distortion to be applied above the saturation point. Starting from a value of
+`0.0` meaning no distortion, higher values increase the rate and amount of
 distortion as the input gets larger. A distortion value `dist` of infinity
-implies hard clipping where the input cannot exceed the saturation value `sat.
-
-    #Type#ClipP (sat, dist)
-    #Type#ClipN (sat, dist)
-    #Type#ClipS (sat, dist)
-    #Type#ClipA (distlo, satlo, sathi, disthi)
-
-The above constructors are the general form used by all clippers except hard
-clipping. All values must be positive, non-zero numbers or parameters.
+implies hard clipping where the input cannot exceed the saturation value
+`sat`.
 
 ### Hard Clipping
 
@@ -52,7 +46,7 @@ The most basic form of clipping, hard clipping, truncates any values that
 exceed a limit. For example, hard clipping with a limit of `0.2` will allow
 any value less than `0.2` to pass through. Any values above `0.2` will be
 truncated to exactly `0.2`. Because hard clipping causes a very abrupt cutoff,
-the result is typically perceived as harsh, and which may be allievated with a
+the result is typically perceived as harsh and may be allievated with a
 subsequent low pass filter.
 
     HardClipP max
@@ -68,6 +62,25 @@ with a limit of `1.0`.
 ![Ramp Input](fig/dist_hard_ramp.svg)
 ![Sine Input](fig/dist_hard_sine.svg)
 
+### Soft Clipping
+
+Soft clipping provides a smoother version of hard clipping. The `max`
+parameter specifies the largest input before the clipper is fully saturated.
+The input corresponding to complete saturation is exactly `2*max`.
+
+    SoftClipP max
+    SoftClipN max
+    SoftClipS max
+    SoftClipA (maxlo,maxhi)
+
+As shown by the below pair of graphs, the soft clipper limits the output
+within the specified range while softening edges near the extremes. The
+relationship between the output and input is near linear near zero (but not
+exactly), increasing in distortion as the input approaches the maximum.
+
+![Ramp Input](fig/dist_soft_ramp.svg)
+![Sine Input](fig/dist_soft_sine.svg)
+
 ### Linear Clipping
 
 Linear clipping is a primitive method of "soft" clipping that linearly scales
@@ -79,7 +92,7 @@ what good this is for but feel free to experiment.
     LinClipS (sat, dist)
     LinClipA (distlo, satlo, sathi, disthi)
 
-The higher `dist` parameter increases the scaling after saturation. The
+A higher `dist` parameter increases the scaling after saturation. The
 following graphs use a saturation of `0.5` and varying distortion parameters
 to produce a jaggy version of the input.
 
@@ -91,9 +104,9 @@ to produce a jaggy version of the input.
 Polynomial clipping -- maybe better named quadratic clipping -- is a very fast
 method of "soft" clipping that gradually transitions from linear to flat. The
 output follows a quadratic curve to that begins with a slope of one (i.e.
-linear) that linearly transitions to a slope of zero (i.e. flat). If the input
-signal is too large,the output never increaases beyond maximum saturation,
-completely masking higher frequency information.
+linear) and transitions to a slope of zero (i.e. flat). If the input signal is
+too large,the output never increaases beyond maximum saturation, completely
+masking higher frequency information.
 
     PolyClipP (sat, dist)
     PolyClipN (sat, dist)
@@ -121,7 +134,7 @@ of clipping.
 ### Logarithmic Clipping
 
 Logarithmic clipping follows a logarithmic curve to distort the signal. The
-output is scales such that an order of magnitude increase on the input will
+output is scaled such that an order of magnitude increase on the input will
 result in approximately doubling the output. This provides an exponentially
 more drastic gain reduction.
 
@@ -132,3 +145,6 @@ more drastic gain reduction.
 
 ![Ramp Input](fig/dist_log_ramp.svg)
 ![Sine Input](fig/dist_log_sine.svg)
+
+
+## Bitcrushing

@@ -5,12 +5,13 @@ setconf()
 {
   lib_target "libdsp.so"
   hdr_target "libdsp.h"
+  inc_target "src/inc.h"
 
   h_src "src/defs.h"
 
+  c_src "src/mem.c"
   c_src "src/buf.c"
   c_src "src/math.c"
-  c_src "src/mem.c"
 
   c_src "src/algo.c"
   c_src "src/comp.c"
@@ -22,7 +23,7 @@ setconf()
 ## end configuration options ##
 
 
-##### marc_andrysco configure script, rev 2 #####
+##### marc_andrysco configure script, rev 4 #####
 
 # special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
@@ -48,6 +49,7 @@ bin_target()
   chk_space "$1" || fail "bin_target parameter '$1' has spaces"
 
   target="$1"
+  install="${install}${nl}${tab}install --mode 0755 -D $1 \$(BINDIR)/$1"
 }
 
 # Set the library target
@@ -60,7 +62,7 @@ lib_target()
   ldflags="$ldflags -shared"
 
   target="$1"
-  install="${install}${nl}${tab}install --mode 0755 -D $1 \$(LIBDIR)/$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(LIBDIR)/$1"
 }
 
 # Set the header target
@@ -74,6 +76,19 @@ hdr_target()
   install="${install}${nl}${tab}install --mode 0644 -D $1 \$(INCDIR)/$1"
 }
 
+# Set the include target
+#   @path: The target path.
+inc_target()
+{
+  test $# -ne 1 && fail "inc_target function takes 1 argument"
+  chk_space "$1" || fail "inc_target parameter '$1' has spaces"
+
+  inc="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(INCDIR)/$1"
+
+  :>"$inc"
+}
+
 # Add a C source file to the Makefile.
 #   @path: The source path.
 c_src()
@@ -84,7 +99,8 @@ c_src()
 
   obj="$obj ${1%.*}.o"
   deps="$deps ${1%.*}.d"
-  test -z "$noinc" && inc="$inc ${1%.*}.h"
+  test -z "$noinc" && hdrs="$hdrs ${1%.*}.h"
+  test "$inc" && inc_src "${1%.*}.h"
 }
 
 # Add a header source file to the Makefile.
@@ -95,7 +111,25 @@ h_src()
   chk_space "$1" || fail "h_src parameter '$1' has spaces"
   test ${1##*.} != "h" && fail "h_src argument has invalid extension '.${1##*.}'"
 
-  inc="$inc $1"
+  hdrs="$hdrs $1"
+  test "$inc" && inc_src "$1"
+}
+
+# Add a header include file.
+#   @path: The source path.
+inc_src()
+{
+  test $# -ne 1 && fail "inc_src function takes 1 argument"
+  chk_space "$1" || fail "inc_src parameter '$1' has spaces"
+  test ${1##*.} != "h" && fail "inc_src argument has invalid extension '.${1##*.}'"
+
+  path="$1"
+  rem="$inc"
+  while [ "$path$rem" ] && [ "${path%%/*}" = "${rem%%/*}" ] ; do
+    path=${path#*/} ; rem=${rem#*/}
+  done
+
+  printf "#include \"%s\"\n" "$path" >> "$inc"
 }
 
 # Add an asset to the share directory.
@@ -171,7 +205,7 @@ for opt in "$@" ; do
 done
 
 # append config.args file
-test -f config.args && eval set -- "`cat config.args | tr '\n\t' '  '`"
+test -f config.args && eval set -- "${args}`cat config.args | tr '\n\t' '  '`"
 
 #initialize options
 toolchain="" #toolchain
@@ -181,6 +215,7 @@ rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
 noinc=""     #disable automated include
+pkgcfg=""    #pkgconfig dependencies
 
 prefix='/usr/local'
 bindir='$(PREFIX)/bin'
@@ -201,10 +236,17 @@ while [ "$#" -gt 0 ] ; do
       eval "$name=`quote "$val"`"
       ;;
     *)
-      printf "unknown option '%s'\n" "$1" >&2 ; exit 1
+      opt "$@" && { printf "unknown option '%s'\n" "$1" >&2 ; exit 1 ; }
+      shift $?
       ;;
   esac
 done
+
+# pkgconfig args
+if [ "$pkgcfg" ] ; then
+      cflags="${cflags} \`pkg-config --cflags ${pkgcfg% }\`"
+      ldflags="${ldflags} \`pkg-config --libs ${pkgcfg% }\`"
+fi
 
 # sanity check
 test "$release" && test "$debug" && fail "cannot use both --debug and --release"
@@ -219,7 +261,7 @@ cc="${toolchain}gcc"
 ld="${toolchain}gcc"
 
 # process configuration information
-target="" ; obj="" ; hdr="" ; inc="" ; deps="" ; install=""
+target="" ; obj="" ; hdr="" ; hdrs="" ; inc="" ; deps="" ; install=""
 setconf
 
 test -z "$target" && fail "missing target"
@@ -263,10 +305,10 @@ EOF
 if [ "$hdr" ] ; then
   guard="`printf 'LIB%s_H' "${hdr%%.*}" | tr '[a-z]' '[A-Z]'`"
   cat <<EOF >> "$mkfile"
-$hdr:$inc Makefile
+$hdr:$hdrs Makefile
 	rm -f \$@
 	printf '#ifndef $guard\n#define $guard\n' >> \$@
-	for inc in $inc ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
+	for inc in $hdrs ; do sed -e'1,2d' -e'\$\$d' \$\$inc >> \$@ ; done
 	printf '#endif\n' >> \$@
 EOF
 fi

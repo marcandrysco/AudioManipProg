@@ -1,9 +1,13 @@
+ML = \
+     core.ml \
+     mode.ml \
+
 # install rules
 
 install: ml-install
 
 ml-install:
-	install --mode 0644 -D ml/core.ml $(SHAREDIR)/amp/core.ml
+	for f in $(ML) ; do install --mode 0644 -D ml/$$f $(SHAREDIR)/amp/$$f ; done
 
 # run rules
 

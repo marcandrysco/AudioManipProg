@@ -197,8 +197,6 @@ void amp_sched_proc(struct amp_sched_t *sched, struct amp_time_t *time, unsigned
 		iter = cur;
 
 		do {
-			//if(i == 0)
-				//printf("hi? %d:%.2f %d:%.2f\n", time[0].bar, time[0].beat, iter->time.bar, iter->time.beat);
 			if(!amp_time_between(iter->time, time[i], time[i+1]))
 				break;
 
@@ -222,6 +220,11 @@ static struct amp_sched_inst_t *inst_get(struct avltree_node_t *node)
 	return node ? getparent(node, struct amp_sched_inst_t, node) : NULL;
 }
 
+/**
+ * Copy an instance.
+ *   @inst: The original instance.
+ *   &returns: The copied instance.
+ */
 static struct amp_sched_inst_t *inst_copy(struct amp_sched_inst_t *inst)
 {
 	struct amp_sched_inst_t *copy;
@@ -236,6 +239,10 @@ static struct amp_sched_inst_t *inst_copy(struct amp_sched_inst_t *inst)
 	return copy;
 }
 
+/**
+ * Delete an instance.
+ *   @inst: The instance.
+ */
 static void inst_delete(struct amp_sched_inst_t *inst)
 {
 	free(inst->event);

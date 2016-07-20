@@ -17,11 +17,13 @@ hax/hax.h
 hax/test/hax-test
 dsp/libdsp.h
 core/amplib.h
+core/doc/bld
 lang/cli/muselang
 lang/test/muselang-test
 lang/muselang.h
 rt/amprt
 rt/amprt.h
+tut/bld
 
 /bin
 /include

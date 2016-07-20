@@ -422,12 +422,11 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 			return false;
 
 		while(**format == ',') {
-			if(link == NULL)
-				return false;
-
 			(*format)++;
 			link = link->next;
-			if(!match_unpack(link->value, format, args))
+			if(link == NULL)
+				return false;
+			else if(!match_unpack(link->value, format, args))
 				return false;
 		}
 

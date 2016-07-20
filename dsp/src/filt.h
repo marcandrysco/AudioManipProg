@@ -1,6 +1,15 @@
 #ifndef FILT_H
 #define FILT_H
 
+
+/*
+ * filter declarations
+ */
+struct z_double_t dsp_lpf_tf(double cutoff, struct z_double_t in);
+struct z_double_t dsp_lpf_tf_real(double freq, double cutoff, double rate);
+double dsp_lpf_tf_mag(double freq, double cutoff, double rate);
+
+
 /**
  * Low-pass constant structure.
  *   @g: The gain element.
@@ -560,11 +569,48 @@ static inline struct dsp_butter4high_t dsp_butter4high_init(double freq, unsigne
  *   @x: The input.
  *   @butter: The filter consant.
  *   @s: The state.
+ *   &returns: The filter value.
  */
 static inline double dsp_butter4high_proc(double x, struct dsp_butter4high_t butter, double *s)
 {
 	x = dsp_quad_proc(x, butter.quad[0], &s[0]);
 	x = dsp_quad_proc(x, butter.quad[1], &s[2]);
+
+	return x;
+}
+
+
+/**
+ * Second oder band-pass butterworth filter.
+ *   @low: The low-pass filter.
+ *   @high: The high-pass filter.
+ */
+struct dsp_bpf2_t {
+	struct dsp_butter2low_t low;
+	struct dsp_butter2high_t high;
+};
+
+/**
+ * Initialize a 4th order band-pass filter.
+ *   @freq: The cutoff frequency.
+ *   @rate: The sample rate.
+ */
+static inline struct dsp_bpf2_t dsp_bpf2_init(double freqlo, double freqhi, unsigned int rate)
+{
+	return (struct dsp_bpf2_t){ dsp_butter2low_init(freqhi, rate), dsp_butter2high_init(freqlo, rate) };
+}
+
+/**
+ * Process a 4th high-pass filter.
+ *   @x: The input.
+ *   @butter: The filter consant.
+ *   @s: The state. Must have 4 variables.
+ *   &returns: The filter value.
+ */
+static inline double dsp_bpf2_proc(double x, struct dsp_bpf2_t butter, double *s)
+{
+	x = dsp_butter2low_proc(x, butter.low, &s[0]);
+	x = dsp_butter2high_proc(x, butter.high, &s[2]);
 
 	return x;
 }

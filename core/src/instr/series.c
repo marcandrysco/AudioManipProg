@@ -72,21 +72,21 @@ void amp_series_delete(struct amp_series_t *series)
  */
 char *amp_series_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-#define onexit ml_value_delete(value); amp_series_delete(series);
+#define onexit amp_series_delete(series);
 	struct amp_series_t *series;
 	struct ml_link_t *link;
 
 	series = amp_series_new();
 
 	if(value->type != ml_value_list_v)
-		fail("Type error. Instrument series requires a list of instrument as input.");
+		fail("%C: Type error. Instrument series requires a list of instrument as input.", ml_tag_chunk(&value->tag));
 
 	for(link = value->data.list->head; link != NULL; link = link->next) {
 		struct amp_box_t *box;
 
 		box = amp_unbox_value(link->value, amp_box_instr_e);
 		if(box == NULL)
-			fail("Type error. Instrument series requires a list of instrument as input.");
+			fail("%C: Type error. Instrument series requires a list of instrument as input.", ml_tag_chunk(&value->tag));
 
 		amp_series_append(series, amp_instr_copy(box->data.instr));
 	}

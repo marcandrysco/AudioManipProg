@@ -218,6 +218,28 @@ struct amp_reverb_t *amp_reverb_bpcf(double len, struct amp_param_t *vary, struc
 	return reverb;
 }
 
+/**
+ * Create a 2nd order band-pass comb-feedback reverb.
+ *   @len: The length.
+ *   @vary: The varying delay.
+ *   @gain: The gain.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The reverb.
+ */
+struct amp_reverb_t *amp_reverb_bpcf2(double len, struct amp_param_t *vary, struct amp_param_t *gain, struct amp_param_t *freqlo, struct amp_param_t *freqhi, double rate)
+{
+	struct amp_reverb_t *reverb;
+
+	reverb = amp_reverb_new(amp_reverb_bpcf2_e, len, vary, rate);
+	reverb->fast = amp_param_isfast(gain) && amp_param_isfast(freqlo) && amp_param_isfast(freqhi);
+	amp_param_set(&reverb->param[opt_gain_e], gain);
+	amp_param_set(&reverb->param[opt_freqlo_e], freqlo);
+	amp_param_set(&reverb->param[opt_freqhi_e], freqhi);
+
+	return reverb;
+}
+
 
 /**
  * Handle information on a reverb.
@@ -380,6 +402,37 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 				buf[i] = dsp_reverb_bpcf(buf[i], ring, gain, bpf, s);
 		}
 		break;
+
+	case amp_reverb_bpcf2_e:
+		if(!reverb->fixed) {
+			double *s = reverb->s, vary[len], gain[len], freqlo[len], freqhi[len], rate = reverb->rate;
+
+			cont |= amp_param_proc(reverb->vary, vary, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_gain_e], gain, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freqlo_e], freqlo, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freqhi_e], freqhi, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_vary_bpcf2(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_bpf2_init(freqlo[i], freqhi[i], rate), s);
+		}
+		else if(!reverb->fast) {
+			double *s = reverb->s, gain[len], freqlo[len], freqhi[len], rate = reverb->rate;
+
+			cont |= amp_param_proc(reverb->param[opt_gain_e], gain, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freqlo_e], freqlo, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freqhi_e], freqhi, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_reverb_bpcf2(buf[i], ring, gain[i], dsp_bpf2_init(freqlo[i], freqhi[i], rate), s);
+		}
+		else {
+			double *s = reverb->s, gain = reverb->param[opt_gain_e]->flt;
+			struct dsp_bpf2_t bpf = dsp_bpf2_init(reverb->param[opt_freqlo_e]->flt, reverb->param[opt_freqhi_e]->flt, reverb->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_reverb_bpcf2(buf[i], ring, gain, bpf, s);
+		}
+		break;
 	}
 
 	return cont;
@@ -482,6 +535,26 @@ char *amp_bpcf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 	chkfail(amp_match_unpack(value, "(f,P,P,P,P)", &len, &vary, &gain, &freqlo, &freqhi));
 
 	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_bpcf(len, vary, gain, freqlo, freqhi, amp_core_rate(env))));
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Create a band-pass comb-feedback reverb from a value.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *amp_bpcf2_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit
+	double len;
+	struct amp_param_t *vary, *gain, *freqlo, *freqhi;
+
+	chkfail(amp_match_unpack(value, "(f,P,P,P,P)", &len, &vary, &gain, &freqlo, &freqhi));
+
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_bpcf2(len, vary, gain, freqlo, freqhi, amp_core_rate(env))));
 	return NULL;
 #undef onexit
 }

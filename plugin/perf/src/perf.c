@@ -4,7 +4,7 @@
 /*
  * local declarations
  */
-struct amp_poly_i perf_inst_iface = { (amp_poly_f)perf_inst_proc, (copy_f)perf_inst_copy, (delete_f)perf_inst_delete };
+struct amp_poly_i perf_inst_iface = { (amp_poly_f)perf_inst_proc, (amp_info_f)perf_inst_info, (copy_f)perf_inst_copy, (delete_f)perf_inst_delete };
 
 
 /**
@@ -74,6 +74,15 @@ char *perf_inst_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 #undef onexit
 }
 
+
+/**
+ * Process information on a performance tracker.
+ *   @perf: The performance tracker.
+ *   @info: The information.
+ */
+void perf_inst_info(struct perf_inst_t *perf, struct amp_info_t info)
+{
+}
 
 /**
  * Process a performance tracker.

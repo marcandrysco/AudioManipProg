@@ -26,6 +26,7 @@ void perf_inst_delete(struct perf_inst_t *perf);
 
 char *perf_inst_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
+void perf_inst_info(struct perf_inst_t *perf, struct amp_info_t info);
 bool perf_inst_proc(struct perf_inst_t *perf, struct amp_poly_t *poly, struct amp_polyinfo_t *info);
 
 #endif

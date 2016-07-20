@@ -5,6 +5,7 @@ This tutorial walks through building a reverberator using by composing effect
 components. For a complete and documented reverberator, see the [Reverberator
 Example](../ex/reverb.ml).
 
+
 ## Allpass Reverberator
 
 Before creating any reverberator at all, we will first copy a minimalistic
@@ -33,7 +34,9 @@ we are using a 100% wet signal. To temper the reverberator, the
 [Mix](../core/doc/efx/mix.md) works like the mix knob on most effect pedals. A
 value of 0.0 generates a completely dry signal, and a value of 1.0 gives a
 completely wet signal. For reverberators, we generally keep the mix low --
-usuall around 10% (0.1) wet. The full code including the mixing is below.
+usually around 10% (0.1) wet. The full code including the mixing is below.
 
     let reverb = Allpass(0.001,0.6)
     let amp.instr = Splice(Mix(0.1,reverb))
+
+

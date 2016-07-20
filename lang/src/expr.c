@@ -314,7 +314,7 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 	case ml_expr_cond_v:
 		{
-#define onexit ml_value_erase(value);
+#define onexit ml_value_erase(value); *ret = NULL;
 			struct ml_value_t *value = NULL;
 
 			chkfail(ml_expr_eval(&value, expr->data.cond->eval, env));
@@ -330,7 +330,7 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 	case ml_expr_match_v:
 		{
-#define onexit ml_value_erase(value); ml_env_erase(sub);
+#define onexit ml_value_erase(value); ml_env_erase(sub); *ret = NULL;
 			struct ml_with_t *with;
 			struct ml_env_t *sub = NULL;
 			struct ml_value_t *value = NULL;
@@ -357,7 +357,7 @@ char *ml_expr_eval(struct ml_value_t **ret, struct ml_expr_t *expr, struct ml_en
 
 	case ml_expr_tuple_v:
 		{
-#define onexit ml_list_delete(list);
+#define onexit ml_list_delete(list); *ret = NULL;
 			struct ml_list_t *list;
 			struct ml_elem_t *elem;
 

@@ -8,6 +8,36 @@
  *   @env: The environment.
  *   &returns: Error.
  */
+char *ml_eval_get(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	int idx;
+	struct ml_list_t *tuple, *list;
+
+	if(value->type != ml_value_tuple_v)
+		return mprintf("%C: Function 'get' requires (List,int).", ml_tag_chunk(&value->tag));
+
+	tuple = value->data.list;
+	if(tuple->head->value->type != ml_value_list_v)
+		return mprintf("%C: Function 'get' requires (List,int).", ml_tag_chunk(&value->tag));
+	else if(tuple->tail->value->type != ml_value_num_v)
+		return mprintf("%C: Function 'get' requires (List,int).", ml_tag_chunk(&value->tag));
+
+	list = tuple->head->value->data.list;
+	idx = tuple->tail->value->data.num;
+	if((idx < 0) || (idx >= list->len))
+		return mprintf("%C: Function 'get' is given an invalid index.", ml_tag_chunk(&value->tag));
+
+	*ret = ml_value_copy(ml_list_getv(list, idx)), ml_tag_copy(value->tag);
+	return NULL;
+}
+
+/**
+ * Evaluate a list creation.
+ *   @ret: @ref: The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
 char *ml_eval_list(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 	*ret = ml_value_list(ml_list_copy(value->data.list), ml_tag_copy(value->tag));
@@ -46,13 +76,13 @@ char *ml_eval_cons(struct ml_value_t **ret, struct ml_value_t *value, struct ml_
 }
 
 /**
- * Evaluate a concat.
+ * Evaluate a merge of two lists.
  *   @ret: The return value.
  *   @value: The value.
  *   @env: The environment.
  *   &returns: Error.
  */
-char *ml_eval_concat(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+char *ml_eval_merge(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 #define onexit
 #define error() fail("%C: Type error. Expected '(List,List).", ml_tag_chunk(&value->tag))
@@ -74,6 +104,39 @@ char *ml_eval_concat(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	else 
 		error();
 
+	return NULL;
+#undef onexit
+#undef error
+}
+
+/**
+ * Evaluate a concat.
+ *   @ret: The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *ml_eval_concat(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit ml_list_delete(list);
+#define error() fail("%C: Type error. Expected 'List[List].", ml_tag_chunk(&value->tag))
+
+	struct ml_link_t *link;
+	struct ml_list_t *list;
+
+	list = ml_list_new();
+
+	if(value->type != ml_value_list_v)
+		error();
+
+	for(link = value->data.list->head; link != NULL; link = link->next) {
+		if(link->value->type != ml_value_list_v)
+			error();
+
+		list = ml_list_merge(list, ml_list_copy(link->value->data.list));
+	}
+
+	*ret = ml_value_list(list, ml_tag_copy(value->tag));
 	return NULL;
 #undef onexit
 #undef error
@@ -173,6 +236,63 @@ char *ml_eval_map(struct ml_value_t **ret, struct ml_value_t *value, struct ml_e
 
 		if(closure->pat->next)
 			value = ml_value_closure(ml_closure_new(NULL, ml_env_copy(sub), ml_pat_copy(closure->pat->next), ml_expr_copy(closure->expr)), ml_tag_copy(value->tag));
+		else
+			chkfail(ml_expr_eval(&value, closure->expr, sub));
+
+		ml_env_delete(sub);
+		ml_list_append(list, value);
+	}
+
+	*ret = ml_value_list(list, ml_tag_copy(value->tag));
+#undef onexit
+#undef error
+	return NULL;
+}
+
+/**
+ * Evaluate a map with index.
+ *   @ret: The return value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *ml_eval_mapi(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit ml_list_delete(list); ml_env_delete(sub);
+#define error() return mprintf("%C: Type error. Expected '(Fun,List).", ml_tag_chunk(&value->tag))
+	int i;
+	struct ml_link_t *link;
+	struct ml_closure_t *closure;
+	struct ml_list_t *tuple, *list;
+
+	if(value->type != ml_value_tuple_v)
+		error();
+
+	tuple = value->data.list;
+	if(tuple->len != 2)
+		error();
+
+	if((tuple->head->value->type != ml_value_closure_v) || (tuple->tail->value->type != ml_value_list_v))
+		error();
+
+	list = ml_list_new();
+	closure = tuple->head->value->data.closure;
+
+	for(i = 0, link = tuple->tail->value->data.list->head; link != NULL; i++, link = link->next) {
+		struct ml_env_t *sub;
+		struct ml_value_t *value;
+
+		sub = ml_env_copy(closure->env);
+		if(closure->pat->type != ml_pat_var_v)
+			fail("%C: Failed to match pattern between %C and %C.", ml_tag_chunk(&value->tag), ml_tag_chunk(&closure->pat->tag), ml_tag_chunk(&link->value->tag));
+
+		ml_env_add(&sub, strdup(closure->pat->data.var), ml_value_num(i, ml_tag_copy(value->tag)));
+
+		if(!ml_pat_match(closure->pat->next, link->value, &sub))
+			fail("%C: Failed to match pattern between %C and %C.", ml_tag_chunk(&value->tag), ml_tag_chunk(&closure->pat->tag), ml_tag_chunk(&link->value->tag));
+
+		if(closure->pat->next->next)
+			value = ml_value_closure(ml_closure_new(NULL, ml_env_copy(sub), ml_pat_copy(closure->pat->next->next), ml_expr_copy(closure->expr)), ml_tag_copy(value->tag));
 		else
 			chkfail(ml_expr_eval(&value, closure->expr, sub));
 

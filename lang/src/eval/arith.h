@@ -24,6 +24,7 @@ char *ml_eval_lte(struct ml_value_t **ret, struct ml_value_t *value, struct ml_e
 char *ml_eval_gt(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *ml_eval_gte(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
+char *ml_eval_floor(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *ml_eval_round(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 char *ml_eval_min(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);

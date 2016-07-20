@@ -11,12 +11,26 @@ struct accum_t {
 	struct strbuf_t buf;
 };
 
+/**
+ * Buffer structure.
+ *   @ptr: The pointer.
+ *   @idx, nbytes: The current index and number of bytes.
+ */
+struct buf_t {
+	void **ptr;
+	size_t *idx, nbytes;
+};
+
 
 /*
  * local declarations
  */
 static size_t str_write(void *ref, const void *buf, size_t nbytes);
 static size_t str_read(void *ref, void *buf, size_t nbytes);
+
+static size_t buf_read(void *ref, void *data, size_t nbytes);
+static size_t buf_write(void *ref, const void *data, size_t nbytes);
+static void buf_close(void *ref);
 
 
 /**
@@ -245,4 +259,49 @@ static size_t str_read(void *ref, void *buf, size_t nbytes)
 	}
 
 	return i;
+}
+
+
+/**
+ * Create a file for buffering output.
+ *   @ptr: The pointer.
+ *   @nbytes: The number of bytes.
+ */
+struct io_file_t io_file_buf(void **ptr, size_t *nbytes)
+{
+	struct buf_t *buf;
+	static struct io_file_i iface = { buf_read, buf_write, buf_close };
+
+	*nbytes = 0;
+	*ptr = malloc(256);
+
+	buf = malloc(sizeof(struct buf_t));
+	*buf = (struct buf_t){ ptr, nbytes, 256 };
+
+	return (struct io_file_t){ buf, &iface };
+}
+static size_t buf_read(void *ref, void *data, size_t nbytes)
+{
+	return 0;
+}
+static size_t buf_write(void *ref, const void *data, size_t nbytes)
+{
+	struct buf_t *buf = ref;
+
+	if((*buf->idx + nbytes) > buf->nbytes) {
+		buf->nbytes = 2 * buf->nbytes + nbytes;
+		*buf->ptr = realloc(*buf->ptr, buf->nbytes);
+	}
+
+	memcpy(*buf->ptr + *buf->idx, data, nbytes);
+	*buf->idx += nbytes;
+
+	return nbytes;
+}
+static void buf_close(void *ref)
+{
+	struct buf_t *buf = ref;
+
+	*buf->ptr = realloc(*buf->ptr, *buf->idx);
+	free(buf);
 }

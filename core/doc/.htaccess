@@ -1,0 +1,9 @@
+RewriteOptions AllowNoSlash
+DirectoryIndex root
+
+RewriteEngine On
+RewriteRule ^/ %{REQUEST_URI}/index [L]
+
+<FilesMatch "^(dist|index)$">
+	ForceType application/xhtml+xml
+</FilesMatch>

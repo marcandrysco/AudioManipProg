@@ -1,31 +1,8 @@
-(**
- * Create panning instrument on a single channel.
- *   @n (int):     The channel number.
- *   @v (float):   The volume.
- *   @d (float):   The delay in second.
- *   &ret (Instr): The instrument
- *)
-let Pan(n,v,d) = Single(n,Delay(d,v))
-
-(**
- * Create panning instrument on the left channel.
- *   @v (float):   The volume.
- *   @d (float):   The delay in second.
- *   &ret (Instr): The instrument
- *)
-let PanLeft(v,d) = Pan(0,v,d)
-let PanLeftSplice(e,v,d) = Series[Splice e,PanLeft(v,d)]
-
-(**
- * Create panning instrument on the right channel.
- *   @v (float):   The volume.
- *   @d (float):   The delay in second.
- *   &ret (Instr): The instrument
- *)
-let PanRight(v,d) = Pan(1,v,d)
-
+import "mode.ml"
 
 (*** Attack-Decay-Sustain-Release variants ***)
+let ADSR' (a,d,s,r) = ADSR((0,1),(a,d,s,r))
+let ADSR1 (a,d,s,r) = ADSR((1,1),(a,d,s,r))
 
 (* Attack-Release constructor
  *   @l,h (num,num): The low and high value pair.
@@ -48,31 +25,6 @@ let ASR1 (a,r) = ASR((1,1),(a,r))
 
 (*** Distortion Variants ***)
 
-(* Symmetric clipping.
- *   @s (float): Saturation point.
- *   @m (float): Maximum point.
- *   &ret (Effect): Clipping effect.
- *)
-let Clip'(s,m) = Clip(-m,-s,s,m)
-
-(* Soft clipping with no linear range.
- *   @l (float): The minimum.
- *   @h (float): The maximum.
- *   @v (float): Limiting value.
- *   &ret (Effect): Clipping effect.
- *)
-let SoftClip(l,h) = Clip(2*l,0,0,2*h)
-let SoftClip' v = SoftClip(-v,v)
-
-(* Hard clipping.
- *   @l (float): The minimum.
- *   @h (float): The maximum.
- *   @v (float): Limiting value.
- *   &ret (Effect): Clipping effect.
- *)
-let HardClip(l,h) = Clip(2*l,2*l,2*h,2*h)
-let HardClip' v = HardClip(-v,v)
-
 
 (*** Reverb variants ***)
 
@@ -85,6 +37,7 @@ let Delay' (l,v,g) = DelayV(l,Mul(l,v),g)
 let Comb (l,g) = CombV(l,l,g)
 let Allpass (l,g) = AllpassV(l,l,g)
 let Lpcf (l,g,f) = LpcfV(l,l,g,f)
+let Bpcf (l,g,lo,hi) = BpcfV(l,l,g,lo,hi)
 let Delay1 l = Delay(l,1)
 
 
@@ -193,7 +146,9 @@ let SampleShot1'(p,k) = Shot(Sample1(3,0.01,p),k)
  *   &ret (Module): The oscillator module.
  *)
 let Sine'(f) = Sine(Ramp(f))
+let SineF(f) = Sine(Ramp(f))
 let SineW(f,w) = Sine(Warp(Ramp(f),w))
+let SineS(f,l,h) = Patch(Sine(Ramp(f)),Scale'(l,h))
 let SineScale(w,l,h) = Patch(Sine(w),Scale'(l,h))
 let SineScale'(f,l,h) = SineScale(Ramp(f),l,h)
 let SineScaleW(f,w,l,h) = SineScale(Warp(Ramp(f),w),l,h)
@@ -282,3 +237,36 @@ let Res2 (f,q) = Chain[Res(f,q),Res(f,q)]
 let Res2' (g,f,q) = Chain[Boost(g),Res(f,q),Res(f,q)]
 let Res3 (f,q) = Chain[Res(f,q),Res(f,q),Res(f,q)]
 let Res3' (g,f,q) = Chain[Boost(g),Res(f,q),Res(f,q),Res(f,q)]
+
+
+(**** Panning ****)
+
+(**
+ * Create panning instrument on a single channel.
+ *   @n (int):     The channel number.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
+ *)
+let Pan(n,v,d) = Single(n,Delay(d,v))
+
+(**
+ * Create panning instrument on the left channel.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
+ *)
+let PanLeft(v,d) = Pan(0,v,d)
+let PanLeftP(i,v,d) = Series[i,Pan(0,v,d)]
+let PanLeftSplice(e,v,d) = Series[Splice e,PanLeft(v,d)]
+
+(**
+ * Create panning instrument on the right channel.
+ *   @v (float):   The volume.
+ *   @d (float):   The delay in second.
+ *   &ret (Instr): The instrument
+ *)
+let PanRight(v,d) = Pan(1,v,d)
+let PanRightP(i,v,d) = Series[i,Pan(1,v,d)]
+
+

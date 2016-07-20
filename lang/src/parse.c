@@ -108,7 +108,19 @@ char *ml_parse_top(struct ml_env_t **env, struct ml_token_t *token, const char *
 			if(value->type != ml_value_str_v)
 				fail("%C: Import expects string value.", ml_tag_chunk(&value->tag));
 
-			chkfail(ml_parse_file(env, value->data.str));
+			{
+				char *end;
+
+				end = strrchr(path, '/');
+				if(end != NULL) {
+					char full[end - path + strlen(value->data.str) + 2];
+
+					sprintf(full, "%.*s/%s", (int)(end - path), path, value->data.str);
+					chkfail(ml_parse_file(env, full));
+				}
+				else
+					chkfail(ml_parse_file(env, value->data.str));
+			}
 
 			ml_expr_delete(expr);
 			ml_value_delete(value);
@@ -416,7 +428,7 @@ static char *parse_expr_concat(struct ml_expr_t **expr, struct ml_token_t **toke
 		if(right == NULL)
 			fail("%C: Missing right-hand expression.", ml_tag_chunk(&(*token)->tag));
 
-		func = ml_expr_value(ml_value_eval(ml_eval_concat, ml_tag_copy(tag)), ml_tag_copy(tag));
+		func = ml_expr_value(ml_value_eval(ml_eval_merge, ml_tag_copy(tag)), ml_tag_copy(tag));
 		value = ml_expr_tuple(ml_tuple_newl(*expr, right, NULL), ml_tag_copy((*expr)->tag));
 		*expr = ml_expr_app(ml_app_new(func, value), ml_tag_copy((*expr)->tag));
 	}
@@ -729,28 +741,29 @@ static char *parse_expr_value(struct ml_expr_t **expr, struct ml_token_t **token
 static char *parse_expr_tuple(struct ml_expr_t **ret, struct ml_token_t **token, struct ml_env_t *env)
 {
 #define onexit ml_expr_erase(*ret); ml_tuple_erase(tuple); *ret = NULL;
+	struct ml_expr_t *expr;
 	struct ml_tuple_t *tuple = NULL;
 
 	if((*token)->id != '(')
 		return NULL;
 
+	*ret = NULL;
 	*token = (*token)->next;
-	chkfail(parse_expr(ret, token, env));
-	if(*ret == NULL)
+	chkfail(parse_expr(&expr, token, env));
+	if(expr == NULL)
 		fail("%C: Missing expression.", ml_tag_chunk(&(*token)->tag));
 
 	if((*token)->id == ',') {
 		tuple = ml_tuple_new();
-		ml_tuple_append(tuple, *ret);
+		ml_tuple_append(tuple, expr);
 
 		do {
-			*ret = NULL;
 			*token = (*token)->next;
-			chkfail(parse_expr(ret, token, env));
-			if(*ret == NULL)
+			chkfail(parse_expr(&expr, token, env));
+			if(expr == NULL)
 				fail("%C: Missing expression in tuple.", ml_tag_chunk(&(*token)->tag));
 
-			ml_tuple_append(tuple, *ret);
+			ml_tuple_append(tuple, expr);
 		} while((*token)->id == ',');
 
 		if((*token)->id != ')')
@@ -759,8 +772,10 @@ static char *parse_expr_tuple(struct ml_expr_t **ret, struct ml_token_t **token,
 		*token = (*token)->next;
 		*ret = ml_expr_tuple(tuple, ml_tag_copy(tuple->head->expr->tag));
 	}
-	else if((*token)->id == ')')
+	else if((*token)->id == ')') {
 		*token = (*token)->next;
+		*ret = expr;
+	}
 	else
 		fail("%C: Missing ',' or ')'.", ml_tag_chunk(&(*token)->tag));
 

@@ -27,8 +27,8 @@ char *amp_eval_vel(struct ml_value_t **ret, struct ml_value_t *value, struct ml_
  */
 char *amp_eval_val(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-        if(value->type == ml_value_flt_v)
-                *ret = ml_value_num(UINT16_MAX * value->data.flt, ml_tag_copy(value->tag));
+        if(ml_value_isnum(value))
+                *ret = ml_value_num(UINT16_MAX * ml_value_getflt(value), ml_tag_copy(value->tag));
         else
                 return mprintf("%C: Type error. Expected float.", ml_tag_chunk(&value->tag));
 
@@ -124,6 +124,81 @@ char *amp_eval_human(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	}
 
 	*ret = ml_value_list(list, ml_tag_copy(tag));
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Humanize a schedule of events.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *amp_eval_human4(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit ml_list_delete(list);
+#define error() fail("%C: Type error. Expected list of velocities and events.", ml_tag_chunk(&value->tag))
+	double arr[6];
+	unsigned int idx;
+	struct ml_link_t *link;
+	struct ml_list_t *list, *tuple, *vel, *sched;
+
+	list = ml_list_new();
+
+	if(value->type != ml_value_tuple_v)
+		error();
+
+	tuple = value->data.list;
+	if(tuple->len != 2)
+		error();
+	else if((tuple->head->value->type != ml_value_list_v) || (tuple->tail->value->type != ml_value_list_v))
+		error();
+
+	vel = tuple->head->value->data.list;
+	sched = tuple->tail->value->data.list;
+	if(vel->head == NULL)
+		error();
+
+	for(idx = 0, link = vel->head; link != NULL; idx++, link = link->next) {
+		if(!ml_value_isnum(link->value))
+			error();
+
+		arr[idx] = ml_value_getflt(link->value);
+	}
+
+	while(idx < 6)
+		arr[idx] = arr[idx-1], idx++;
+
+	for(link = sched->head; link != NULL; link = link->next) {
+		double beat;
+		int bar, dev, key, val;
+
+		chkfail(amp_match_unpack(link->value, "((d,f),(d,d),d)", &bar, &beat, &dev, &key, &val));
+
+		if(beat == 0.0)
+			val *= arr[0];
+		else if(fmod(beat, 2.0) == 0.0)
+			val *= arr[1], beat += 0.005;
+		else if(fmod(beat, 1.0) == 0.0)
+			val *= arr[2], beat += 0.010;
+		else if(fmod(beat, 0.5) == 0.0)
+			val *= arr[3], beat += 0.015;
+		else if(fmod(beat, 0.25) == 0.0)
+			val *= arr[4], beat += 0.020;
+		else
+			val *= arr[5], beat += 0.025;
+
+		tuple = ml_list_copy(link->value->data.list);
+		tuple->tail->value->data.num = val;
+		tuple->head->value->data.list->tail->value->data.flt = beat;
+		tuple->head->value->data.list->tail->value->type = ml_value_flt_v;
+
+		ml_list_append(list, ml_value_tuple(tuple, ml_tag_copy(value->tag)));
+	}
+
+	*ret = ml_value_list(list, ml_tag_copy(value->tag));
+
 	return NULL;
 #undef onexit
 }

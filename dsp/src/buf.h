@@ -46,6 +46,11 @@ struct dsp_ring_t {
 struct dsp_ring_t *dsp_ring_new(unsigned int len);
 void dsp_ring_delete(struct dsp_ring_t *ring);
 
+static inline void dsp_ring_zero(struct dsp_ring_t *ring)
+{
+	dsp_zero_d(ring->arr, ring->len);
+}
+
 /**
  * Retrieve the last value added to a ring buffer.
  *   @ring: The ring buffer.

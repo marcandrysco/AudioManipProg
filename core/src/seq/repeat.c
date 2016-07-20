@@ -111,7 +111,7 @@ void amp_repeat_info(struct amp_repeat_t *repeat, struct amp_info_t info)
 void amp_repeat_proc(struct amp_repeat_t *repeat, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
-	struct amp_time_t tmp[len];
+	struct amp_time_t tmp[len+1];
 
 	for(i = 0; i <= len; i++)
 		tmp[i] = amp_time_repeat(time[i], repeat->off, repeat->len);

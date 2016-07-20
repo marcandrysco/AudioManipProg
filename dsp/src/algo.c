@@ -16,7 +16,10 @@ static void fft_d(struct z_double_t *in, struct z_double_t *out, int n, int step
 void dsp_fft_d(const double *in, double *mag, double *phase, unsigned int len)
 {
 	unsigned int i;
-	struct z_double_t a[len], b[len];
+	struct z_double_t *a, *b;
+
+	a = malloc(len * sizeof(struct z_double_t));
+	b = malloc(len * sizeof(struct z_double_t));
 
 	for(i = 0; i < len; i++)
 		a[i] = b[i] = z_re_d(in[i]);
@@ -30,6 +33,9 @@ void dsp_fft_d(const double *in, double *mag, double *phase, unsigned int len)
 		if(phase != NULL)
 			phase[i] = z_arg_d(a[i]);
 	}
+
+	free(a);
+	free(b);
 }
 
 /**

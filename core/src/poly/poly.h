@@ -10,37 +10,25 @@ struct amp_poly_t;
 /**
  * Instrument data.
  *   @buf: The buffer.
- *   @time: The time.
- *   @len: The length.
  */
 struct amp_polyinstr_t {
 	double **buf;
-	struct amp_time_t *time;
-	unsigned int len;
 };
 
 /**
  * Effect data.
  *   @buf: The buffer.
- *   @time: The time.
- *   @len: The length.
  */
 struct amp_polyeffect_t {
 	double *buf;
-	struct amp_time_t *time;
-	unsigned int len;
 };
 
 /**
  * Module data.
  *   @buf: The buffer.
- *   @time: The time.
- *   @len: The length.
  */
 struct amp_polymodule_t {
 	double *buf;
-	struct amp_time_t *time;
-	unsigned int len;
 };
 
 /*
@@ -55,9 +43,18 @@ union amp_polyinfo_u {
 	struct amp_polymodule_t module;
 };
 
+/**
+ * Polymorphic information structure.
+ *   @len: The length.
+ *   @queue: The queue.
+ *   @data: The data.
+ */
 struct amp_polyinfo_t {
-	union amp_polyinfo_u data;
+	unsigned int len;
+	struct amp_time_t *time;
 	struct amp_queue_t *queue;
+
+	union amp_polyinfo_u data;
 };
 
 /**
@@ -77,9 +74,11 @@ typedef bool (*amp_poly_f)(void *ref, struct amp_poly_t *poly, struct amp_polyin
  */
 struct amp_poly_i {
 	amp_poly_f proc;
+	amp_info_f info;
 	copy_f copy;
 	delete_f delete;
 };
+
 
 /*
  * polymorphic declarations

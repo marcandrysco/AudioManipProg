@@ -18,8 +18,8 @@ struct amp_clipt {
  * global variables
  */
 const struct amp_effect_i amp_clip_iface = {
-	(amp_info_f)amp_clipinfo,
-	(amp_effect_f)amp_clipproc,
+	(amp_info_f)amp_clip_info,
+	(amp_effect_f)amp_clip_proc,
 	(amp_copy_f)amp_clip_copy,
 	(amp_delete_f)amp_clip_delete
 };
@@ -117,6 +117,18 @@ char *amp_clip_make2(struct ml_value_t **ret, int dir, enum amp_clip_e type, str
 	return NULL;
 #undef onexit
 }
+char *amp_linclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 1, amp_clip_lin_v, value);
+}
+char *amp_linclip_sym(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, 0, amp_clip_lin_v, value);
+}
+char *amp_linclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	return amp_clip_make2(ret, -1, amp_clip_lin_v, value);
+}
 char *amp_polyclip_pos(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
 	return amp_clip_make2(ret, 1, amp_clip_poly_v, value);
@@ -160,7 +172,7 @@ char *amp_logclip_neg(struct ml_value_t **ret, struct ml_value_t *value, struct 
  *   @clip: The cliper.
  *   @info: The info.
  */
-void amp_clipinfo(struct amp_clipt *clip, struct amp_info_t info)
+void amp_clip_info(struct amp_clipt *clip, struct amp_info_t info)
 {
 	amp_param_info(clip->sat, info);
 	amp_param_info(clip->dist, info);
@@ -175,7 +187,7 @@ void amp_clipinfo(struct amp_clipt *clip, struct amp_info_t info)
  *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool amp_clipproc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+bool amp_clip_proc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 	unsigned int i;
 	bool cont = false;
@@ -186,9 +198,9 @@ bool amp_clipproc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, 
 			double sat = clip->sat->flt;
 
 			for(i = 0; i < len; i++) {
-				if((clip->dir >= 0) && (buf[i] >= 0))
+				if((buf[i] >= 0))
 					buf[i] = amp_clip_hard(buf[i], sat);
-				else if((clip->dir <= 0) && (buf[i] <= 0))
+				else if((buf[i] <= 0))
 					buf[i] = -amp_clip_hard(-buf[i], sat);
 			}
 		}
@@ -202,6 +214,33 @@ bool amp_clipproc(struct amp_clipt *clip, double *buf, struct amp_time_t *time, 
 					buf[i] = amp_clip_hard(buf[i], sat[i]);
 				else if((clip->dir <= 0) && (buf[i] <= 0))
 					buf[i] = -amp_clip_hard(-buf[i], sat[i]);
+			}
+		}
+
+		break;
+
+	case amp_clip_lin_v:
+		if(amp_param_isfast(clip->sat) && amp_param_isfast(clip->dist)) {
+			double sat = clip->sat->flt, dist = clip->dist->flt;
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_lin(buf[i], sat, dist);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_lin(-buf[i], sat, dist);
+			}
+		}
+		else {
+			double sat[len], dist[len];
+
+			cont |= amp_param_proc(clip->sat, sat, time, len, queue);
+			cont |= amp_param_proc(clip->dist, dist, time, len, queue);
+
+			for(i = 0; i < len; i++) {
+				if((clip->dir >= 0) && (buf[i] >= 0))
+					buf[i] = amp_clip_lin(buf[i], sat[i], dist[i]);
+				else if((clip->dir <= 0) && (buf[i] <= 0))
+					buf[i] = -amp_clip_lin(-buf[i], sat[i], dist[i]);
 			}
 		}
 

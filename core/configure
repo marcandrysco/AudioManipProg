@@ -58,9 +58,6 @@ setconf()
   c_src "src/efx/wrap.c"
   c_src "src/efx/vol.c"
 
-  c_src "src/eval/sched.c"
-
-  c_src "src/instr/inject.c"
   c_src "src/instr/mixer.c"
   c_src "src/instr/series.c"
   c_src "src/instr/single.c"
@@ -78,6 +75,7 @@ setconf()
   c_src "src/mod/trig.c"
   c_src "src/mod/warp.c"
 
+  c_src "src/poly/inject.c"
   c_src "src/poly/poly.c"
   c_src "src/poly/shot.c"
 

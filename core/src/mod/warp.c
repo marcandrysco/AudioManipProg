@@ -90,6 +90,7 @@ char *amp_warp_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
  */
 void amp_warp_info(struct amp_warp_t *warp, struct amp_info_t info)
 {
+	amp_param_info(warp->dist, info);
 	amp_module_info(warp->phase, info);
 }
 
