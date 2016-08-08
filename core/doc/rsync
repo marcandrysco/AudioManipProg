@@ -1,7 +1,12 @@
 .htaccess
 
 root
+ctrl
+filt
 key
 osc
+reverb
+
+fig/osc_ramp.svg
 
 style.css

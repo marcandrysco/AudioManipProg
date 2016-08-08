@@ -3,125 +3,17 @@
 
 /**
  * Time structure.
- *   @idx, bar: The index and bar.
- *   @beat: The beat.
+ *   @idx: The index.
+ *   @bar, beat: The bar and beat.
  */
 struct amp_time_t {
-	int idx, bar;
-	double beat;
+	int idx;
+	double bar, beat;
 };
 
-static inline struct amp_time_t amp_time(int bar, double beat)
+static inline struct amp_time_t amp_time(double bar, double beat)
 {
 	return (struct amp_time_t){ 0, bar, beat };
-}
-
-/**
- * Repeat a time.
- *   @time: The time.
- *   @off: The offset.
- *   @len: The length.
- *   &returns: The repeated time.
- */
-static inline struct amp_time_t amp_time_repeat(struct amp_time_t time, int off, unsigned int len)
-{
-	time.bar = ((time.bar + off) % len + len) % len;
-
-	return time;
-}
-
-/**
- * Modulus a time.
- *   @time: The time.
- *   @mod: The modulus.
- */
-static inline struct amp_time_t amp_time_mod(struct amp_time_t time, struct amp_time_t mod)
-{
-	if(mod.idx > 0)
-		time.idx %= mod.idx;
-
-	if(mod.bar > 0)
-		time.bar %= mod.bar;
-
-	if(mod.beat > 0)
-		time.beat = fmod(time.beat, mod.beat);
-
-	return time;
-}
-
-/**
- * Compare two times.
- *   @left: The left time.
- *   @right: The right time.
- *   &returns: Their order.
- */
-static inline int amp_time_cmp(struct amp_time_t left, struct amp_time_t right)
-{
-	if(left.bar > right.bar)
-		return 2;
-	else if(left.bar < right.bar)
-		return -2;
-	else if(left.beat > right.beat)
-		return 1;
-	else if(left.beat < right.beat)
-		return -1;
-	else
-		return 0;
-}
-
-/**
- * Check if a time falls between two other times.
- *   @time: The time.
- *   @left: The left time.
- *   @right: The right time.
- *   &returns: True if between.
- */
-static inline bool amp_time_between(struct amp_time_t time, struct amp_time_t left, struct amp_time_t right)
-{
-	if(amp_time_cmp(left, right) < 0)
-		return (amp_time_cmp(left, time) <= 0) && (amp_time_cmp(time, right) < 0);
-	else
-		return (amp_time_cmp(left, time) <= 0) || (amp_time_cmp(time, right) < 0);
-}
-
-static inline bool amp_time_chkbeat(struct amp_time_t time, struct amp_time_t left, struct amp_time_t right)
-{
-	if(amp_time_cmp(left, right) < 0)
-		return (amp_time_cmp(left, time) <= 0) && (amp_time_cmp(time, right) < 0);
-	else
-		return (amp_time_cmp(left, time) <= 0) || (amp_time_cmp(time, right) < 0);
-}
-
-/**
- * Calculate a time given an index and beat parameters.
- *   @idx: The index.
- *   @bpm: The beats-per-minute.
- *   @nbeats: The beats-per-measure.
- *   @rate: The sample rate.
- *   &returns: The time.
- */
-static inline struct amp_time_t amp_time_calc(int idx, double bpm, double nbeats, unsigned int rate)
-{
-	double beat;
-	struct amp_time_t time;
-	
-	beat = (idx * bpm) / (rate * 60);
-
-	time.idx = idx;
-	time.bar = beat / nbeats;
-	time.beat = beat - time.bar * nbeats;
-
-	if(time.beat < 0) {
-		time.beat += nbeats;
-		time.bar -= 1;
-	}
-
-	return time;
-}
-
-static inline bool amp_time_isequal(struct amp_time_t left, struct amp_time_t right)
-{
-	return (left.bar == right.bar) && (left.beat == right.beat);
 }
 
 
@@ -217,6 +109,7 @@ struct amp_seek_t {
  *   @amp_info_commit_e: Commit data.
  *   @amp_info_action_e: Event action.
  *   @amp_info_note_e: Note setup.
+ *   @amp_info_tell_e: Tell.
  *   @amp_info_seek_e: Seek.
  *   @amp_info_start_e: Start the clock.
  *   @amp_info_stop_e: Stop the clock.
@@ -226,6 +119,7 @@ enum amp_info_e {
 	amp_info_commit_e,
 	amp_info_action_e,
 	amp_info_note_e,
+	amp_info_tell_e,
 	amp_info_seek_e,
 	amp_info_start_e,
 	amp_info_stop_e,
@@ -236,11 +130,15 @@ enum amp_info_e {
  *   @action: The action.
  *   @note: The note.
  *   @seek: The seek information.
+ *   @num: Integer number.
+ *   @flt: Floating-point number.
  */
 union amp_info_u {
 	struct amp_action_t *action;
 	struct amp_note_t *note;
 	struct amp_seek_t *seek;
+	int *num;
+	double *flt;
 };
 
 /**
@@ -294,21 +192,29 @@ static inline struct amp_info_t amp_info_action(struct amp_action_t *action)
  *   @note: The note.
  *   &returns: The information structure.
  */
-
 static inline struct amp_info_t amp_info_note(struct amp_note_t *note)
 {
 	return (struct amp_info_t){ amp_info_note_e, (union amp_info_u){ .note = note } };
 }
 
 /**
- * Create a seek information structure.
- *   @seek: The seek.
+ * Create a tell information structure.
+ *   @bar: The returned bar.
  *   &returns: The information structure.
  */
-
-static inline struct amp_info_t amp_info_seek(struct amp_seek_t *seek)
+static inline struct amp_info_t amp_info_tell(double *bar)
 {
-	return (struct amp_info_t){ amp_info_seek_e, (union amp_info_u){ .seek = seek } };
+	return (struct amp_info_t){ amp_info_tell_e, (union amp_info_u){ .flt = bar } };
+}
+
+/**
+ * Create a seek information structure.
+ *   @bar: The target bar.
+ *   &returns: The information structure.
+ */
+static inline struct amp_info_t amp_info_seek(double *bar)
+{
+	return (struct amp_info_t){ amp_info_seek_e, (union amp_info_u){ .flt = bar } };
 }
 
 /**
@@ -316,7 +222,6 @@ static inline struct amp_info_t amp_info_seek(struct amp_seek_t *seek)
  *   @seek: The seek.
  *   &returns: The information structure.
  */
-
 static inline struct amp_info_t amp_info_start(struct amp_seek_t *seek)
 {
 	return (struct amp_info_t){ amp_info_start_e, (union amp_info_u){ .seek = seek } };
@@ -327,18 +232,10 @@ static inline struct amp_info_t amp_info_start(struct amp_seek_t *seek)
  *   @seek: The seek.
  *   &returns: The information structure.
  */
-
 static inline struct amp_info_t amp_info_stop(struct amp_seek_t *seek)
 {
 	return (struct amp_info_t){ amp_info_stop_e, (union amp_info_u){ .seek = seek } };
 }
-
-/*
-static inline int8_t ml_key_octave(int16_t key)
-{
-	return key - ;
-}
-*/
 
 
 /**

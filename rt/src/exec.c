@@ -27,6 +27,12 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	sys_mutex_lock(&engine->sync);
 	sys_mutex_lock(&engine->lock);
 
+	if(engine->run)
+		amp_engine_stop(engine);
+
+	double bar;
+	amp_clock_info(engine->clock, amp_info_tell(&bar));
+
 	value = ml_env_lookup(env, "amp.clock");
 	if(value != NULL) {
 		box = amp_unbox_value(value, amp_box_clock_e);
@@ -36,17 +42,6 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 		}
 		else
 			fprintf(stderr, "Type for 'amp.clock' is not valid.\n");
-	}
-
-	value = ml_env_lookup(env, "amp.seq");
-	if(value != NULL) {
-		box = amp_unbox_value(value, amp_box_seq_e);
-		if(box != NULL) {
-			amp_seq_set(&engine->seq, amp_seq_copy(box->data.seq));
-			amp_seq_info(engine->seq, amp_info_init());
-		}
-		else
-			fprintf(stderr, "Type for 'amp.seq' is not valid.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.instr");
@@ -60,13 +55,22 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 			fprintf(stderr, "Type for 'amp.instr' is not valid.\n");
 	}
 
+	value = ml_env_lookup(env, "amp.bar");
+	if(value != NULL) {
+		if(ml_value_isnum(value)) {
+		}
+		else
+			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'bool'.\n");
+	}
+
 	value = ml_env_lookup(env, "amp.run");
 	if(value != NULL) {
-		if(value->type != ml_value_bool_v)
+		if((value->type == ml_value_bool_v) && value->data.flag)
+			amp_engine_start(engine);
+		else
 			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'bool'.\n");
-
-		engine->toggle = value->data.flag;
 	}
+
 #if DEBUG
 	struct ml_env_t *iter;
 
@@ -84,6 +88,9 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 	for(watch = engine->watch; watch != NULL; watch = watch->next)
 		watch->func(env, watch->arg);
+
+	//amp_clock_info(engine->clock, amp_info_seek(&bar));
+	//amp_instr_info(engine->instr, amp_info_seek(&bar));
 
 	sys_mutex_unlock(&engine->lock);
 	sys_mutex_unlock(&engine->sync);
@@ -133,8 +140,8 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 			if((strcmp(argv[0], "q") == 0) || (strcmp(argv[0], "quit") == 0) || (strcmp(argv[0], "exit") == 0))
 				quit = true;
 			else if(strcmp(argv[0], "s") == 0) {
-				printf("%s engine.\n", engine->toggle ? "Stopping" : "Starting");
-				engine->toggle ^= true;
+				printf("%s engine.\n", engine->run ? "Stopping" : "Starting");
+				(engine->run ? amp_engine_stop : amp_engine_start)(engine);
 			}
 			else
 				printf("Unknown command '%s'.\n", argv[0]);
@@ -147,6 +154,8 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 	amp_engine_delete(engine);
 }
 
+#include <sndfile.h>
+SNDFILE *file = NULL;
 
 /**
  * Audio callback.
@@ -156,7 +165,6 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
  */
 static void callback(double **buf, unsigned int len, void *arg)
 {
-	bool run;
 	struct amp_event_t event;
 	struct amp_engine_t *engine = arg;
 	struct amp_time_t time[len+1];
@@ -173,6 +181,7 @@ static void callback(double **buf, unsigned int len, void *arg)
 		return;
 	}
 
+	/*
 	run = engine->toggle;
 	if(engine->run != run) {
 		struct amp_seek_t seek;
@@ -180,6 +189,7 @@ static void callback(double **buf, unsigned int len, void *arg)
 		engine->run = run;
 		amp_clock_info(engine->clock, (run ? amp_info_start : amp_info_stop)(&seek));
 	}
+	*/
 
 	amp_clock_proc(engine->clock, time, len);
 
@@ -190,13 +200,16 @@ static void callback(double **buf, unsigned int len, void *arg)
 	while(amp_comm_read(engine->comm, &event))
 		amp_queue_add(&queue, (struct amp_action_t){ 0, event });
 
-	if(engine->seq.iface != NULL)
-		amp_seq_proc(engine->seq, time, len, &queue);
-
 	if(engine->instr.iface != NULL)
 		amp_instr_proc(engine->instr, buf, time, len, &queue);
 	else
 		dsp_zero_d(buf[0], len), dsp_zero_d(buf[1], len);
+
+	static int a = 0;
+	if(a < 96000ull * 45824ull / 44100ull) {
+		sf_write_double(file, buf[0], len);
+		a+=len;
+	}
 
 	sys_mutex_unlock(&engine->lock);
 }

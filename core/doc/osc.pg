@@ -1,0 +1,21 @@
+# oscillator plots
+#
+# build with `gnuplot osc.pg`
+
+
+mod(x,y) = (x-floor(x/y)*y)
+
+
+# Ramp
+
+f(x) = mod(x / 0.5, 1)
+
+set terminal svg size 400 300
+set output 'bld/fig/osc_ramp.svg'
+
+set yrange [0:1]
+set key top left
+plot [0:1] f(x) title "ramp" with lines linestyle 1
+
+
+# Soft Clipping

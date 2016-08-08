@@ -581,6 +581,46 @@ static inline double dsp_butter4high_proc(double x, struct dsp_butter4high_t but
 
 
 /**
+ * Eighth-order low-pass butterworth filter.
+ *   @quad: The biquad filter set.
+ */
+struct dsp_butter8low_t {
+	struct dsp_quad_t quad[4];
+};
+
+/**
+ * Initialize a 8th low-pass filter.
+ *   @freq: The cutoff frequency.
+ *   @rate: The sample rate.
+ */
+static inline struct dsp_butter8low_t dsp_butter8low_init(double freq, unsigned int rate)
+{
+	return (struct dsp_butter8low_t){ {
+		dsp_quad_init(freq, -2.0*cos(9.0/16.0*M_PI), 1.0, 0.0, 0.0, 1.0, rate),
+		dsp_quad_init(freq, -2.0*cos(11.0/16.0*M_PI), 1.0, 0.0, 0.0, 1.0, rate),
+		dsp_quad_init(freq, -2.0*cos(13.0/16.0*M_PI), 1.0, 0.0, 0.0, 1.0, rate),
+		dsp_quad_init(freq, -2.0*cos(15.0/16.0*M_PI), 1.0, 0.0, 0.0, 1.0, rate)
+	} };
+}
+
+/**
+ * Process a 8th low-pass filter.
+ *   @x: The input.
+ *   @butter: The filter consant.
+ *   @s: The state.
+ */
+static inline double dsp_butter8low_proc(double x, struct dsp_butter8low_t butter, double *s)
+{
+	x = dsp_quad_proc(x, butter.quad[0], &s[0]);
+	x = dsp_quad_proc(x, butter.quad[1], &s[2]);
+	x = dsp_quad_proc(x, butter.quad[2], &s[4]);
+	x = dsp_quad_proc(x, butter.quad[3], &s[6]);
+
+	return x;
+}
+
+
+/**
  * Second oder band-pass butterworth filter.
  *   @low: The low-pass filter.
  *   @high: The high-pass filter.
@@ -613,6 +653,46 @@ static inline double dsp_bpf2_proc(double x, struct dsp_bpf2_t butter, double *s
 	x = dsp_butter2high_proc(x, butter.high, &s[2]);
 
 	return x;
+}
+
+
+/**
+ * Ringing filter.
+ *   @g: The gain.
+ *   @svf: The SVF filter.
+ */
+struct dsp_ringf_t {
+	double g;
+	struct dsp_svf_t svf;
+};
+
+/**
+ * Initialize a ringing filter.
+ *   @gain: The gain.
+ *   @freq: The frequency.
+ *   @tau: The decay time to 0.5 in seconds.
+ *   @rate: The sample rate.
+ *   &returns: The ringing filter.
+ */
+static inline struct dsp_ringf_t dsp_ringf_init(double gain, double freq, double tm, double rate)
+{
+	double t = log(2.0)*tm;
+	double q = t * atan(2.0 * M_PI * freq/rate) * rate;
+	double r = 1.0 / q;
+
+	return (struct dsp_ringf_t){ gain * t * r / (1.0 - r*r) * rate, dsp_res_init(freq, q, rate) };
+}
+
+/**
+ * Process a ringing filter.
+ *   @x: The input.
+ *   @ring: The ringing filter constant.
+ *   @s: The state variable, must have two doubles.
+ *   &returns: The output.
+ */
+static inline double dsp_ringf_proc(double x, struct dsp_ringf_t ring, double *s)
+{
+	return ring.g * dsp_svf_low(x, ring.svf, s);
 }
 
 #endif

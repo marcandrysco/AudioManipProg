@@ -1,12 +1,18 @@
 #!/bin/sh
 
-FILES="osc root key"
+FILES="ctrl filt key osc root reverb"
 EXTRA=".htaccess style.css"
 
 dir="bld"
 test -e bld || mkdir bld
+test -e bld/fig || mkdir bld/fig
 
 verb=1
+
+for file in osc.pg ; do
+  test "$verb" -eq 1 && echo "PLOT $file"
+  gnuplot "$file"
+done
 
 for file in $FILES ; do
   in="$file.md"

@@ -39,6 +39,33 @@ void dsp_fft_d(const double *in, double *mag, double *phase, unsigned int len)
 }
 
 /**
+ * Perform an inverse fast fourier transform on a buffer.
+ *   @mag: The magnitude.
+ *   @phase: The phase.
+ *   @out: The input buffer.
+ *   @len: The length.
+ */
+void dsp_ifft_d(const double *mag, const double *phase, double *out, unsigned int len)
+{
+	unsigned int i;
+	struct z_double_t *a, *b;
+
+	a = malloc(len * sizeof(struct z_double_t));
+	b = malloc(len * sizeof(struct z_double_t));
+
+	for(i = 0; i < len; i++)
+		a[i] = b[i] = z_mul_d(z_re_d(mag[i]), z_expi_d(phase[i]));
+
+	fft_d(a, b, len, 1);
+
+	for(i = 0; i < len; i++)
+		out[i] = a[i].re / len;
+
+	free(a);
+	free(b);
+}
+
+/**
  * Internal FFT computation
  *   @in: The input.
  *   @out: The output.

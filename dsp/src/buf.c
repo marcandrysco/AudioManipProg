@@ -85,8 +85,22 @@ void dsp_buf_delete(struct dsp_buf_t *buf)
  *   @path: The path.
  *   &returns: Error.
  */
-char *dsp_buf_save(struct dsp_buf_t *buf, const char *path)
+char *dsp_buf_save(struct dsp_buf_t *buf, const char *path, unsigned int rate)
 {
+	SF_INFO info;
+	SNDFILE *file;
+
+	info.samplerate = rate;
+	info.channels = 1;
+	info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_24;
+
+	file = sf_open(path, SFM_WRITE, &info);
+	if(file == NULL)
+		return mprintf("Cannot save to '%s'. %s", path, sf_strerror(NULL));
+
+	sf_write_float(file, buf->arr, buf->len);
+	sf_close(file);
+
 	return NULL;
 }
 

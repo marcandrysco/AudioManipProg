@@ -21,7 +21,7 @@ struct amp_watch_t {
 
 /**
  * Engine structure.
- *   @run, toggle: The run and toggle flag.
+ *   @run: The run flag.
  *   @core: The core.
  *   @notify: The notifier.
  *   @rev: The revision number.
@@ -34,14 +34,13 @@ struct amp_watch_t {
  *   @watch: The watch list.
  */
 struct amp_engine_t {
-	bool run, toggle;
+	bool run;
 	struct amp_core_t *core;
 	struct amp_notify_t *notify;
 
 	unsigned int rev;
 	sys_mutex_t lock, sync;
 	struct amp_clock_t clock;
-	struct amp_seq_t seq;
 	struct amp_instr_t instr;
 
 	struct amp_rt_t rt;
@@ -59,5 +58,8 @@ void amp_engine_delete(struct amp_engine_t *engine);
 void amp_engine_update(struct amp_engine_t *engine, const char *path);
 
 void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg);
+
+void amp_engine_start(struct amp_engine_t *engine);
+void amp_engine_stop(struct amp_engine_t *engine);
 
 #endif

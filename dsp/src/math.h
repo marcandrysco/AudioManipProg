@@ -2,6 +2,29 @@
 #define MATH_H
 
 /**
+ * Perform integer modulus with strictliy positive results.
+ *   @a: The value.
+ *   @m: The modulus.
+ *   &returns: The remainder.
+ */
+static inline unsigned int dsp_mod_i(int v, unsigned int m)
+{
+	return ((v % m) + m) % m;
+}
+
+/**
+ * Perform double modulus with strictliy positive results.
+ *   @a: The value.
+ *   @m: The modulus.
+ *   &returns: The remainder.
+ */
+static inline double dsp_mod_d(double v, double m)
+{
+	return fmod(fmod(v, m) + m, m);
+}
+
+
+/**
  * Compute a faster but less precise power as a double.
  *   @b: The base.
  *   @e: The exponent.

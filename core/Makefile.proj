@@ -1,6 +1,10 @@
 ML = \
      core.ml \
+     \
+     ctrl.ml \
      mode.ml \
+     osc.ml \
+     reverb.ml \
 
 # install rules
 
@@ -16,3 +20,8 @@ run: install
 
 debug: install
 	$(MAKE) debug -C ..
+
+doc:
+	$(MAKE) run -C doc
+
+.PHONY: doc

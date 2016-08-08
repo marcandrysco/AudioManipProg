@@ -64,6 +64,33 @@ static inline void dsp_zero_d(double *buf, unsigned int len)
 
 
 /**
+ * Set a buffer of floats to one.
+ *   @buf: The buffer.
+ *   @len: The length.
+ */
+static inline void dsp_one_f(float *buf, unsigned int len)
+{
+	unsigned int i;
+
+	for(i = 0; i < len; i++)
+		buf[i] = 1.0f;
+}
+
+/**
+ * Set a buffer of doubles to one.
+ *   @buf: The buffer.
+ *   @len: The length.
+ */
+static inline void dsp_one_d(double *buf, unsigned int len)
+{
+	unsigned int i;
+
+	for(i = 0; i < len; i++)
+		buf[i] = 1.0;
+}
+
+
+/**
  * Copy a buffer of doubles.
  *   @dest: The destination.
  *   @src: The source.
@@ -90,6 +117,21 @@ static inline void dsp_add_d(double *dest, double *src, unsigned int len)
 
 	for(i = 0; i < len; i++)
 		dest[i] += src[i];
+}
+
+
+/**
+ * Multiply two buffer of doubles.
+ *   @dest: The destination.
+ *   @src: The source.
+ *   @len: The length.
+ */
+static inline void dsp_mul_d(double *dest, double *src, unsigned int len)
+{
+	unsigned int i;
+
+	for(i = 0; i < len; i++)
+		dest[i] *= src[i];
 }
 
 

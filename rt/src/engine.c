@@ -5,7 +5,8 @@
  */
 static void notify(const char *path, void *arg);
 
-
+#include <sndfile.h>
+extern SNDFILE *file;
 /**
  * Create an engine.
  *   @list: Constant. Optional. The file list.
@@ -22,10 +23,9 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 	engine->rev = 1;
 	engine->lock = sys_mutex_init(0);
 	engine->sync = sys_mutex_init(0);
-	engine->run = engine->toggle = false;
+	engine->run = false;
 	engine->core = amp_core_new(amp_audio_info(audio).rate);
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, amp_audio_info(audio).rate));
-	engine->seq = amp_seq_null;
 	engine->instr = amp_instr_null;
 	engine->comm = comm ?: amp_comm_new();
 	engine->notify = amp_notify_new(list, notify, engine);
@@ -48,6 +48,14 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 
 	ml_env_add(&engine->core->env, strdup("amp.audio"), ml_value_str(strdup(iface), ml_tag_copy(ml_tag_null)));
 
+		SF_INFO info;
+
+		info.samplerate = amp_audio_info(audio).rate;
+		info.channels = 1;
+		info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_24;
+		file = sf_open("/home/marc/test.flac", SFM_WRITE, &info);
+		if(file == NULL)
+			fatal("Failed to open file.");
 	return engine;
 }
 
@@ -59,6 +67,8 @@ void amp_engine_delete(struct amp_engine_t *engine)
 {
 	struct amp_watch_t *watch;
 
+	sf_close(file);
+	printf("close\n");
 	while(engine->watch != NULL) {
 		watch = engine->watch;
 		engine->watch = watch->next;
@@ -69,7 +79,6 @@ void amp_engine_delete(struct amp_engine_t *engine)
 	amp_notify_delete(engine->notify);
 	amp_comm_delete(engine->comm);
 	amp_clock_delete(engine->clock);
-	amp_seq_erase(engine->seq);
 	amp_instr_erase(engine->instr);
 	amp_core_delete(engine->core);
 	sys_mutex_destroy(&engine->lock);
@@ -104,4 +113,21 @@ void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg)
 static void notify(const char *path, void *arg)
 {
 	amp_engine_update(arg, path);
+}
+
+
+void amp_engine_start(struct amp_engine_t *engine)
+{
+	struct amp_seek_t seek;
+
+	engine->run = true;
+	amp_clock_info(engine->clock, amp_info_start(&seek));
+}
+
+void amp_engine_stop(struct amp_engine_t *engine)
+{
+	struct amp_seek_t seek;
+
+	engine->run = false;
+	amp_clock_info(engine->clock, amp_info_stop(&seek));
 }

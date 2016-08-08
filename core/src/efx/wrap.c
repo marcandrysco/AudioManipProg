@@ -77,11 +77,6 @@ void amp_wrap_info(struct amp_wrap_t *wrap, struct amp_info_t info)
 	amp_param_info(wrap->limit, info);
 }
 
-static inline double dsp_mod_d(double v, double m)
-{
-	return fmod(fmod(v, m) + m, m);
-}
-
 static inline double dsp_wrap_d(double v, double limit)
 {
 	double s;

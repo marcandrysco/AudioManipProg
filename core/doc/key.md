@@ -1,6 +1,12 @@
 Keys and Notes
 ==============
 
+This page covers the system of keys and notes communicating between MIDI
+devices, sequencers, and instruments. Notes are composed of two components:
+the key that specifies note pitch, and the value which specifies velocity or
+volume. AmpCore provides additional functions to computing related notes based
+off of scales and key signatures.
+
 
 ## Key Representations
 

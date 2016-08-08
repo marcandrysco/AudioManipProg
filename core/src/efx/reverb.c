@@ -7,6 +7,7 @@
  *   @opt_freq_e: Frequency.
  *   @opt_freqlo_e: Low frequency.
  *   @opt_freqhi_e: High frequency.
+ *   @opt_qual_v: Quality.
  *   @opt_n: The number of options.
  */
 enum opt_e {
@@ -14,6 +15,7 @@ enum opt_e {
 	opt_freq_e,
 	opt_freqlo_e,
 	opt_freqhi_e,
+	opt_qual_v,
 	opt_n
 };
 
@@ -240,6 +242,28 @@ struct amp_reverb_t *amp_reverb_bpcf2(double len, struct amp_param_t *vary, stru
 	return reverb;
 }
 
+/**
+ * Create a resonance comb-feedback reverb.
+ *   @len: The length.
+ *   @vary: The varying delay.
+ *   @gain: The gain.
+ *   @freq: The frequency.
+ *   @rate: The sample rate.
+ *   &returns: The reverb.
+ */
+struct amp_reverb_t *amp_reverb_rescf(double len, struct amp_param_t *vary, struct amp_param_t *gain, struct amp_param_t *freq, struct amp_param_t *qual, double rate)
+{
+	struct amp_reverb_t *reverb;
+
+	reverb = amp_reverb_new(amp_reverb_rescf_v, len, vary, rate);
+	reverb->fast = amp_param_isfast(gain) && amp_param_isfast(freq) && amp_param_isfast(qual);
+	amp_param_set(&reverb->param[opt_gain_e], gain);
+	amp_param_set(&reverb->param[opt_freq_e], freq);
+	amp_param_set(&reverb->param[opt_qual_v], qual);
+
+	return reverb;
+}
+
 
 /**
  * Handle information on a reverb.
@@ -433,6 +457,37 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 				buf[i] = dsp_reverb_bpcf2(buf[i], ring, gain, bpf, s);
 		}
 		break;
+
+	case amp_reverb_rescf_v:
+		if(!reverb->fixed) {
+			double *s = reverb->s, vary[len], gain[len], freq[len], qual[len], rate = reverb->rate;
+
+			cont |= amp_param_proc(reverb->vary, vary, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_gain_e], gain, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_qual_v], qual, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_reverb_rescf(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_res_init(freq[i], qual[i], rate), s);
+		}
+		else if(!reverb->fast) {
+			double *s = reverb->s, gain[len], freq[len], qual[len], rate = reverb->rate;
+
+			cont |= amp_param_proc(reverb->param[opt_gain_e], gain, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(reverb->param[opt_qual_v], qual, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_reverb_rescf(buf[i], ring, ring->len, &reverb->i, gain[i], dsp_res_init(freq[i], qual[i], rate), s);
+		}
+		else {
+			double *s = reverb->s, gain = reverb->param[opt_gain_e]->flt, rate = reverb->rate;
+			struct dsp_svf_t svf = dsp_res_init(reverb->param[opt_freq_e]->flt, reverb->param[opt_qual_v]->flt, rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_reverb_rescf(buf[i], ring, ring->len, &reverb->i, gain, svf, s);
+		}
+		break;
 	}
 
 	return cont;
@@ -555,6 +610,26 @@ char *amp_bpcf2_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	chkfail(amp_match_unpack(value, "(f,P,P,P,P)", &len, &vary, &gain, &freqlo, &freqhi));
 
 	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_bpcf2(len, vary, gain, freqlo, freqhi, amp_core_rate(env))));
+	return NULL;
+#undef onexit
+}
+
+/**
+ * Create a resonance comb-feedback reverb from a value.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *amp_rescf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit
+	double len;
+	struct amp_param_t *vary, *gain, *freq, *qual;
+
+	chkfail(amp_match_unpack(value, "(f,P,P,P,P)", &len, &vary, &gain, &freq, &qual));
+
+	*ret = amp_pack_effect(amp_reverb_effect(amp_reverb_rescf(len, vary, gain, freq, qual, amp_core_rate(env))));
 	return NULL;
 #undef onexit
 }

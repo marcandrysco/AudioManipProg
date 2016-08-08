@@ -171,4 +171,24 @@ static inline double dsp_vary_bpcf2(double x, struct dsp_ring_t *ring, double de
 
 	return v;
 }
+
+/**
+ * Process a band-pass comb-feedback reverberator.
+ *   @x: The input.
+ *   @ring: The ring buffer.
+ *   @gain: The gain.
+ *   @lpf: The band-pass filter constant.
+ *   @s2: The state. Must have two variables.
+ *   &returns: The next output.
+ */
+static inline double dsp_reverb_rescf(double x, struct dsp_ring_t *ring, double delay, double *s1, double gain, struct dsp_svf_t svf, double *s2)
+{
+	double v;
+
+	v = dsp_res_proc(gain * dsp_ring_get1(ring, delay, s1), svf, s2);
+	dsp_ring_put(ring, v + x);
+
+	return v;
+}
+
 #endif

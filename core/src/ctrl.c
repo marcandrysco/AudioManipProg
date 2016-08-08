@@ -51,57 +51,21 @@ void amp_ctrl_delete(struct amp_ctrl_t *ctrl)
  *   @err: The rror.
  *   &returns: The valueor null.
  */
-struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env, char **err)
+char *amp_ctrl_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	/*
-#undef fail
-#define fail() do { ml_value_delete(value); *err = strdup("Type mismatch. Control constructor requires the form '(num:Default, (num:Low, num:High), (num:Device, num:Key))'."); return NULL; } while(0)
+#define onexit
+	int dev, key;
+	double low, high, def;
 
-	double val, low, high, dev, key;
-	struct ml_tuple_t tuple, range, instr;
+	chkfail(amp_match_unpack(value, "((d,d),(d,d),d)", &dev, &key, &low, &high, &def));
 
-	if(value->type != ml_value_tuple_v)
-		fail();
+	if((dev < 0) || (dev > UINT16_MAX) || (key < 0) || (key > UINT16_MAX))
+		fail("Invalid device ID.");
 
-	tuple = value->data.tuple;
-	if(tuple.len != 3)
-		fail();
+	*ret = amp_pack_ctrl(amp_ctrl_new(def, low, high, false, dev, key));
 
-	if((tuple.value[0]->type != ml_value_num_v) || (tuple.value[1]->type != ml_value_tuple_v) || (tuple.value[2]->type != ml_value_tuple_v))
-		fail();
-
-	range = tuple.value[1]->data.tuple;
-	instr = tuple.value[2]->data.tuple;
-	if((range.len != 2) || (instr.len != 2))
-		fail();
-
-	if((range.value[0]->type != ml_value_num_v) || (range.value[1]->type != ml_value_num_v))
-		fail();
-
-	if((instr.value[0]->type != ml_value_num_v) || (instr.value[1]->type != ml_value_num_v))
-		fail();
-
-	val = tuple.value[0]->data.num;
-	low = range.value[0]->data.num;
-	high = range.value[1]->data.num;
-	dev = instr.value[0]->data.num;
-	key = instr.value[1]->data.num;
-
-#undef fail
-#define fail(...) do { ml_value_delete(value); amp_eprintf(err, __VA_ARGS__); return NULL; } while(0)
-
-	if((val < low) || (val > high))
-		fail("Default value does not fall in range.");
-	else if((dev < 0) || (dev > UINT16_MAX))
-		fail("Invalid device.");
-	else if((key < 0) || (key > UINT16_MAX))
-		fail("Invalid key.");
-
-	ml_value_delete(value);
-
-	return amp_pack_ctrl(amp_ctrl_new(val, low, high, false, dev, key));
-	*/
-	fatal("stub");
+	return NULL;
+#undef onexit
 }
 
 
@@ -115,6 +79,7 @@ double amp_ctrl_proc(struct amp_ctrl_t *ctrl, struct amp_event_t event)
 {
 	double val;
 
+	printf("proc?");
 	if((event.dev != ctrl->dev) || (event.key != ctrl->key))
 		return ctrl->val;
 

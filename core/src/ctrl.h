@@ -10,7 +10,7 @@ struct amp_ctrl_t *amp_ctrl_new(double val, double low, double high, bool exp, u
 struct amp_ctrl_t *amp_ctrl_copy(struct amp_ctrl_t *ctrl);
 void amp_ctrl_delete(struct amp_ctrl_t *ctrl);
 
-struct ml_value_t *amp_ctrl_make(struct ml_value_t *value, struct ml_env_t *env, char **err);
+char *amp_ctrl_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 double amp_ctrl_proc(struct amp_ctrl_t *ctrl, struct amp_event_t event);
 

@@ -18,6 +18,8 @@ struct dsp_buf_t *dsp_buf_new(unsigned int len);
 struct dsp_buf_t *dsp_buf_load(const char *path, unsigned int chan, unsigned int rate);
 void dsp_buf_delete(struct dsp_buf_t *buf);
 
+char *dsp_buf_save(struct dsp_buf_t *buf, const char *path, unsigned int rate);
+
 
 /**
  * Delete a buffer if non-null.

@@ -7,6 +7,7 @@
 
 s = 0.5
 
+
 # Hard Clipping
 
 f(x,m) = (x > m) ? m : (x < -m) ? -m : x

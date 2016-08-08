@@ -2,8 +2,8 @@ RewriteOptions AllowNoSlash
 DirectoryIndex root
 
 RewriteEngine On
-RewriteRule ^/ %{REQUEST_URI}/index [L]
+RewriteRule ^/ %{REQUEST_URI}/root [L]
 
-<FilesMatch "^(dist|index)$">
+<FilesMatch "^[^.]*$">
 	ForceType application/xhtml+xml
 </FilesMatch>

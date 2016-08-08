@@ -91,12 +91,7 @@ void amp_param_info(struct amp_param_t *param, struct amp_info_t info)
 {
 	switch(param->type) {
 	case amp_param_flt_e:
-		break;
-
 	case amp_param_ctrl_e:
-		if(info.type == amp_info_action_e)
-			param->flt = amp_ctrl_proc(param->data.ctrl, info.data.action->event);
-
 		break;
 
 	case amp_param_module_e:
@@ -118,15 +113,29 @@ bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *t
 {
 	switch(param->type) {
 	case amp_param_flt_e:
-	case amp_param_ctrl_e:
 		{
 			unsigned int i;
 
 			for(i = 0; i < len; i++)
 				buf[i] = param->flt;
+
+			return false;
 		}
 
-		return false;
+	case amp_param_ctrl_e:
+		{
+			unsigned int i, n = 0;
+			struct amp_event_t *event;
+
+			for(i = 0; i < len; i++) {
+				while((event = amp_queue_event(queue, &n, i)) != NULL)
+					param->flt = amp_ctrl_proc(param->data.ctrl, *event);
+
+				buf[i] = param->flt;
+			}
+
+			return false;
+		}
 
 	case amp_param_module_e:
 		return amp_module_proc(param->data.module, buf, time, len, queue);

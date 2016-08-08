@@ -27,6 +27,7 @@ setconf()
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/thread.c"
+    c_src "src/posix/spawn.c"
     c_src "src/posix/time.c"
   fi
 

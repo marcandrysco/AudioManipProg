@@ -191,6 +191,27 @@ struct amp_filt_t *amp_filt_res(struct amp_param_t *freq, struct amp_param_t *qu
 }
 
 /**
+ * Create a ringing filter.
+ *   @freq: The frequency.
+ *   @gain: The gain.
+ *   @qual: The quality.
+ *   @rate: The sample rate.
+ *   &returns: The filter.
+ */
+struct amp_filt_t *amp_filt_ringf(struct amp_param_t *freq, struct amp_param_t *gain, struct amp_param_t *tau, double rate)
+{
+	struct amp_filt_t *filt;
+
+	filt = amp_filt_new(amp_filt_ringf_v, rate);
+	filt->fast = amp_param_isfast(freq) && amp_param_isfast(gain) && amp_param_isfast(tau);
+	amp_param_set(&filt->param[amp_filt_opt_freq_e], freq);
+	amp_param_set(&filt->param[amp_filt_opt_gain_e], gain);
+	amp_param_set(&filt->param[amp_filt_opt_tau_v], tau);
+
+	return filt;
+}
+
+/**
  * Create a Moog VCF.
  *   @freq: The frequency.
  *   @res: The resonance.
@@ -453,6 +474,26 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 		break;
 
+	case amp_filt_ringf_v:
+		if(!filt->fast) {
+			/*
+			double freq[len], qual[len], rate = filt->rate;
+
+			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_qual_e], qual, time, len, queue);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_ringf_proc(buf[i], dsp_ringf_init(freq[i], qual[i], rate), filt->s);
+				*/
+		}
+		else {
+			struct dsp_ringf_t c = dsp_ringf_init(filt->param[amp_filt_opt_gain_e]->flt, filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_tau_v]->flt, filt->rate);
+
+			for(i = 0; i < len; i++)
+				buf[i] = dsp_ringf_proc(buf[i], c, filt->s);
+		}
+		break;
+
 	case amp_filt_moog_e:
 		if(!filt->fast) {
 			double freq[len], res[len];
@@ -700,6 +741,25 @@ char *amp_res_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_
 }
 
 /**
+ * Create a ringing filter from a value.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *amp_ring_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+#define onexit
+	struct amp_param_t *freq, *gain, *tau;
+
+	chkfail(amp_match_unpack(value, "(P,P,P)", &freq, &gain, &tau));
+
+	*ret = amp_pack_effect(amp_filt_effect(amp_filt_ringf(freq, gain, tau, amp_core_rate(env))));
+	return NULL;
+#undef onexit
+}
+
+/**
  * Create a Moog VCF from a value.
  *   @ret: Ref. The returned value.
  *   @value: The value.
@@ -772,6 +832,7 @@ const char *amp_filt_name(enum amp_filt_e type)
 	case amp_filt_svhpf_e: return "svhpf";
 	case amp_filt_peak_e: return "peak";
 	case amp_filt_res_e: return "res";
+	case amp_filt_ringf_v: return "ringf";
 	case amp_filt_moog_e: return "moog";
 	case amp_filt_butter2low_e: return "butter2low";
 	case amp_filt_butter2high_e: return "butter2high";

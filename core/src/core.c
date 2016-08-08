@@ -35,6 +35,8 @@ struct ml_box_i amp_box_iface = {
 static const struct pair_t list[] = {
 	/* clocks */
 	{ "BasicClock", amp_basic_make },
+	/* controls */
+	{ "Ctrl", amp_ctrl_make },
 	/* effects */
 	{ "Bias",     amp_bias_make },
 	{ "Bitcrush", amp_bitcrush_make },
@@ -64,6 +66,7 @@ static const struct pair_t list[] = {
 	{ "Moog",  amp_moog_make },
 	{ "Peak",  amp_peak_make },
 	{ "Res",   amp_res_make },
+	{ "Ringf", amp_ring_make },
 	{ "Svlpf", amp_svlpf_make },
 	{ "Svhpf", amp_svhpf_make },
 	/* filter - butterworth */
@@ -88,6 +91,7 @@ static const struct pair_t list[] = {
 	{ "CombV",    amp_comb_make },
 	{ "DelayV",   amp_delay_make },
 	{ "LpcfV",    amp_lpcf_make },
+	{ "RescfV",   amp_rescf_make },
 	/* polymorphic */
 	{ "Shot", amp_shot_make },
 	/* standard functions */
@@ -156,7 +160,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Mul"), ml_value_eval(amp_mul_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Patch"), ml_value_eval(amp_patch_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Sample"), ml_value_eval(amp_sample_make, ml_tag_copy(ml_tag_null)));
-	ml_env_add(&core->env, strdup("Sum"), ml_value_eval(amp_sum_make, ml_tag_copy(ml_tag_null)));
+	ml_env_add(&core->env, strdup("Add"), ml_value_eval(amp_add_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Synth"), ml_value_eval(amp_synth_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Trig"), ml_value_eval(amp_trig_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Warp"), ml_value_eval(amp_warp_make, ml_tag_copy(ml_tag_null)));

@@ -71,7 +71,7 @@ bool amp_param_proc(struct amp_param_t *param, double *buf, struct amp_time_t *t
  */
 static inline bool amp_param_isfast(struct amp_param_t *param)
 {
-	return param->type != amp_param_module_e;
+	return param->type == amp_param_flt_e;
 }
 
 /**

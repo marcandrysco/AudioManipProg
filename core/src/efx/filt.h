@@ -9,6 +9,7 @@
  *   @amp_filt_svhpf_e: State-variable high-pass filter.
  *   @amp_filt_peak_e: Peaking filter.
  *   @amp_filt_res_e: Resonance filter.
+ *   @amp_filt_ringf_e: Ringing filter.
  *   @amp_filt_moog_e: Moog VCF.
  *   @amp_filt_butter2low_e: 2nd-order low-pass butterworth.
  *   @amp_filt_butter2high_e: 2nd-order high-pass butterworth.
@@ -24,6 +25,7 @@ enum amp_filt_e {
 	amp_filt_svhpf_e,
 	amp_filt_peak_e,
 	amp_filt_res_e,
+	amp_filt_ringf_v,
 	amp_filt_moog_e,
 	amp_filt_butter2low_e,
 	amp_filt_butter2high_e,
@@ -43,6 +45,7 @@ enum amp_filt_e {
  *   @amp_filt_opt_gain_e: Gain.
  *   @amp_filt_opt_gainlo_e: Low gain.
  *   @amp_filt_opt_gainhi_e: High gain.
+ *   @amp_filt_opt_tau_v: Decay constant.
  *   @amp_filt_opt_n: The number of options.
  */
 enum amp_filt_opt_e {
@@ -54,6 +57,7 @@ enum amp_filt_opt_e {
 	amp_filt_opt_gain_e,
 	amp_filt_opt_gainlo_e,
 	amp_filt_opt_gainhi_e,
+	amp_filt_opt_tau_v,
 	amp_filt_opt_n
 };
 
@@ -88,6 +92,7 @@ struct amp_filt_t *amp_filt_svlpf(struct amp_param_t *freq, struct amp_param_t *
 struct amp_filt_t *amp_filt_svhpf(struct amp_param_t *freq, struct amp_param_t *res, double rate);
 struct amp_filt_t *amp_filt_peak(struct amp_param_t *freq, struct amp_param_t *gain, struct amp_param_t *qual, double rate);
 struct amp_filt_t *amp_filt_res(struct amp_param_t *freq, struct amp_param_t *qual, double rate);
+struct amp_filt_t *amp_filt_ringf(struct amp_param_t *freq, struct amp_param_t *gain, struct amp_param_t *tau, double rate);
 struct amp_filt_t *amp_filt_moog(struct amp_param_t *freq, struct amp_param_t *res, double rate);
 struct amp_filt_t *amp_filt_butter2low(struct amp_param_t *freq, double rate);
 struct amp_filt_t *amp_filt_butter2high(struct amp_param_t *freq, double rate);
@@ -105,6 +110,7 @@ char *amp_svlpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 char *amp_svhpf_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_peak_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_res_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
+char *amp_ring_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 char *amp_moog_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 
 char *amp_butter2low_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);

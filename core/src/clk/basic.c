@@ -129,25 +129,30 @@ char *amp_basic_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
 {
 	switch(info.type) {
+	case amp_info_tell_e:
+		*info.data.flt = basic->cur.bar;
+		break;
+
 	case amp_info_seek_e:
-		amp_basic_seek(basic, info.data.seek->time.bar);
+		amp_basic_seek(basic, *info.data.flt);
 		basic->cur = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
 	case amp_info_start_e:
 		basic->run = true;
+		info.data.seek->idx = basic->idx;
+		info.data.seek->time = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
 	case amp_info_stop_e:
 		basic->run = false;
+		info.data.seek->idx = basic->idx;
+		info.data.seek->time = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
 	default:
 		return;
 	}
-
-	info.data.seek->idx = basic->idx;
-	info.data.seek->time = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 }
 
 /**
@@ -167,11 +172,11 @@ void amp_basic_proc(struct amp_basic_t *basic, struct amp_time_t *time, unsigned
 
 		for(i = 1; i < len; i++)
 			time[i] = amp_time_calc(basic->idx++, basic->bpm, basic->nbeats, basic->rate);
+
+		basic->cur = time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 	}
 	else {
-		for(i = 1; i < len; i++)
-			time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
+		for(i = 1; i <= len; i++)
+			time[i] = basic->cur;
 	}
-
-	basic->cur = time[i] = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 }

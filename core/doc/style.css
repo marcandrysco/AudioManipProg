@@ -22,14 +22,16 @@ pre {
   border: 1px solid #bbb;
 }
 
-pre > code {
-  background-color: #f6f6f6;
-}
-
 code {
   font-family: monospace;
-  background-color: #e8e8e8;
   font-size: 14px;
+  background-color: #e8e8e8;
+  white-space: nowrap;
+}
+
+pre > code {
+  background-color: #f6f6f6;
+  white-space: pre;
 }
 
 h1 {

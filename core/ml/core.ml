@@ -1,4 +1,8 @@
+import "ctrl.ml"
 import "mode.ml"
+import "osc.ml"
+import "reverb.ml"
+
 
 (*** Attack-Decay-Sustain-Release variants ***)
 let ADSR' (a,d,s,r) = ADSR((0,1),(a,d,s,r))
@@ -28,17 +32,8 @@ let ASR1 (a,r) = ASR((1,1),(a,r))
 
 (*** Reverb variants ***)
 
-(* Pure delay constructor.
- *   @l (float): Delay length.
- *   &ret (Effect): The delay effect.
- *)
-let Delay (l,g) = DelayV(l,l,g)
-let Delay' (l,v,g) = DelayV(l,Mul(l,v),g)
-let Comb (l,g) = CombV(l,l,g)
-let Allpass (l,g) = AllpassV(l,l,g)
 let Lpcf (l,g,f) = LpcfV(l,l,g,f)
 let Bpcf (l,g,lo,hi) = BpcfV(l,l,g,lo,hi)
-let Delay1 l = Delay(l,1)
 
 
 (*** Alternate constructors ***)
@@ -146,8 +141,6 @@ let SampleShot1'(p,k) = Shot(Sample1(3,0.01,p),k)
  *   &ret (Module): The oscillator module.
  *)
 let Sine'(f) = Sine(Ramp(f))
-let SineF(f) = Sine(Ramp(f))
-let SineW(f,w) = Sine(Warp(Ramp(f),w))
 let SineS(f,l,h) = Patch(Sine(Ramp(f)),Scale'(l,h))
 let SineScale(w,l,h) = Patch(Sine(w),Scale'(l,h))
 let SineScale'(f,l,h) = SineScale(Ramp(f),l,h)
@@ -174,6 +167,7 @@ let SquareScale'(f,l,h) = SquareScale(Ramp(f),l,h)
  *   &ret (Effect): The generator with muted input.
  *)
 let Gen' m  = Chain[Mute,Gen(m)]
+let Gen0 m  = Chain[Mute,Gen(m)]
 
 (**
  * Create synthesizer generator.
