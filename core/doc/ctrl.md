@@ -12,11 +12,11 @@ modules or effects.
 
     Ctrl   ((dev, key), (low, high), def)
 
-Controls are used to generate signals based off of input from a MIDI input.
-The `dev` and `key` specify the listening device and key. The values `low` and
-`high` specify the range of output values. Because the AmpCore control cannot
-know the current position of the MIDI device, it begins using the default
-value given by `def`.
+Controls are used to generate signals based off of a MIDI input. The `dev` and
+`key` specify the listening device and key. The values `low` and `high`
+specify the range of output values. Because the AmpCore control cannot know
+the current position of the MIDI device, it begins using the default value
+given by `def`.
     
     Ctrl1  ((dev, key), def)    (* = Ctrl  ((dev, key), (0, 1), def) *)
     Ctrl1L (dev, key)           (* = Ctrl1 ((dev, key), 0.0) *)

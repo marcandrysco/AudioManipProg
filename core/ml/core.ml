@@ -1,4 +1,5 @@
 import "ctrl.ml"
+import "filt.ml"
 import "mode.ml"
 import "osc.ml"
 import "reverb.ml"

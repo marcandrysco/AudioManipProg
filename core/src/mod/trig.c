@@ -3,10 +3,10 @@
 
 /**
  * Trigger structure.
- *   @freq: The frequency.
+ *   @freq, mul: The frequency and multiplier.
  */
 struct amp_trig_t {
-	double freq;
+	double freq, mul;
 };
 
 
@@ -23,13 +23,15 @@ const struct amp_module_i amp_trig_iface = {
 
 /**
  * Create a trigger.
+ *   @mul: The multiplier.
  *   &returns: The trigger.
  */
-struct amp_trig_t *amp_trig_new(void)
+struct amp_trig_t *amp_trig_new(double mul)
 {
 	struct amp_trig_t *trig;
 
 	trig = malloc(sizeof(struct amp_trig_t));
+	trig->mul = mul;
 	trig->freq = 0.0;
 
 	return trig;
@@ -42,7 +44,7 @@ struct amp_trig_t *amp_trig_new(void)
  */
 struct amp_trig_t *amp_trig_copy(struct amp_trig_t *trig)
 {
-	return amp_trig_new();
+	return amp_trig_new(trig->mul);
 }
 
 /**
@@ -64,10 +66,10 @@ void amp_trig_delete(struct amp_trig_t *trig)
  */
 char *amp_trig_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
 {
-	if(value->type != ml_value_nil_v)
-		return amp_printf("Type mismatch. Expected Nil.");
+	if(!ml_value_isnum(value))
+		return amp_printf("Type mismatch. Expected number.");
 
-	*ret = amp_pack_module((struct amp_module_t){ amp_trig_new(), &amp_trig_iface });
+	*ret = amp_pack_module((struct amp_module_t){ amp_trig_new(ml_value_getflt(value)), &amp_trig_iface });
 	return NULL;
 }
 
@@ -80,7 +82,7 @@ char *amp_trig_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
 void amp_trig_info(struct amp_trig_t *trig, struct amp_info_t info)
 {
 	if(info.type == amp_info_note_e)
-		trig->freq = info.data.note->freq;
+		trig->freq = info.data.note->freq * trig->mul;
 }
 
 /**

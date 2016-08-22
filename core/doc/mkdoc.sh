@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FILES="ctrl filt key osc root reverb"
+FILES="ctrl filt key math osc root reverb synth"
 EXTRA=".htaccess style.css"
 
 dir="bld"

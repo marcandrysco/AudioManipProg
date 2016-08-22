@@ -8,7 +8,7 @@ struct amp_trig_t;
 
 extern const struct amp_module_i amp_trig_iface;
 
-struct amp_trig_t *amp_trig_new(void);
+struct amp_trig_t *amp_trig_new(double mul);
 struct amp_trig_t *amp_trig_copy(struct amp_trig_t *trig);
 void amp_trig_delete(struct amp_trig_t *trig);
 

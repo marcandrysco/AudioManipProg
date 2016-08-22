@@ -2,6 +2,7 @@ ML = \
      core.ml \
      \
      ctrl.ml \
+     filt.ml \
      mode.ml \
      osc.ml \
      reverb.ml \

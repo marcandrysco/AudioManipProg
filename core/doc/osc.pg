@@ -18,4 +18,7 @@ set key top left
 plot [0:1] f(x) title "ramp" with lines linestyle 1
 
 
-# Soft Clipping
+# Warping
+
+
+# 

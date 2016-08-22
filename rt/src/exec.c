@@ -65,8 +65,10 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 
 	value = ml_env_lookup(env, "amp.run");
 	if(value != NULL) {
-		if((value->type == ml_value_bool_v) && value->data.flag)
-			amp_engine_start(engine);
+		if(value->type == ml_value_bool_v) {
+			if(value->data.flag)
+				amp_engine_start(engine);
+		}
 		else
 			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'bool'.\n");
 	}

@@ -89,7 +89,6 @@ static inline double dsp_osc_tri(double t)
  *   @v: The warp value.
  *   &returns: The warped time.
  */
-
 static inline double dsp_osc_warp(double t, double v)
 {   
 	double mid = 0.5 * (1.0 - v);
@@ -103,7 +102,6 @@ static inline double dsp_osc_warp(double t, double v)
  *   @v: The warp value.
  *   &returns: The unwarped time.
  */
-
 static inline double dsp_osc_unwarp(double t, double v)
 {   
 	double mid = 0.5 * (1.0 - v);

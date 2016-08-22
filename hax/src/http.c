@@ -46,10 +46,25 @@ struct http_client_t {
 	struct http_client_t *prev, *next;
 };
 
+/**
+ * Asynchronous information structure.
+ *   @server: Server.
+ *   @func: The function.
+ *   @arg: The argument.
+ */
+struct async_t {
+	struct http_server_t *server;
+
+	http_handler_f func;
+	void *arg;
+};
+
 
 /*
  * local declarations
  */
+static void server_async(sys_fd_t fd, void *arg);
+
 static void client_resp(struct http_client_t *client, http_handler_f func, void *arg);
 
 static bool isdelim(int16_t byte);
@@ -93,6 +108,48 @@ void http_server_close(struct http_server_t *server)
 	tcp_server_close(server->tcp);
 	free(server);
 }
+
+
+/**
+ * Create an asynchronous server.
+ *   @port: The port.
+ *   @func: The function.
+ *   @arg: The argument.
+ *   &returns: The task.
+ */
+struct sys_task_t *http_server_async(uint16_t port, http_handler_f func, void *arg)
+{
+	struct async_t *async;
+
+	async = malloc(sizeof(struct async_t));
+	async->func = func;
+	async->arg = arg;
+	http_server_open(&async->server, port);
+
+	return sys_task_new(server_async, async);
+}
+static void server_async(sys_fd_t fd, void *arg)
+{
+	struct async_t *async = arg;
+
+	while(true) {
+		unsigned int nfds = 1 + http_server_poll(async->server, NULL);
+		struct sys_poll_t poll[nfds];
+
+		poll[0] = sys_poll_fd(fd, sys_poll_in_e);
+		http_server_poll(async->server, poll + 1);
+
+		sys_poll(poll, nfds, 0);
+		if(poll[0].revents)
+			break;
+
+		http_server_proc(async->server, poll + 1, async->func, async->arg);
+	}
+
+	http_server_close(async->server);
+	free(async);
+}
+
 
 /**
  * Create a new HTTP client.

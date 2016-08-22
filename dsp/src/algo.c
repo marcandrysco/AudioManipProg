@@ -66,6 +66,18 @@ void dsp_ifft_d(const double *mag, const double *phase, double *out, unsigned in
 }
 
 /**
+ * Compute the frequency from an FFT.
+ *   @idx: The index.
+ *   @rate: The sample rate.
+ *   @size; The FFT size.
+ *   &returns: The frequency.
+ */
+double dsp_fft_freq(unsigned int idx, unsigned int rate, unsigned int size)
+{
+	return (double)idx * (double)rate / (double)size;
+}
+
+/**
  * Internal FFT computation
  *   @in: The input.
  *   @out: The output.
@@ -84,4 +96,24 @@ static void fft_d(struct z_double_t *in, struct z_double_t *out, int n, int step
 			in[(i + n)/2] = z_sub_d(out[i], t);
 		}
 	}
+}
+
+
+/**
+ * Multiply a buffer by a blackman window.
+ *   @buf: The buffer.
+ *   @len: The length.
+ */
+void dsp_blackman_d(double *buf, unsigned int len)
+{
+	unsigned int i;
+	double a = 0.16;
+	double a0, a1, a2;
+
+	a0 = (1.0 - a) / 2.0;
+	a1 = 0.5;
+	a2 = a / 2.0;
+
+	for(i = 0; i < len; i++)
+		buf[i] *= a0 - a1 * cos(2.0 * M_PI * i / (len - 1)) + a2 * cos(4.0 * M_PI * i / (len - 1));
 }

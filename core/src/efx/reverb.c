@@ -347,7 +347,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 			cont |= amp_param_proc(reverb->param[opt_gain_e], gain, time, len, queue);
 
 			for(i = 0; i < len; i++)
-				buf[i] = dsp_vary_comb(buf[i], ring, rate / vary[i], &reverb->i, gain[i]);
+				buf[i] = dsp_vary_comb(buf[i], ring, rate * vary[i], &reverb->i, gain[i]);
 		}
 		else if(!reverb->fast) {
 			double gain[len];
@@ -375,7 +375,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 			cont |= amp_param_proc(reverb->param[opt_freq_e], freq, time, len, queue);
 
 			for(i = 0; i < len; i++)
-				buf[i] = dsp_vary_lpcf(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_lpf_init(freq[i], rate), s);
+				buf[i] = dsp_vary_lpcf(buf[i], ring, rate * vary[i], &reverb->i, gain[i], dsp_lpf_init(freq[i], rate), s);
 		}
 		else if(!reverb->fast) {
 			double *s = reverb->s, gain[len], freq[len], rate = reverb->rate;
@@ -406,7 +406,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 			cont |= amp_param_proc(reverb->param[opt_freqhi_e], freqhi, time, len, queue);
 
 			for(i = 0; i < len; i++)
-				buf[i] = dsp_vary_bpcf(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_bpf_init(freqlo[i], freqhi[i], rate), s);
+				buf[i] = dsp_vary_bpcf(buf[i], ring, rate * vary[i], &reverb->i, gain[i], dsp_bpf_init(freqlo[i], freqhi[i], rate), s);
 		}
 		else if(!reverb->fast) {
 			double *s = reverb->s, gain[len], freqlo[len], freqhi[len], rate = reverb->rate;
@@ -437,7 +437,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 			cont |= amp_param_proc(reverb->param[opt_freqhi_e], freqhi, time, len, queue);
 
 			for(i = 0; i < len; i++)
-				buf[i] = dsp_vary_bpcf2(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_bpf2_init(freqlo[i], freqhi[i], rate), s);
+				buf[i] = dsp_vary_bpcf2(buf[i], ring, rate * vary[i], &reverb->i, gain[i], dsp_bpf2_init(freqlo[i], freqhi[i], rate), s);
 		}
 		else if(!reverb->fast) {
 			double *s = reverb->s, gain[len], freqlo[len], freqhi[len], rate = reverb->rate;
@@ -468,7 +468,7 @@ bool amp_reverb_proc(struct amp_reverb_t *reverb, double *buf, struct amp_time_t
 			cont |= amp_param_proc(reverb->param[opt_qual_v], qual, time, len, queue);
 
 			for(i = 0; i < len; i++)
-				buf[i] = dsp_reverb_rescf(buf[i], ring, rate / vary[i], &reverb->i, gain[i], dsp_res_init(freq[i], qual[i], rate), s);
+				buf[i] = dsp_reverb_rescf(buf[i], ring, rate * vary[i], &reverb->i, gain[i], dsp_res_init(freq[i], qual[i], rate), s);
 		}
 		else if(!reverb->fast) {
 			double *s = reverb->s, gain[len], freq[len], qual[len], rate = reverb->rate;

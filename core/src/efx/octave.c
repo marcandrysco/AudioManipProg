@@ -15,7 +15,7 @@ const struct amp_effect_i amp_octave_iface = {
  * Tone structure.
  *   @t, q, f, g, s: The time, quality, frequency, gain, and filter state.
  */
-struct dsp_tone_t {
+struct dsp_tone2_t {
 	double t, q, f, g, s[2];
 };
 
@@ -33,7 +33,7 @@ struct dsp_tuner_t {
 	unsigned int tm, rate;
 
 	unsigned int len;
-	struct dsp_tone_t tone[];
+	struct dsp_tone2_t tone[];
 };
 
 /**
@@ -49,7 +49,7 @@ struct dsp_tuner_t *dsp_tuner_new(double lpf, unsigned int rate)
 
 	unsigned int n = 2;
 
-	tuner = malloc(n * sizeof(struct dsp_tone_t) + sizeof(struct dsp_tuner_t));
+	tuner = malloc(n * sizeof(struct dsp_tone2_t) + sizeof(struct dsp_tuner_t));
 	tuner->vol = dsp_vol_init(lpf, rate);
 	tuner->tm = 1;
 	tuner->last = 0.0;
@@ -57,7 +57,7 @@ struct dsp_tuner_t *dsp_tuner_new(double lpf, unsigned int rate)
 	tuner->rate = rate;
 
 	for(i = 0; i < n; i++)
-		tuner->tone[i] = (struct dsp_tone_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
+		tuner->tone[i] = (struct dsp_tone2_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
 
 	return tuner;
 }
@@ -80,7 +80,7 @@ static inline void dsp_tuner_proc(struct dsp_tuner_t *tuner, double v)
 	//exit(0);
 	for(i = 0; i < tuner->len; i++) {
 		double w, m, t, s;
-		struct dsp_tone_t *tone = &tuner->tone[i];
+		struct dsp_tone2_t *tone = &tuner->tone[i];
 
 		if(tone->g < 0.0001)
 			continue;
@@ -89,7 +89,7 @@ static inline void dsp_tuner_proc(struct dsp_tuner_t *tuner, double v)
 		w = tone->g * dsp_osc_sine_f(tone->t);
 
 		if(fabs(s - w) > (tone->g)) {
-			*tone = (struct dsp_tone_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
+			*tone = (struct dsp_tone2_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
 			continue;
 		}
 
@@ -120,7 +120,7 @@ static inline void dsp_tuner_proc(struct dsp_tuner_t *tuner, double v)
 			}
 
 			if(i < tuner->len) {
-				tuner->tone[i] = (struct dsp_tone_t){ 0.0, 1.0, freq, tuner->vol.v, { 0.0, 0.0 } };
+				tuner->tone[i] = (struct dsp_tone2_t){ 0.0, 1.0, freq, tuner->vol.v, { 0.0, 0.0 } };
 			}
 		}
 

@@ -60,9 +60,18 @@ static const struct pair_t list[] = {
 	{ "LogClipP",  amp_logclip_pos },
 	{ "LogClipS",  amp_logclip_sym },
 	{ "LogClipN",  amp_logclip_neg },
+	/* effects - math */
+	{ "Exp",    amp_exp_make },
+	{ "Hz2Sec", amp_hz2sec_make },
 	/* filters */
 	{ "Lpf",   amp_lpf_make },
+	{ "Lpf2",  amp_butter2low_make },
+	{ "Lpf3",  amp_butter3low_make },
+	{ "Lpf4",  amp_butter4low_make },
 	{ "Hpf",   amp_hpf_make },
+	{ "Hpf2",  amp_butter2high_make },
+	{ "Hpf3",  amp_butter3high_make },
+	{ "Hpf4",  amp_butter4high_make },
 	{ "Moog",  amp_moog_make },
 	{ "Peak",  amp_peak_make },
 	{ "Res",   amp_res_make },
@@ -173,13 +182,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Repeat"), ml_value_eval(amp_repeat_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Snap"), ml_value_eval(amp_snap_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Toggle"), ml_value_eval(amp_toggle_make, ml_tag_copy(ml_tag_null)));
-
-	//ml_env_add(&core->env, strdup("Butter2low"), ml_value_impl(amp_butter2low_make));
-	//ml_env_add(&core->env, strdup("Butter2high"), ml_value_impl(amp_butter2high_make));
-	//ml_env_add(&core->env, strdup("Butter3low"), ml_value_impl(amp_butter3low_make));
-	//ml_env_add(&core->env, strdup("Butter3high"), ml_value_impl(amp_butter3high_make));
-	//ml_env_add(&core->env, strdup("Butter4low"), ml_value_impl(amp_butter4low_make));
-	//ml_env_add(&core->env, strdup("Butter4high"), ml_value_impl(amp_butter4high_make));
 
 	const struct pair_t *cur;
 

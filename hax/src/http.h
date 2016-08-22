@@ -59,6 +59,8 @@ struct http_client_t;
 char *http_server_open(struct http_server_t **server, uint16_t port);
 void http_server_close(struct http_server_t *server);
 
+struct sys_task_t *http_server_async(uint16_t port, http_handler_f func, void *arg);
+
 char *http_server_proc(struct http_server_t *server, struct sys_poll_t *fds, http_handler_f func, void *arg);
 unsigned int http_server_poll(struct http_server_t *server, struct sys_poll_t *poll);
 

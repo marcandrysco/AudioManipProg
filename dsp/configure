@@ -18,6 +18,7 @@ setconf()
   c_src "src/filt.c"
   c_src "src/osc.c"
   c_src "src/reverb.c"
+  c_src "src/tone.c"
   c_src "src/vol.c"
 }
 ## end configuration options ##

@@ -40,6 +40,12 @@ the first and second half of the signal.
     SineP (freq, high)       (* = UH? *)
     Sine1 (freq)             (* = UH? *)
 
+## Triangle Wave
+
+## Square Wave
+
+## Impulse Chain
+
 ## Noise
 
     Noise  ()

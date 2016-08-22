@@ -134,7 +134,7 @@ bool amp_math_proc(struct amp_math_t *math, double *buf, struct amp_time_t *time
 
 	case amp_math_hz2sec_v:
 		for(i = 0; i < len; i++)
-			buf[i] /= math->rate;
+			buf[i] = 1.0 / buf[i];
 
 		break;
 	}

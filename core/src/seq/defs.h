@@ -167,6 +167,10 @@ struct amp_seq_t {
 	void *ref;
 	const struct amp_seq_i *iface;
 };
+static inline struct amp_seq_t amp_seq(void *ref, const struct amp_seq_i *iface)
+{
+	return (struct amp_seq_t){ ref, iface };
+}
 
 
 /**

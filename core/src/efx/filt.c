@@ -342,6 +342,11 @@ void amp_filt_info(struct amp_filt_t *filt, struct amp_info_t info)
 {
 	unsigned int i;
 
+	if(info.type == amp_info_note_e) {
+		if(info.data.note->init)
+			dsp_zero_d(filt->s, 8);
+	}
+
 	for(i = 0; i < amp_filt_opt_n; i++)
 		amp_param_info(filt->param[i], info);
 }
@@ -476,15 +481,22 @@ bool amp_filt_proc(struct amp_filt_t *filt, double *buf, struct amp_time_t *time
 
 	case amp_filt_ringf_v:
 		if(!filt->fast) {
-			/*
-			double freq[len], qual[len], rate = filt->rate;
+			double gain[len], freq[len], tau[len], rate = filt->rate;
+			struct dsp_ringf_t c;
 
+			cont |= amp_param_proc(filt->param[amp_filt_opt_gain_e], gain, time, len, queue);
 			cont |= amp_param_proc(filt->param[amp_filt_opt_freq_e], freq, time, len, queue);
-			cont |= amp_param_proc(filt->param[amp_filt_opt_qual_e], qual, time, len, queue);
+			cont |= amp_param_proc(filt->param[amp_filt_opt_tau_v], tau, time, len, queue);
 
-			for(i = 0; i < len; i++)
-				buf[i] = dsp_ringf_proc(buf[i], dsp_ringf_init(freq[i], qual[i], rate), filt->s);
-				*/
+			c = dsp_ringf_init(gain[0], freq[0], tau[0], rate);
+			buf[0] = dsp_ringf_proc(buf[0], c, filt->s);
+
+			for(i = 1; i < len; i++) {
+				if((gain[i] != gain[i-1]) && (freq[i] != freq[i-1]) && (tau[i] != tau[i-1]))
+					c = dsp_ringf_init(gain[i], freq[i], tau[i], rate);
+
+				buf[i] = dsp_ringf_proc(buf[i], c, filt->s);
+			}
 		}
 		else {
 			struct dsp_ringf_t c = dsp_ringf_init(filt->param[amp_filt_opt_gain_e]->flt, filt->param[amp_filt_opt_freq_e]->flt, filt->param[amp_filt_opt_tau_v]->flt, filt->rate);

@@ -39,10 +39,13 @@ setconf()
   c_src "src/func.c"
   c_src "src/list.c"
   c_src "src/log.c"
+  c_src "src/math.c"
   c_src "src/mem.c"
   c_src "src/print.c"
   c_src "src/rand.c"
   c_src "src/strbuf.c"
+
+  c_src "src/fmt/xml.c"
 
   c_src "src/http.c"
   c_src "src/tcp.c"

@@ -1,6 +1,7 @@
 Filters
 =======
 
+
 ## Low-Pass Filter
 
     Lpf (freq)
@@ -10,6 +11,7 @@ Filters
 
 The low-pass filters are implemented using a butterworth design giving a cut
 of `8*n` decibels per octave.
+
 
 ## High-Pass Filter
 
@@ -21,9 +23,15 @@ of `8*n` decibels per octave.
 The high-pass filters are implemented using a butterworth design giving a cut
 of `8*n` decibels per octave.
 
+
 ## Band-Pass Filter
 
     Bpf (freqlo, freqhi)
+
+The band-pass filter cascades a low-pass and high-pass filter creating a
+band-pass with `8*n` decibels per octave cut below `freqlo` and above
+`freqhi`.
+
 
 ## Resonance Filter
 
@@ -35,10 +43,17 @@ the width of the band, with values above `1` creating a tall and
 narrow peak. Especially high quality values will creating a ringing at the
 center frequency.
 
+
 ## Peaking Filter
 
-    Peak (freq, gain, qual)
+    Peak  (freq, gain, qual)
+    Notch (freq, qual)        (* = Peak (freq, 0, qual) *)
 
 Peaking filters modify only a region around the `freq` by the specified
 `gain`. The `qual` parameter determines how narrow (large `qual`) or wide
 (small `qual`) the band of effected frequencies.
+
+
+## Ringing Filter
+
+   Ringf (freq, gain, tau)
