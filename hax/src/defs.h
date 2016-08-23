@@ -9,6 +9,7 @@
 #	define _WIN32_WINNT 0x600
 #	include <windows.h>
 #	include <winsock2.h>
+#	include <ws2tcpip.h>
 #else
 #	include <pthread.h>
 #	include <netinet/in.h>

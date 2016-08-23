@@ -47,6 +47,7 @@ static inline struct sys_poll_t sys_poll_sock(sys_sock_t sock, enum sys_poll_e e
 	return (struct sys_poll_t){ NULL, sock, events, 0 };
 }
 
+
 /*
  * poll declarations
  */

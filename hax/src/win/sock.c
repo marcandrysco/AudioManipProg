@@ -34,16 +34,54 @@ char *sys_socket(sys_sock_t *sock, int af, int type, int prot)
 
 	return NULL;
 }
-static BOOL CALLBACK startup(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *lpContext)
+
+/**
+ * Connect a socket to a host and port.
+ *   @sock: Ref. The output socket.
+ *   @type: The socke type.
+ *   @host: The host.
+ *   @port: The port.
+ *   &returns: Error.
+ */
+char *sys_connect(sys_sock_t *sock, int type, const char *host, uint16_t port)
 {
 	int err;
-	WSADATA data;
+	char name[6];
+	struct addrinfo hints, *res, *cur;
 
-	err = WSAStartup(MAKEWORD(2, 2), &data);
+	InitOnceExecuteOnce(&init, startup, NULL, NULL);
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = type;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = 0;
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	sprintf(name, "%u", port);
+	err = getaddrinfo(host, name, &hints, &res);
 	if(err != 0)
-		fatal("WSAStartup failed with error. %C.\n", sys_sockerr());
+		return mprintf("Failed to connect to %s:%u.", host, port);
 
-	return TRUE;
+	for(cur = res; cur != NULL; cur = cur->ai_next) {
+		*sock = socket(cur->ai_family, cur->ai_socktype, cur->ai_protocol);
+		if(*sock < 0)
+			continue;
+
+		if(connect(*sock, cur->ai_addr, cur->ai_addrlen) == 0)
+			break;
+
+		close(*sock);
+	}
+
+	freeaddrinfo(res);
+
+	if(cur == NULL)
+		return mprintf("Failed to connect to %s:%u.", host, port);
+
+	return NULL;
 }
 
 /**
@@ -53,6 +91,25 @@ static BOOL CALLBACK startup(PINIT_ONCE InitOnce, PVOID Parameter, PVOID *lpCont
 void sys_closesocket(sys_sock_t sock)
 {
 	closesocket(sock);
+}
+
+/**
+ * Once callback for Winsock startup.
+ *   @once: The init once.
+ *   @param: Unused parameter.
+ *   @ctx: Unused contxt.
+ *   &returns: Always true.
+ */
+static BOOL CALLBACK startup(PINIT_ONCE once, PVOID param, PVOID *ctx)
+{
+	int err;
+	WSADATA data;
+
+	err = WSAStartup(MAKEWORD(2, 2), &data);
+	if(err != 0)
+		fatal("WSAStartup failed with error. %C.\n", sys_sockerr());
+
+	return TRUE;
 }
 
 

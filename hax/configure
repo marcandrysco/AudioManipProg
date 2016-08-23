@@ -97,9 +97,12 @@ lib_target()
   chk_space "$1" || fail "lib_target parameter '$1' has spaces"
   test ${1##*.} != "so" && fail "lib_target argument has invalid extension '.${1##*.}'"
   ldflags="$ldflags -shared"
-
-  target="$1"
-  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(LIBDIR)/$1"
+  if [ "$windows" ] ; then
+    target="${1%.so}.dll"
+  else
+    target="$1"
+  fi
+  install="${install}${nl}${tab}install --mode 0644 -D $target \$(LIBDIR)/$target"
 }
 
 # Set the header target

@@ -4,8 +4,6 @@
 ## begin configuration options ##
 setconf()
 {
-  ldflags="-L../ -Wl,-rpath=../"
-
   bin_target "hax-test"
 
   lib_dep "hax"
@@ -14,6 +12,7 @@ setconf()
   c_src "src/main.c"
 
   c_src "src/avltree.c"
+  c_src "src/printf.c"
 }
 ## end configuration options ##
 

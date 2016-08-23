@@ -6,7 +6,7 @@
  */
 static bool log_init = false;
 static const char *log_path = "log";
-static struct sys_mutex_t log_lock = SYS_MUTEX_INIT;
+static struct sys_mutex_t log_lock = { INIT_ONCE_STATIC_INIT };
 
 
 /**

@@ -50,7 +50,6 @@ char *sys_connect(sys_sock_t *sock, int type, const char *host, uint16_t port)
 	char name[6];
 	struct addrinfo hints, *res, *cur;
 
-
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = type;
