@@ -1,0 +1,11 @@
+ASSETS = web/index.xhtml \
+         web/draw.js \
+         web/gui.js \
+         web/gui.css \
+	 web/web.js \
+	 web/web.css \
+
+install: install-assets
+
+install-assets: $(ASSETS)
+	for f in $^ ; do install --mode 0644 -D $$f $(SHAREDIR)/ampweb/$${f##*/} ; done

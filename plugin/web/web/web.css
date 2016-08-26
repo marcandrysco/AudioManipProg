@@ -1,0 +1,171 @@
+* {
+  font-family: sans-serif;
+  box-sizing: border-box;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+}
+
+#page {
+}
+
+  #page > .sel {
+    padding: 2px 4px;
+    border-bottom: 1px solid black;
+  }
+  #page > .sel:not(:first-child) {
+    border-left: 1px solid black;
+  }
+
+  #page > .work {
+    padding: 12px 8px;
+    overflow: hidden;
+  }
+
+/* machine */
+
+.mach {
+}
+
+  .mach > .head {
+    font-size: 24px;
+    height: 40px;
+    line-height: 40px;
+    display: flex;
+  }
+
+    .mach > .head > .title {
+    }
+
+    .mach > .head > * {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .mach > .head > :not(:first-child) {
+      margin-left: 16px;
+    }
+
+
+  .mach > .instr {
+  }
+  .mach > .instr:not(:first-child) {
+    margin-top: 10px;
+  }
+
+    .mach > .instr > .row {
+      display: flex;
+    }
+    .mach > .instr > .row:not(:first-child) {
+      margin-top: 4px;
+    }
+
+      .mach > .instr > .row > .cell {
+        width: 50px;
+        height: 70px;
+        border: 3px solid #222;
+        border-radius: 4px;
+      }
+      .mach > .instr > .row > .cell.beat {
+        border-width: 4px;
+      }
+      .mach > .instr > .row > .cell.half {
+        background-color: #e49b9b;
+      }
+      .mach > .instr > .row > .cell.most {
+        background-color: #dc6565;
+      }
+      .mach > .instr > .row > .cell.full {
+        background-color: #d83c3c;
+      }
+
+      .mach > .instr > .row > .cell:not(:first-child) {
+        margin-left: 5px;
+      }
+
+/* player */
+
+.player {
+}
+
+  .player > .roll {
+    width: 100%;
+    overflow-y: auto;
+  }
+
+    .player > .roll > * {
+      display: flex;
+    }
+
+      .player > .roll > * > * {
+        flex-shrink: 0;
+      }
+
+      .player > .roll > * > .cell {
+        width: 16px;
+        padding-left: 3px;
+      }
+
+    .player > .roll > .head {
+    }
+
+      .player > .roll > .head > * {
+        height: 22px;
+        border-bottom: 2px solid black;
+      }
+
+      .player > .roll > .head > .cell {
+        font-size: 16px;
+      }
+      .player > .roll > .head > .cell.sm {
+        font-size: 10px;
+      }
+        .player > .roll > .head > .cell.sm > .align {
+          font-size: 16px;
+          visibility: hidden;
+        }
+
+      .player > .roll > .head > .half {
+        width: 1px;
+      }
+
+      .player > .roll > .head > .single {
+        width: 1px;
+        background-color: #000;
+      }
+
+      .player > .roll > .head > .double {
+        width: 2px;
+        background-color: #000;
+      }
+
+    .player > .roll > .row {
+      height: 17px;
+    }
+
+      .player > .roll > .row > * {
+        border-bottom: 1px solid #888;
+      }
+
+      .player > .roll > .row > .cell {
+      }
+      .player > .roll > .row:nth-child(odd) > .cell {
+        background-color: #eee;
+      }
+
+      .player > .roll > .row > .half {
+        width: 1px;
+        background-color: #bbb;
+      }
+
+      .player > .roll > .row > .single {
+        width: 1px;
+        background-color: #000;
+      }
+
+      .player > .roll > .row > .double {
+        width: 2px;
+        background-color: #000;
+      }

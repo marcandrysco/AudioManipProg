@@ -3,55 +3,16 @@
 ## begin configuration options ##
 setconf()
 {
-  lib_target "libhax.so"
-  hdr_target "hax.h"
+  lib_target "amprt-web.so"
   inc_target "src/inc.h"
 
-  h_src "src/defs.h"
+  lib_dep "hax"
+  lib_dep "ampcore"
 
-  if [ "$windows" ] ; then
-    h_src "src/win/defs.h"
-
-    lib_dep "ws2_32"
-  else
-    h_src "src/posix/defs.h"
-  fi
-
-  if [ "$windows" ] ; then
-    h_src "src/win/defs.h"
-    c_src "src/win/fs.c"
-    c_src "src/win/poll.c"
-    c_src "src/win/sock.c"
-    c_src "src/win/thread.c"
-  else
-    h_src "src/posix/defs.h"
-    c_src "src/posix/fs.c"
-    c_src "src/posix/poll.c"
-    c_src "src/posix/sock.c"
-    c_src "src/posix/thread.c"
-    c_src "src/posix/spawn.c"
-    c_src "src/posix/time.c"
-  fi
-
-  c_src "src/avltree.c"
-  c_src "src/chunk.c"
-  c_src "src/complex.c"
-  c_src "src/crc.c"
-  c_src "src/file.c"
-  c_src "src/func.c"
-  c_src "src/list.c"
-  c_src "src/log.c"
-  c_src "src/math.c"
-  c_src "src/mem.c"
-  c_src "src/print.c"
-  c_src "src/rand.c"
-  c_src "src/strbuf.c"
-
-  c_src "src/fmt/json.c"
-  c_src "src/fmt/xml.c"
-
-  c_src "src/http.c"
-  c_src "src/tcp.c"
+  c_src "src/mach.c"
+  c_src "src/player.c"
+  c_src "src/plugin.c"
+  c_src "src/serv.c"
 }
 ## end configuration options ##
 
@@ -100,12 +61,9 @@ lib_target()
   chk_space "$1" || fail "lib_target parameter '$1' has spaces"
   test ${1##*.} != "so" && fail "lib_target argument has invalid extension '.${1##*.}'"
   ldflags="$ldflags -shared"
-  if [ "$windows" ] ; then
-    target="${1%.so}.dll"
-  else
-    target="$1"
-  fi
-  install="${install}${nl}${tab}install --mode 0644 -D $target \$(LIBDIR)/$target"
+
+  target="$1"
+  install="${install}${nl}${tab}install --mode 0644 -D $1 \$(LIBDIR)/$1"
 }
 
 # Set the header target

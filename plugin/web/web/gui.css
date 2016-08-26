@@ -1,0 +1,92 @@
+/* generic styles */
+
+.noselect,
+.gui-noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.gui-bottom {
+  display: flex;
+  flex-direction: row;
+}
+
+  .gui-bottom > * {
+    align-self: baseline;
+  }
+
+/* standard elements */
+
+.gui-button {
+}
+
+
+/* toggle widget */
+
+.gui-toggle {
+  font-size: 16px;
+  padding: 3px 10px;
+  color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+  .gui-toggle.gui-on {
+    background-color: #5bb85b;
+    border-color: #5cb85c;
+  }
+  .gui-toggle.gui-off {
+    background-color: #d9534f;
+    border-color: #d9534f;
+  }
+
+
+.gui-slider {
+  display: inline-flex;
+  height: 24px;
+}
+
+  .gui-slider > .gui-left {
+    position: relative;
+    width: 150px;
+    cursor: pointer;
+    padding: 0 3px;
+  }
+
+    .gui-slider > .gui-left > .gui-track {
+      width: 100%;
+      height: 12px;
+      background-color: #ccc;
+      border: 1px solid #555;
+    }
+
+    .gui-slider > .gui-left > .gui-space {
+      height: 6px;
+      padding: 0;
+    }
+
+    .gui-slider > .gui-left > .gui-rail {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: calc(100% - 8px);
+      height: 100%;
+    }
+      .gui-slider > .gui-left > .gui-rail > .gui-cur {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 8px;
+        border: 1px solid #333;
+        background-color: rgba(100,100,100,0.5);
+      }
+
+  .gui-slider > input {
+    margin-left: 10px;
+    width: 36px;
+  }
