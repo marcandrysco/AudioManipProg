@@ -33,8 +33,6 @@
         case "player": Player.init(work, Web.data[i].data).idx = i; break;
         }
       }
-
-      //Gui.byid("page").innerHTML = v;
     });
   };
 
@@ -44,27 +42,168 @@
    */
   window.Key = new Object();
 
+  /**
+   * Retrieve the letter associate with a given value.
+   *   @val: The key value.
+   *   &returns: The letter and accidental.
+   */
   window.Key.letter = function(val) {
     switch((val % 12 + 12) % 12) {
-    case 0: return "B";
-    case 1: return "C";
-    case 2: return "C♯";
-    case 3: return "D";
-    case 4: return "E♭";
-    case 5: return "E";
-    case 6: return "F";
-    case 7: return "F♯";
-    case 8: return "G";
-    case 9: return "A♭";
-    case 10: return "A";
-    case 11: return "B♭";
+    case 0: return "C";
+    case 1: return "C♯";
+    case 2: return "D";
+    case 3: return "E♭";
+    case 4: return "E";
+    case 5: return "F";
+    case 6: return "F♯";
+    case 7: return "G";
+    case 8: return "A♭";
+    case 9: return "A";
+    case 10: return "B♭";
+    case 11: return "B";
     }
     throw("Invalid value.");
   };
 
+  /**
+   * Convert a key value into its string.
+   *   @val: The key value.
+   *   &returns: The string.
+   */
   window.Key.str = function(val) {
     return Key.letter(val) + Math.floor(val / 12).toString();
   };
+
+  /**
+   * Parse a string into a key value.
+   *   @str: The string.
+   *   &returns: The value if successful, null otherwise.
+   */
+  window.Key.parse = function(str) {
+    if(typeof str != "string") { return null; }
+    var val;
+    switch(str.charAt(0).toUpperCase()) {
+    case "C": val = 0; break;
+    case "D": val = 2; break;
+    case "E": val = 4; break;
+    case "F": val = 5; break;
+    case "G": val = 7; break;
+    case "A": val = 9; break;
+    case "B": val = 11; break;
+    default: return null;
+    }
+    str = str.substr(1);
+    if(str.charAt(0) == "#") {
+      val++;
+      str = str.substr(1);
+    } else if(str.charAt(0) == "b") {
+      val--;
+      str = str.substr(1);
+    }
+    var n = Number.parseInt(str);
+    if(str.length != n.toString().length) { return null; }
+    return val + 12 * n;
+  };
+
+
+  /*
+   * Location namespace
+   */
+  window.Loc = new Object();
+
+  /**
+   * Copy a location.
+   *   @loc: The original location.
+   *   &returns: The copied location.
+   */
+  window.Loc.copy = function(loc) {
+    return { bar: loc.bar, beat: loc.beat };
+  };
+
+  /**
+   * Compare two locations for their order.
+   *   @left: The left location.
+   *   @right: The right location.
+   *   &returns: True if properly ordered.
+   */
+  window.Loc.cmp = function(left, right) {
+    if(left.bar < right.bar)
+      return true;
+    else if(left.bar > right.bar)
+      return false;
+    else
+      return left.beat <= right.beat;
+  };
+
+  /**
+   * Compare two locations for their order.
+   *   @left: The left location.
+   *   @right: The right location.
+   *   &returns: True if properly ordered.
+   */
+  window.Loc.order = function(left, right) {
+    if(left.bar < right.bar)
+      return true;
+    else if(left.bar > right.bar)
+      return false;
+    else
+      return left.beat <= right.beat;
+  };
+
+  /**
+   * Reorder two locations to be in order.
+   *   @left: The left location.
+   *   @right: The right location.
+   */
+  window.Loc.reorder = function(left, right) {
+    if(Loc.order(left, right)) { return; }
+
+    var tmp;
+    tmp = left.bar; left.bar = right.bar; right.bar = tmp;
+    tmp = left.beat; left.beat = right.beat; right.beat = tmp;
+  };
+
+
+  /*
+   * Note namespace
+   */
+  window.Note = new Object();
+
+  /**
+   * Convert a velocity to an integer value.
+   *   @vel: The velocity.
+   *   &returns: The integer value.
+   */
+  window.Note.vel2val = function(vel) {
+    var val = Math.round(65535 * vel);
+    if(val < 0) { val = 0; } else if(val > 65535) { val = 65535; }
+    return val;
+  };
+
+  /**
+   * Convert a integer value to a velocity.
+   *   @val: The integer value.
+   *   &returns: The velocity.
+   */
+  window.Note.val2vel = function(val) {
+    var vel = val / 65535;
+    if(vel < 0) { vel = 0; } else if(vel > 1) { vel = 1; }
+    return vel;
+  };
+
+
+  window.Note.vel2color = function(vel) {
+    var color = Math.round(200 * vel + 55);
+    if(color < 0) { color = 0; } else if(color > 255) { color = 255; }
+    return color;
+  };
+
+  window.Note.val2color = function(val) {
+    var color = Math.round(200 * val / 65535 + 55);
+    if(color < 0) { color = 0; } else if(color > 255) { color = 255; }
+    return color;
+  };
+
 
   /*
    * Machine namespace
@@ -174,48 +313,158 @@
     player.sel = -1;
     player.x = 0;
     player.conf.rows = [32,33,34,35,36,37,38,39,40,41,42,43,44];
-    player.scroll = {
-      box: function() {
-        return layout.height(false) + 3.5
-      }
-    };
+    player.vel = 32768;
+
     player.layout = {
-      head: { h: 18, ln: 2, off: 20 },
-      cell: { w: 16, h: 16 },
-      width: { disp: 0, total: 0, max: 0 },
-      scroll: 20, label: 40,
-      div: function(ln) {
-        return player.layout.cell.w + (ln ? 1 : 0);
+      scroll: 20,
+      label: 40,
+      head: 18,
+      cell: { width: 16, height: 16 },
+      width: function() { // render area width in pixels
+        return player.roll.width - (player.layout.label + 2);
       },
-      beat: function(ln) {
-        return (player.layout.cell.w + 1) * player.conf.ndivs - 1 + (ln ? 1 : 0);
+      height: function() { // render area height in pixels
+        return player.conf.rows.length * (player.layout.cell.height + 1) - 1;
       },
-      bar: function(ln) {
-        return (player.layout.cell.w + 1) * player.conf.nbeats * player.conf.ndivs - 1 + (ln ? 2 : 0);
+      bar: function() { // size of a bar in pixels
+        return player.conf.ndivs * player.conf.nbeats * (player.layout.cell.width + 1) + 1;
       },
-      height: function(scroll) {
-        return player.layout.head.off + 17 * player.conf.rows.length - 1 + (scroll ? (player.layout.scroll + 2) : 0);
-      },
-      refresh: function() {
-        var width = player.layout.width;
-        width.disp = player.roll.offsetWidth;
-        width.total = player.layout.bar(true) * player.conf.nbars + 2;
-        width.max = width.total - width.disp;
+      ndivs: function() { // number of divs per bar
+        return Math.round(player.conf.nbeats * player.conf.ndivs);
       }
     };
+
+    var conf = player.conf;
+    var layout = player.layout;
+
+    var head = Gui.div("head");
+    head.appendChild(Gui.div("title", Gui.text("Player")));
+    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], true, function() {
+    }));
+    head.appendChild(player.slider = Gui.Slider({input: 100}, function(slider, v) {
+      player.vel = Math.round(v * 65535);
+      slider.guiTrack.style.backgroundColor = Player.color(player.vel, false);
+
+      if(player.sel >= 0) {
+        var dat = player.data[player.sel];
+        dat.vel = player.vel;
+        Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + dat.vel, function() {
+      });
+      }
+
+      if(player.init) { Player.draw(player); }
+    }));
+    head.appendChild(Gui.Button("Keys", {}, function(e) {
+    }));
+    work.appendChild(head);
 
     player.roll = Gui.tag("canvas", "roll");
     player.roll.addEventListener("mousedown", Player.mouse(player));
     player.roll.addEventListener("contextmenu", Player.context(player));
     player.roll.addEventListener("wheel", Player.wheel(player));
-    player.roll.style.height = player.layout.height(true) + 4 + "px";
+    player.roll.style.height = (layout.height() + layout.scroll + layout.head + 4) + 4 + "px";
     player.roll.style.border = "2px solid black";
     work.appendChild(player.roll);
 
     Player.draw(player);
     window.addEventListener("resize", function() { Player.draw(player); });
 
+    console.log(Key.parse("C4"));
+    Player.keys(player);
+    player.init = true;
     return player;
+  };
+
+  /**
+   * Create the keys configuration UI.
+   *   @player: The player.
+   *   &returns: The UI.
+   */
+  window.Player.keys = function(player) {
+    var check = function() {
+      var begin = Key.parse(left.value);
+      var end = Key.parse(right.value);
+      if((begin != null) && (end != null)) {
+        Gui.replace(valid, Gui.text("Valid (" + begin + "," + end + ")"));
+      } else {
+        Gui.replace(valid, Gui.text("Invalid"));
+      }
+    };
+
+    var keys = Gui.div("player-keys");
+
+    var range = Gui.div("range");
+    keys.appendChild(range);
+
+    var left = Gui.tag("input", "left");
+    left.value = "C2";
+    left.addEventListener("input", function(e) { check(); });
+    range.appendChild(left);
+
+    range.appendChild(Gui.text(" - "));
+
+    var right = Gui.tag("input", "right");
+    right.value = "C5";
+    right.addEventListener("input", check);
+    range.appendChild(right);
+
+    var valid = Gui.div("valid", Gui.text("Valid"));
+    keys.appendChild(valid);
+
+    var action = Gui.div("action");
+    action.appendChild(Gui.Button("Accept", {}, function(e) {
+    }));
+    action.appendChild(Gui.Button("Cancel", {}, function(e) {
+      popup.guiDismiss();
+    }));
+    keys.appendChild(action);
+    check();
+
+    var popup = Gui.Popup(keys, function(e) {
+    });
+    document.body.appendChild(popup);
+  };
+
+  /**
+   * Retrieve the row, beat and bar information from a set of coordinates.
+   *   @player: The player.
+   *   @x: The x-coordinate.
+   *   @y: THe y-coordinate.
+   *   @round: The rounding.
+   *   &returns: The information or null.
+   */
+  window.Player.getxy = function(player, x, y, round) {
+    var layout = player.layout, conf = player.conf;
+    var row = Math.min(Math.floor(y / (layout.cell.height + 1)), conf.rows.length - 1);
+    var bar = Math.floor(x / layout.bar());
+    var div = (x - bar * layout.bar()) / (layout.cell.width + 1);
+    var beat = (round ? Math.floor(div) : div) / conf.ndivs;
+    if(beat >= conf.nbeats) { bar++; beat = 0; }
+
+    return { row: row, bar: bar, beat: beat, div: div };
+  };
+
+  /**
+   * Retrieve the data index at a given coordinate.
+   *   @player; The player.
+   *   @x: The x-coordinate.
+   *   @y: The y-coordinate.
+   *   &returns: The index or '-1' if no matches.
+   */
+  window.Player.getidx = function(player, x, y) {
+    var xy = Player.getxy(player, x, y, false);
+    if(xy == null) { return; }
+
+    for(var i = 0; i < player.data.length; i++) {
+      var dat = player.data[i];
+      if(dat.key != player.conf.rows[xy.row]) { continue; }
+      if(dat.begin.bar > xy.bar) { continue; }
+      if((dat.begin.bar == xy.bar) && (dat.begin.beat >= xy.beat)) { continue; }
+      if(dat.end.bar < xy.bar) { continue; }
+      if((dat.end.bar == xy.bar) && (dat.end.beat <= xy.beat)) { continue; }
+      return i;
+    }
+    return -1;
   };
 
   /**
@@ -256,6 +505,17 @@
     }
     return -1;
   };
+ 
+  /**
+   * Compute the CSS color for a value.
+   *   @val: The value.
+   *   @orange: Orange flag.
+   *   &returns: The CSS color string.
+   */
+  window.Player.color = function(val, orange) {
+    var t = 200 - Math.round(val / 65535 * 200);
+    return "rgb(255,"+(orange?Math.floor(128+t/2):t)+","+t+")";
+  };
 
   /**
    * Handle a mouse down on the player.
@@ -267,82 +527,108 @@
       if(e.button != 0) { return; }
       e.preventDefault();
 
+      var x = e.offsetX, y = e.offsetY;
+      var layout = player.layout;
       var box = Pack.canvas(player.roll);
-      var scroll = Pack.vert(box, player.layout.scroll, true);
-      Pack.vert(box, 2);
+      Pack.vert(box, layout.scroll + 2, true);
+      Pack.vert(box, layout.head + 2);
+      Pack.horiz(box, layout.label + 2);
 
-      if(scroll.inside(e.offsetX, e.offsetY)) {
-        scroll = Pack.pad(scroll, 1, 0);
-        var x = e.offsetX - scroll.x;
-        var y = e.offsetY - scroll.y;
+      if(box.inside(x, y)) {
+        x -= box.x;
+        y -= box.y;
 
-        var width = Math.floor(scroll.width * player.layout.width.disp / player.layout.width.total);
-
-        x = (x - width / 2);
-        x = x / (scroll.width - width);
-
-        player.x = Math.floor(x * (player.layout.width.total - player.layout.width.disp));
-        Player.draw(player);
-      } else {
-        var coord = Player.coord(player, e.offsetX, e.offsetY);
-        if((coord.row < 0) || (coord.row >= player.conf.rows.length)) { return; }
-
-        var sel = Player.get(player, coord.row, coord.idx);
-        if(sel >= 0) {
-          player.sel = (player.sel == sel) ? -1 : sel;
+        var idx = Player.getidx(player, x, y);
+        if(idx >= 0) {
+          if(idx != player.sel) {
+            player.sel = idx;
+            player.slider.guiUpdate(player.data[idx].vel / 65535);
+          } else {
+            player.sel = -1;
+          }
           Player.draw(player);
           return;
         }
 
+        var xy = Player.getxy(player, x, y, true);
+        if(xy == null) { return; }
+
         player.sel = -1;
-        player.active = { row: coord.row, begin: coord.idx, end: coord.idx };
+        player.active = {
+          row: player.conf.rows[xy.row],
+          begin: { bar: xy.bar, beat: xy.beat },
+          end: { bar: xy.bar, beat: xy.beat }
+        };
 
-        var move = function(e) {
-          player.active.end = Player.coord(player, e.offsetX, e.offsetY).idx;
-          Player.draw(player);
-        };
-        var out = function(e) {
-          if(e.relatedTarget == window.body) { cleanup(e); }
-        };
-        var up = function(e) {
-          var dat = new Object();
-          dat.row = player.active.row;
-          dat.begin = Math.min(player.active.begin, player.active.end);
-          dat.end = Math.max(player.active.begin, player.active.end);
-          player.data.push(dat);
+        Player.draw(player);
 
-          cleanup();
-        };
-        var cleanup = function() {
-          window.removeEventListener("mousemove", move);
-          window.removeEventListener("mouseup", up);
-          window.removeEventListener("mouseout", out);
-          player.active = null;
-          Player.draw(player);
-        };
-        window.addEventListener("mousemove", move);
-        window.addEventListener("mouseout", out);
-        window.addEventListener("mouseup", up);
-        move(e);
+        Gui.dragNow(function(e, type) {
+          switch(type) {
+          case "move":
+            var xy = Player.getxy(player, e.offsetX - box.x, e.offsetY - box.y, true);
+            if(xy == null) { return; }
+            player.active.end = { bar: xy.bar, beat: xy.beat };
+            Player.draw(player);
+            break;
+
+          case "down":
+            break;
+
+          case "up":
+            var active = player.active;
+            var begin = Loc.copy(active.begin), end = Loc.copy(active.end);
+            Loc.reorder(begin, end);
+            end.beat += 1 / player.conf.ndivs;
+
+            var dat = { key: active.row, begin: begin, end: end, vel: player.vel };
+            player.data.push(dat);
+            Player.draw(player);
+
+            Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + dat.vel, function() {
+            });
+            break;
+
+          case "done":
+            player.active = null;
+            Player.draw(player);
+            break;
+          }
+        });
       }
+      
     };
   };
 
+  /**
+   * Handle a context window event.
+   *   @player: The player.
+   *   &returns: The handler.
+   */
   window.Player.context = function(player) {
     return function(e) {
-      var coord = Player.coord(player, e.offsetX, e.offsetY);
-      if(coord.row < 0) { return; }
-
       e.preventDefault();
 
-      var sel = Player.get(player, coord.row, coord.idx);
-      if(sel < 0) { return; }
+      var layout = player.layout;
+      var box = Pack.canvas(player.roll);
+      Pack.vert(box, layout.scroll + 2, true);
+      Pack.vert(box, layout.head + 2);
+      Pack.horiz(box, layout.label + 2);
 
-      var ret = player.data.splice(sel, 1);
+      if(!box.inside(e.offsetX, e.offsetY)) { return; }
+
+      var idx = Player.getidx(player, e.offsetX - box.x, e.offsetY - box.y);
+      if(idx < 0) { return; }
+
+      var dat = player.data[idx];
+      Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + 0, function() {
+      });
+
       player.sel = -1;
+      player.data.splice(idx, 1);
       Player.draw(player);
     };
   };
+
   /**
    * Handle a wheel on the player.
    *   @player: The player.
@@ -351,6 +637,7 @@
   window.Player.wheel = function(player) {
     return function(e) {
       player.x += e.deltaY;
+      if(player.x < 0) { player.x = 0; }
       Player.draw(player);
     };
   };
@@ -360,188 +647,126 @@
    *   @player: The player.
    */
   window.Player.draw = function(player) {
-    var hline = function(y, full) {
-      ctx.moveTo(full ? 0 : layout.label, y + ctx.lineWidth / 2);
-      ctx.lineTo(w, y + ctx.lineWidth / 2);
-    };
-    var vline = function(x, x0) {
-      ctx.moveTo(x + ctx.lineWidth / 2 + layout.label, x0);
-      ctx.lineTo(x + ctx.lineWidth / 2 + layout.label, player.layout.height(false));
-    };
-    var block = function(h, l, r) {
-      var t = layout.head.off + h * (hrow + 1);
-      ctx.rect(left(l), t, right(r) - left(l), hrow);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(left(l) - 0.5, t);
-      ctx.lineTo(left(l) - 0.5, t + hrow);
-      ctx.moveTo(right(r) + 0.5, t);
-      ctx.lineTo(right(r) + 0.5, t + hrow);
-      ctx.stroke();
-    };
+    player.roll.width = player.roll.clientWidth;
+    player.roll.height = player.roll.clientHeight;
 
-    var layout = player.layout;
+    var ctx = player.roll.getContext("2d", {alpha: false});
     var conf = player.conf;
-
-    // validation
-    if(player.x >= player.layout.width.max) { player.x = player.layout.width.max; }
-    if(player.x < 0) { player.x = 0 }
-
-    var w = player.roll.width = player.roll.clientWidth;
-    var h = player.roll.height = player.roll.clientHeight;
-    player.layout.refresh();
-
-    var ctx = player.roll.getContext("2d");
+    var layout = player.layout;
+    ctx.fillStyle = "#fff";
+    ctx.rect(0, 0, player.roll.width, player.roll.height);
+    ctx.fill();
 
     var box = Pack.canvas(player.roll);
     var scroll = Pack.vert(box, layout.scroll, true);
-    Pack.vert(box, 2, true);
-    var head = Pack.vert(box, 18);
-    Pack.vert(box, 2);
-    var label = Pack.horiz(box, layout.label - 2);
+    Draw.fill(Pack.vert(box, 2, true), ctx, "#000");
+    var line = Pack.horiz(Pack.horiz(box.copy(), layout.label + 2), 2, true);
+    var head = Pack.vert(box, layout.head);
+    Draw.fill(Pack.vert(box, 2), ctx, "#000");
+    var label = Pack.horiz(box, layout.label);
     Pack.horiz(box, 2);
 
-    ctx.clearRect(0, 0, player.roll.width, player.roll.height);
+    // background colors
+    var cur = box.copy();
+    for(var i = 0; i < conf.rows.length; i++) {
+      var row = Pack.vert(cur, layout.cell.height);
+      Pack.vert(cur, 1);
 
-    var htop = 18;
-    var hrow = 16;
+      if((i % 2) == 0) { Draw.fill(row, ctx, "#eee"); }
+    }
 
-    var wdiv = 16;
-    var wbeat = wdiv * conf.ndivs + (conf.ndivs - 1);
-    var wbar = wbeat * conf.nbeats + (conf.nbeats - 1);
-    var nbar = wbar + 2;
+    // vertical lines and heading
+    var blank = Pack.horiz(head, layout.label);
+    Pack.horiz(head, 2);
+    var b = 0, x = -player.x, bar = layout.bar(), ndivs = layout.ndivs(), width = layout.width();
+    while(x < -bar) { x += bar; b++; }
+    while(x < width) {
+      Draw.text(head, ctx, (b++) + 1, {x: 4+x, y: 2, color: "#000", font: "16px sans-serif"});
+      for(var i = 1; i < ndivs; i++) {
+        x += layout.cell.width;
+        if((i % conf.ndivs) == 0) {
+          Draw.vert(box, x, ctx, 1, "#000");
+          Draw.vert(head, x, ctx, 1, "#000");
+          Draw.text(head, ctx, (i / conf.ndivs) + 1, {x: 4+x, y: 2, color: "#000", font: "12px sans-serif"});
+        } else {
+          Draw.vert(box, x, ctx, 1, "#bbb");
+        }
+        x++;
+      }
+      x += layout.cell.width;
+      Draw.vert(box, x, ctx, 2, "#000");
+      Draw.vert(head, x, ctx, 2, "#000");
+      x += 2;
+    }
+    Draw.fill(blank, ctx, "#fff");
+    Draw.fill(label, ctx, "#fff");
+    Draw.fill(line, ctx, "#000");
 
-    ctx.fillStyle = "#eee";
-    for(var i = 0; i < player.conf.rows.length; i += 2) {
-      ctx.rect(0, layout.head.off + i * (hrow + 1), w, hrow);
+    // horizontal lines
+    var y = layout.cell.height;
+    for(var i = 1; i < conf.rows.length; i++) {
+      Draw.horiz(box, i * (layout.cell.height + 1) - 1, ctx, 1, "#000");
+    }
+
+      var pwa = function(player, loc) {
+        var x = -player.x;
+        x += loc.bar * player.layout.bar();
+        x += loc.beat * (player.layout.cell.width + 1) * player.conf.ndivs;
+        return Math.round(x);
+      };
+
+    // active box
+    if(player.active) {
+      var begin = Loc.copy(player.active.begin), end = Loc.copy(player.active.end);
+      Loc.reorder(begin, end);
+      end.beat += 1 / conf.ndivs;
+
+      var left = pwa(player, begin);
+      var right = pwa(player, end);
+      var width = Math.min(2, right - left - 1);
+      var row = player.conf.rows.indexOf(player.active.row);
+      if(row >= 0) {
+        var y = row * (layout.cell.height + 1)
+        ctx.fillStyle = Player.color(player.vel, true);
+        ctx.beginPath();
+        ctx.rect(box.x + left, box.y + y, right - left - 1, layout.cell.height);
+        ctx.fill();
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.rect(box.x + left - 1, box.y + y, 1, layout.cell.height);
+        ctx.rect(box.x + right - 1, box.y + y, 1, layout.cell.height);
+        ctx.fill();
+      }
+    }
+
+    // remaining boxes
+    for(var i = 0; i < player.data.length; i++) {
+      var dat = player.data[i];
+      var left = pwa(player, dat.begin);
+      var right = pwa(player, dat.end);
+      var width = Math.min(2, right - left - 1);
+      var row = player.conf.rows.indexOf(dat.key);
+      if(row < 0) { continue; }
+      var y = row * (layout.cell.height + 1)
+      ctx.fillStyle = Player.color(dat.vel, player.sel == i);
+      ctx.beginPath();
+      ctx.rect(box.x + left, box.y + y, right - left - 1, layout.cell.height);
+      ctx.fill();
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.rect(box.x + left - 1, box.y + y, 1, layout.cell.height);
+      ctx.rect(box.x + right - 1, box.y + y, 1, layout.cell.height);
       ctx.fill();
     }
 
-    ctx.fillStyle = "#000";
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "#bbb";
-    ctx.beginPath();
-    var x = -player.x;
-    while(x < w) {
-      x += wdiv;
-      for(var i = 1; i < conf.ndivs * conf.nbeats; i++) {
-        if(x >= 0) { vline(x, layout.head.off); }
-        x += wdiv + 1;
-      }
-      x += 2;
+    // labels
+    for(var i = 0; i < conf.rows.length; i++) {
+      var key = Key.str(player.conf.rows[i]);
+      var pack = Pack.vert(label, layout.cell.height);
+      Draw.fill(pack, ctx, (key.length > 2) ? "#000" : "#fff");
+      Draw.text(pack, ctx, key, {x: 2, y: 1, font: "16px sans-serif", align: "right", color: (key.length > 2) ? "#fff" : "#000"});
+      Draw.fill(Pack.vert(label, 1), ctx, "#000");
     }
-    ctx.stroke();
-
-    ctx.font = "12px sans-serif";
-    ctx.strokeStyle = "#000";
-    ctx.beginPath();
-    var x = -player.x;
-    while(x < w) {
-      x += wbeat;
-      for(var i = 1; i < conf.nbeats; i++) {
-        if(x >= 0) { vline(x, 0); }
-        ctx.fillText(i+1, x + 4 + layout.label, 15);
-        x += wbeat + 1;
-      }
-      x += 2;
-    }
-    ctx.stroke();
-
-    ctx.font = "16px sans-serif";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    var x = -player.x - 2;
-    var i = 1;
-    while(x < w) {
-      if(x >= 0) { vline(x, 0); }
-      ctx.fillText(i++, x + 4 + layout.label, 15);
-      x += wbar + 2;
-    }
-    ctx.stroke();
-
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#000";
-    ctx.beginPath();
-    hline(htop, true);
-    ctx.stroke();
-
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for(var i = 0; i < player.conf.rows.length; i++) {
-      hline(layout.head.off + i * (hrow + 1) - 1, true);
-    }
-    ctx.stroke();
-
-    var left = function(idx) {
-      var bar = Math.floor(idx / (conf.ndivs * conf.nbeats));
-      var div = idx % (conf.ndivs * conf.nbeats);
-      return (wbar + 2) * bar + (wdiv + 1) * div - player.x + player.layout.label;
-    };
-    var right = function(idx) {
-      return left(idx) + wdiv;
-    };
-
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 1;
-    
-    for(var i = 0; i < player.data.length; i++) {
-      if(i == player.sel) {
-        ctx.fillStyle = "#f80";
-      } else {
-        ctx.fillStyle = "#f00";
-      }
-      var dat = player.data[i];
-      block(dat.row, dat.begin, dat.end);
-    }
-
-    if(player.active != null) {
-      var l = Math.min(player.active.begin, player.active.end);
-      var r = Math.max(player.active.begin, player.active.end);
-      ctx.fillStyle = "#f80";
-      block(player.active.row, l, r);
-    }
-
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    hline(layout.height(false), true);
-    ctx.stroke();
-
-    var l = Math.floor((w-3) * Math.max(0, player.x / layout.width.total));
-    var r = Math.floor((w-3) * Math.min(1, (player.x + layout.width.disp) / layout.width.total));
-    ctx.fillStyle = "#eee";
-    ctx.strokeStyle = "#bbb";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.rect(l + 1.5, layout.height(false) + 3.5, r - l, layout.scroll - 3);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.font = "14px sans-serif";
-    ctx.fillStyle = "#000";
-    ctx.strokeStyle = "#000";
-    ctx.beginPath();
-    for(var i = 0; i < player.conf.rows.length; i++) {
-      var row = player.conf.rows[i];
-      var cur = Pack.vert(label, layout.cell.h);
-      Pack.vert(label, 1);
-      Pack.text(Pack.pad(cur, 2), ctx, Key.str(row), "right");
-    }
-    ctx.fill();
-
-    //ctx.clearRect(0, 0, layout.label, layout.height.head);
-    //ctx.clearRect(0, layout.height.head, layout.label, layout.height(false));
-    ctx.clearRect(0, 0, layout.label, layout.head.h);
-    //ctx.clearRect(0, layout.head.off, layout.label, layout.height(false) - layout.head.off);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    vline(-2, 0);
-    ctx.stroke();
-
-    //ctx.fillStyle = "rgba(0,0,255,0.5)";
-    //ctx.beginPath();
-    //Pack.draw(label, ctx);
-    //ctx.fill();
   };
 
   /*

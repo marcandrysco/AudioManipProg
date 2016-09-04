@@ -90,82 +90,44 @@ body {
 .player {
 }
 
-  .player > .roll {
-    width: 100%;
-    overflow-y: auto;
+  .player > .head {
+    font-size: 24px;
+    margin-bottom: 10px;
+    display: flex;
   }
 
-    .player > .roll > * {
-      display: flex;
+    .player > .head > *:not(:last-child) {
+      margin-right: 20px;
     }
 
-      .player > .roll > * > * {
-        flex-shrink: 0;
-      }
+  .player > .roll {
+    width: 100%;
+  }
 
-      .player > .roll > * > .cell {
-        width: 16px;
-        padding-left: 3px;
-      }
+.player-keys {
+  font-size: 16px;
+  text-align: center;
+}
 
-    .player > .roll > .head {
+  .player-keys > .range {
+  }
+
+    .player-keys > .range > input {
+      width: 60px;
+      font-size: 20px;
     }
+    
+      .player-keys > .range > input.error {
+        background-color: #f00;
+      }
+  
+  .player-keys > .valid {
+    margin: 12px 0;
+  }
 
-      .player > .roll > .head > * {
-        height: 22px;
-        border-bottom: 2px solid black;
-      }
+  .player-keys > .action {
+  }
 
-      .player > .roll > .head > .cell {
-        font-size: 16px;
-      }
-      .player > .roll > .head > .cell.sm {
-        font-size: 10px;
-      }
-        .player > .roll > .head > .cell.sm > .align {
-          font-size: 16px;
-          visibility: hidden;
-        }
-
-      .player > .roll > .head > .half {
-        width: 1px;
-      }
-
-      .player > .roll > .head > .single {
-        width: 1px;
-        background-color: #000;
-      }
-
-      .player > .roll > .head > .double {
-        width: 2px;
-        background-color: #000;
-      }
-
-    .player > .roll > .row {
-      height: 17px;
-    }
-
-      .player > .roll > .row > * {
-        border-bottom: 1px solid #888;
-      }
-
-      .player > .roll > .row > .cell {
-      }
-      .player > .roll > .row:nth-child(odd) > .cell {
-        background-color: #eee;
-      }
-
-      .player > .roll > .row > .half {
-        width: 1px;
-        background-color: #bbb;
-      }
-
-      .player > .roll > .row > .single {
-        width: 1px;
-        background-color: #000;
-      }
-
-      .player > .roll > .row > .double {
-        width: 2px;
-        background-color: #000;
-      }
+  .player-keys > .action > button:not(:last-child) {
+    margin-right: 16px;
+  }

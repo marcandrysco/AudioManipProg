@@ -342,6 +342,4 @@ bool web_mach_req(struct web_mach_t *mach, const char *path, struct http_args_t 
 	}
 	else
 		return false;
-
-	return false;
 }

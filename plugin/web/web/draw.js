@@ -80,8 +80,10 @@
       y = box.y;
       box.height -= height;
       box.y += height;
+      box.top += height;
     } else {
       box.height -= height;
+      box.bottom -= height;
       y = box.height;
     }
 
@@ -100,24 +102,17 @@
 
     var x;
     if(!rev) {
-      x = 0;
+      x = box.x;
       box.width -= width;
       box.x += width;
+      box.left += width;
     } else {
       box.width -= width;
+      box.right -= width;
       x = box.width;
     }
 
     return Pack.box(x, box.y, width, box.height);
-  };
-
-  /**
-   * Draw the box-rect using the context.
-   *   @box: The box.
-   *   @ctx: The context.
-   */
-  window.Pack.draw = function(box, ctx) {
-    ctx.rect(box.x, box.y, box.width, box.height);
   };
 
   /**
@@ -134,6 +129,83 @@
       ctx.textAlign = align;
       ctx.fillText(text, box.right, box.bottom);
       ctx.textAlign = "start";
+    }
+  };
+
+  /**
+   * Draw the box-rect using the context.
+   *   @box: The box.
+   *   @ctx: The context.
+   */
+  window.Pack.draw = function(box, ctx) {
+    ctx.rect(box.x, box.y, box.width, box.height);
+  };
+
+
+  /*
+   * Draw namespace
+   */
+  window.Draw = new Object();
+
+  /**
+   * Draw the box-rect using the context.
+   *   @box: The box.
+   *   @ctx: The context.
+   */
+  window.Draw.fill = function(box, ctx, color) {
+    if(color !== undefined) { ctx.fillStyle = color; }
+    ctx.beginPath();
+    ctx.rect(box.x, box.y, box.width, box.height);
+    ctx.fill();
+  };
+
+  /**
+   * Draw a vertical line in a box-rect.
+   *   @box: The box.
+   *   @x: The x-coordinate.
+   *   @ctx: The context.
+   *   @width: The line width.
+   *   @color: The line color.
+   */
+  window.Draw.vert = function(box, x, ctx, width, color) {
+    if(color !== undefined) { ctx.fillStyle = color; }
+    ctx.beginPath();
+    ctx.rect(box.x + x, box.y, width, box.height);
+    ctx.fill();
+  };
+
+  /**
+   * Draw a horizontal line in a box-rect.
+   *   @box: The box.
+   *   @y: The y-coordinate.
+   *   @ctx: The context.
+   *   @width: The line width.
+   *   @color: The line color.
+   */
+  window.Draw.horiz = function(box, y, ctx, width, color) {
+    if(color !== undefined) { ctx.fillStyle = color; }
+    ctx.beginPath();
+    ctx.rect(box.x, box.y + y, box.width, width);
+    ctx.fill();
+  };
+
+  /**
+   * Draw text in a box-rect.
+   *   @box: The box-rect.
+   *   @ctx: The context.
+   *   @text: The text.
+   *   @opt: Optional. The options.
+   */
+  window.Draw.text = function(box, ctx, text, opt) {
+    if(typeof opt != "object") { opt = new Object(); }
+    if(opt.color) { ctx.fillStyle = opt.color; }
+    if(opt.font) { ctx.font = opt.font; }
+    if(opt.align == "right") {
+      ctx.textAlign = "right";
+      ctx.fillText(text, box.right - opt.x, box.bottom - opt.y);
+      ctx.textAlign = "start";
+    } else {
+    ctx.fillText(text, box.left + opt.x, box.bottom - opt.y);
     }
   };
 })();
