@@ -5,16 +5,15 @@
  */
 static void notify(const char *path, void *arg);
 
-#include <sndfile.h>
-extern SNDFILE *file;
+
 /**
  * Create an engine.
- *   @list: Constant. Optional. The file list.
+ *   @path: Constant. Optional. The source file.
  *   @comm: Consumed. Optional. The communication structure.
  *   @audio: The audio interface.
  *   &returns: The engine.
  */
-struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, struct amp_audio_t audio)
+struct amp_engine_t *amp_engine_new(const char *path, struct amp_comm_t *comm, struct amp_audio_t audio)
 {
 	const char *iface;
 	struct amp_engine_t *engine;
@@ -28,9 +27,9 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, amp_audio_info(audio).rate));
 	engine->instr = amp_instr_null;
 	engine->comm = comm ?: amp_comm_new();
-	engine->notify = amp_notify_new(list, notify, engine);
+	engine->notify = amp_notify_new(path, notify, engine);
 	engine->watch = NULL;
-	engine->rt = (struct amp_rt_t){ engine, amp_engine_watch };
+	engine->rt = (struct amp_rt_t){ engine, amp_export_watch, amp_export_start, amp_export_stop };
 
 	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt), ml_tag_copy(ml_tag_null)));
 
@@ -48,14 +47,6 @@ struct amp_engine_t *amp_engine_new(const char *list, struct amp_comm_t *comm, s
 
 	ml_env_add(&engine->core->env, strdup("amp.audio"), ml_value_str(strdup(iface), ml_tag_copy(ml_tag_null)));
 
-		SF_INFO info;
-
-		info.samplerate = amp_audio_info(audio).rate;
-		info.channels = 1;
-		info.format = SF_FORMAT_FLAC | SF_FORMAT_PCM_24;
-		file = sf_open("/home/marc/test.flac", SFM_WRITE, &info);
-		if(file == NULL)
-			fatal("Failed to open file.");
 	return engine;
 }
 
@@ -67,8 +58,6 @@ void amp_engine_delete(struct amp_engine_t *engine)
 {
 	struct amp_watch_t *watch;
 
-	sf_close(file);
-	printf("close\n");
 	while(engine->watch != NULL) {
 		watch = engine->watch;
 		engine->watch = watch->next;
@@ -116,6 +105,10 @@ static void notify(const char *path, void *arg)
 }
 
 
+/**
+ * Start the engine.
+ *   @engine: The engine.
+ */
 void amp_engine_start(struct amp_engine_t *engine)
 {
 	struct amp_seek_t seek;
@@ -124,10 +117,33 @@ void amp_engine_start(struct amp_engine_t *engine)
 	amp_clock_info(engine->clock, amp_info_start(&seek));
 }
 
+/**
+ * Stop the engine.
+ *   @engine: The engine.
+ */
 void amp_engine_stop(struct amp_engine_t *engine)
 {
 	struct amp_seek_t seek;
 
 	engine->run = false;
 	amp_clock_info(engine->clock, amp_info_stop(&seek));
+}
+
+/**
+ * Seek the engine.
+ *   @engine: The engine.
+ *   @bar: The bar.
+ */
+void amp_engine_seek(struct amp_engine_t *engine, double bar)
+{
+	struct amp_seek_t seek;
+
+	if(engine->run)
+		amp_clock_info(engine->clock, amp_info_stop(&seek));
+
+	amp_clock_info(engine->clock, amp_info_seek(&bar));
+	amp_instr_info(engine->instr, amp_info_seek(&bar));
+
+	if(engine->run)
+		amp_clock_info(engine->clock, amp_info_start(&seek));
 }

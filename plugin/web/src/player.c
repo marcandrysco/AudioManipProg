@@ -6,11 +6,16 @@
  *   @dev: The device.
  *   @nbeats: The number of beats.
  *   @ndivs, nbars: The number of divisoins and bars.
+ *   @keys: Key array.
+ *   @nkeys: The number of keys.
  */
 struct web_player_conf_t {
 	uint16_t dev;
 	double nbeats;
 	unsigned int ndivs, nbars;
+
+	uint16_t *keys;
+	unsigned int nkeys;
 };
 
 /**
@@ -295,9 +300,15 @@ bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsig
  */
 void web_player_print(struct web_player_t *player, struct io_file_t file)
 {
+	unsigned int i;
 	struct web_player_inst_t *inst;
 
-	hprintf(file, "{\"conf\":{\"dev\":%u,\"ndivs\":%u,\"nbeats\":%.3f,\"nbars\":%u},\"data\":[", player->conf.dev, player->conf.ndivs, player->conf.nbeats, player->conf.nbars);
+	hprintf(file, "{\"conf\":{\"dev\":%u,\"ndivs\":%u,\"nbeats\":%.3f,\"nbars\":%u,\"keys\":[", player->conf.dev, player->conf.ndivs, player->conf.nbeats, player->conf.nbars);
+
+	for(i = 0; i < player->conf.nkeys; i++)
+		hprintf(file, "%s%d", i ? "," : "", player->conf.keys[i]);
+
+	hprintf(file, "]},\"data\":[");
 
 	for(inst = player->begin; inst != NULL; inst = inst->left) {
 		if(inst != player->begin)
@@ -331,6 +342,22 @@ static void player_proc(struct io_file_t file, void *arg)
  *   @args: The arguments.
  *   &returns: True if handled.
  */
+bool req_keys(struct json_t *json)
+{
+	struct json_arr_t *arr;
+	unsigned int i;
+
+	if(json->type != json_arr_v)
+		return false;
+
+	arr = json->data.arr;
+	for(i = 0; i < arr->len; i++) {
+		if(arr->vec[i]->type != json_num_v)
+			return false;
+	}
+
+	return true;
+}
 bool web_player_req(struct web_player_t *player, const char *path, struct http_args_t *args)
 {
 	unsigned int key, vel, n;
@@ -352,6 +379,20 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
 			mkdir("web.dat", 0777);
 			web_player_save(player, path);
 		}
+
+		return true;
+	}
+	else if(strcmp(path, "/keys") == 0) {
+		char *err;
+		struct json_t *json;
+
+		err = json_parse_str(&json, args->body);
+		if(err == NULL) {
+
+			json_delete(json);
+		}
+		else
+			free(err);
 
 		return true;
 	}
@@ -408,10 +449,16 @@ void web_player_save(struct web_player_t *player, const char *path)
  */
 void web_player_conf_init(struct web_player_conf_t *conf)
 {
+	unsigned int i;
+
 	conf->dev = 0;
 	conf->ndivs = 4;
 	conf->nbeats = 4.0;
 	conf->nbars = 200;
+	conf->keys = malloc((conf->nkeys = 37) * sizeof(uint16_t));
+
+	for(i = 0; i < conf->nkeys; i++)
+		conf->keys[i] = i + 12;
 }
 
 /**
@@ -420,4 +467,6 @@ void web_player_conf_init(struct web_player_conf_t *conf)
  */
 void web_player_conf_destroy(struct web_player_conf_t *conf)
 {
+	free(conf->keys);
 }
+

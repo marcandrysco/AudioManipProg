@@ -225,7 +225,7 @@
     return function(e) {
       if(e.button != 0) { return; }
       func(e, "down");
-      Gui.dragNow(e, func);
+      Gui.dragNow(func);
     };
   };
   Gui.dragNow = function(func) {
@@ -235,18 +235,18 @@
     var out = function(e) {
       if(e.relatedTarget == window.body) {
         func(e, "out");
-        done();
+        done(e);
       }
     };
     var up = function(e) {
       func(e, "up");
-      done();
+      done(e);
     };
-    var done = function() {
+    var done = function(e) {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
       window.removeEventListener("mouseout", out);
-      func(null, "done");
+      func(e, "done");
     };
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseout", out);

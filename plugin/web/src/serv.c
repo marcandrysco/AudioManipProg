@@ -3,11 +3,13 @@
 
 /**
  * Server structure.
+ *   @rt: The RT core.
  *   @lock: The lock.
  *   @task: The http task.
  *   @inst: The instance tree.
  */
 struct web_serv_t {
+	struct amp_rt_t *rt;
 	struct sys_mutex_t lock;
 
 	struct sys_task_t *task;
@@ -63,13 +65,15 @@ static bool serv_handler(const char *path, struct http_args_t *args, void *arg);
 
 /**
  * Create the server.
+ *   @core: The RT core.
  *   &returns: The server.
  */
-struct web_serv_t *web_serv_new(void)
+struct web_serv_t *web_serv_new(struct amp_rt_t *rt)
 {
 	struct web_serv_t *serv;
 
 	serv = malloc(sizeof(struct web_serv_t));
+	serv->rt = rt;
 	serv->lock = sys_mutex_init(0);
 	serv->inst = avltree_root_init(compare_str);
 	serv->task = http_server_async(8080, serv_handler, serv);
@@ -112,6 +116,31 @@ bool web_serv_req(struct web_serv_t *serv, const char *path, struct http_args_t 
 		http_head_add(&args->resp, "Content-Type", "application/json");
 
 		return true;
+	}
+	else if(strcmp(path, "/time") == 0) {
+		if(strcasecmp(args->req.verb, "GET") == 0) {
+			struct amp_loc_t loc;
+
+			amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
+
+			hprintf(args->file, "{ \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
+			http_head_add(&args->resp, "Content-Type", "application/json");
+
+			return true;
+		}
+		else if(strcasecmp(args->req.verb, "POST") == 0) {
+			if(strcasecmp(args->body, "start") == 0)
+				amp_rt_start(serv->rt);
+			else if(strcasecmp(args->body, "stop") == 0)
+				amp_rt_stop(serv->rt);
+			else
+				return false;
+
+			hprintf(args->file, "ok");
+			return true;
+		}
+		else
+			return false;
 	}
 	else if(sscanf(path, "/%u/%15[a-z]%n", &idx, type, &n) >= 2) {
 		struct web_inst_t *inst;

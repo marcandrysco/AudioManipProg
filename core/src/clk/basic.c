@@ -133,6 +133,10 @@ void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
 		*info.data.flt = basic->cur.bar;
 		break;
 
+	case amp_info_loc_v:
+		*info.data.loc = amp_loc(basic->cur.bar, basic->cur.beat);
+		break;
+
 	case amp_info_seek_e:
 		amp_basic_seek(basic, *info.data.flt);
 		basic->cur = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);

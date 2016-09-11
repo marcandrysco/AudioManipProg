@@ -1,7 +1,6 @@
 #ifndef CORE_H
 #define CORE_H
 
-
 /**
  * Core structure.
  *   @env: The environment.

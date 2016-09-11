@@ -1,66 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-/**
- * Location structure.
- *   @bar: The bar.
- *   @beat: The beat.
- */
-struct amp_loc_t {
-	int bar;
-	double beat;
-};
-
-static inline struct amp_loc_t amp_loc(int bar, double beat) {
-	return (struct amp_loc_t){ bar, beat };
-}
-
-/**
- * Compare two loations.
- *   @left: The left location.
- *   @right: The right location.
- *   &returns: Their order.
- */
-static inline int amp_loc_cmp(struct amp_loc_t left, struct amp_loc_t right)
-{
-	if(left.bar > right.bar)
-		return 2;
-	else if(left.bar < right.bar)
-		return -2;
-	else if(left.beat > right.beat)
-		return 1;
-	else if(left.beat < right.beat)
-		return -1;
-	else
-		return 0;
-}
-
-/**
- * Check if two locations are near eachother, close enough to be considered
- * the "same".
- *   @left; The left location.
- *   @right: The right location.
- *   &returns: True if near.
- */
-static inline bool amp_loc_near(struct amp_loc_t left, struct amp_loc_t right)
-{
-	if(left.bar != right.bar)
-		return false;
-
-	return fabs(left.beat - right.beat) < 1e-5;
-}
-
-static inline struct amp_loc_t amp_loc_idx(unsigned int idx, unsigned int ndivs, double nbeats)
-{
-	struct amp_loc_t loc;
-
-	loc.bar = idx / (ndivs * nbeats);
-	loc.beat = (double)(idx - (ndivs * nbeats) * loc.bar) / (double)ndivs;
-
-	return loc;
-}
-
-
 /*
  * player declarations
  */

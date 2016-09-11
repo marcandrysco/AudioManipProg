@@ -15,7 +15,7 @@ enum web_inst_e {
 /*
  * server declarations
  */
-struct web_serv_t *web_serv_new(void);
+struct web_serv_t *web_serv_new(struct amp_rt_t *rt);
 void web_serv_delete(struct web_serv_t *serv);
 
 bool web_serv_req(struct web_serv_t *serv, const char *path, struct http_args_t *args);

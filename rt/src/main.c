@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	for(arg = argv + 1; *arg != NULL; arg++) {
 		if((*arg)[0] != '-') {
 			if(file != NULL)
-				fprintf(stderr, "Cannot specify two files.");
+				fprintf(stderr, "Cannot specify two files."), exit(1);
 
 			file = *arg;
 		}

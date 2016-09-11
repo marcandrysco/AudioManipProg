@@ -12,13 +12,17 @@
   window.Web.init = function() {
     Web.data = null;
     Web.cur = 0;
+    Web.rec = true;
     Req.get("/all", function(v) {
       var page = Gui.byid("page");
       Gui.clear(page);
       Web.data = JSON.parse(v);
 
+      var head = Gui.div("head");
+      page.appendChild(head);
+
       var sel = Gui.div("sel");
-      page.appendChild(sel);
+      head.appendChild(sel);
 
       for(var i = 0; i < Web.data.length; i++) {
         var div = Gui.div("item", Gui.text(Web.data[i].id));
@@ -33,6 +37,38 @@
         case "player": Player.init(work, Web.data[i].data).idx = i; break;
         }
       }
+
+      var time = Gui.div("time");
+
+      var record = Gui.div("record" + (Web.rec ? " on" : ""), Gui.text("⏺"));
+      record.addEventListener("click", function(e) {
+        if(Web.rec = !Web.rec) {
+          record.classList.add("on");
+          Req.post("/time", "start", function(v) { });
+        } else {
+          record.classList.remove("on");
+          Req.post("/time", "stop", function(v) { });
+        }
+      });
+      time.appendChild(record);
+
+      var disp = Gui.div("disp", Gui.text("000:0.0"));
+      time.appendChild(disp);
+
+      var refresh = function() {
+        Req.get("/time", function(v) {
+          v = JSON.parse(v);
+          var bar = Math.floor(v.bar).toString();
+          var beat = v.beat.toFixed(1);
+          Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
+
+          requestAnimationFrame(function() { refresh(); });
+        });
+      };
+
+      refresh();
+
+      head.appendChild(time);
     });
   };
 
@@ -312,7 +348,7 @@
     player.active = null;
     player.sel = -1;
     player.x = 0;
-    player.conf.rows = [32,33,34,35,36,37,38,39,40,41,42,43,44];
+    player.conf.rows = player.conf.keys;
     player.vel = 32768;
 
     player.layout = {
@@ -331,6 +367,9 @@
       },
       ndivs: function() { // number of divs per bar
         return Math.round(player.conf.nbeats * player.conf.ndivs);
+      },
+      resize: function() {
+        player.roll.style.height = (layout.height() + layout.scroll + layout.head + 4) + 4 + "px";
       }
     };
 
@@ -355,6 +394,7 @@
       if(player.init) { Player.draw(player); }
     }));
     head.appendChild(Gui.Button("Keys", {}, function(e) {
+      Player.keys(player);
     }));
     work.appendChild(head);
 
@@ -370,7 +410,6 @@
     window.addEventListener("resize", function() { Player.draw(player); });
 
     console.log(Key.parse("C4"));
-    Player.keys(player);
     player.init = true;
     return player;
   };
@@ -381,46 +420,68 @@
    *   &returns: The UI.
    */
   window.Player.keys = function(player) {
-    var check = function() {
-      var begin = Key.parse(left.value);
-      var end = Key.parse(right.value);
-      if((begin != null) && (end != null)) {
-        Gui.replace(valid, Gui.text("Valid (" + begin + "," + end + ")"));
-      } else {
-        Gui.replace(valid, Gui.text("Invalid"));
-      }
-    };
-
     var keys = Gui.div("player-keys");
 
-    var range = Gui.div("range");
-    keys.appendChild(range);
+    var grid = Gui.div("grid");
+    keys.appendChild(grid);
 
-    var left = Gui.tag("input", "left");
-    left.value = "C2";
-    left.addEventListener("input", function(e) { check(); });
-    range.appendChild(left);
+    var head = Gui.div("row head");
+    head.appendChild(Gui.div("label"));
+    for(var v = 0; v < 12; v++) {
+      head.appendChild(Gui.div("col", Gui.text(Key.letter(v))));
+    }
+    grid.appendChild(head);
 
-    range.appendChild(Gui.text(" - "));
+    var idx = 0, rows = new Array();
+    for(var n = 0; n <= 9; n++) {
+      var row = Gui.div("row");
+      row.appendChild(Gui.div("label", Gui.text(n)));
 
-    var right = Gui.tag("input", "right");
-    right.value = "C5";
-    right.addEventListener("input", check);
-    range.appendChild(right);
+      for(var v = 0; v < 12; v++) {
+        var box = Gui.div("box");
+        box.xIdx = idx++;
+        if(player.conf.rows.indexOf(box.xIdx) >= 0) {
+          box.classList.add("sel");
+          rows.push(box.xIdx);
+        }
+        row.appendChild(box);
+      }
 
-    var valid = Gui.div("valid", Gui.text("Valid"));
-    keys.appendChild(valid);
+      grid.appendChild(row);
+    }
+
+    grid.addEventListener("mousedown", function(e) {
+      if(!e.target.classList.contains("box")) { return; }
+      e.preventDefault();
+      var func = e.target.classList.contains("sel") ? "remove" : "add";
+      Gui.dragNow(function(e, type) {
+        if(!e.target.classList.contains("box")) { return; }
+        e.target.classList[func]("sel");
+        var idx = rows.indexOf(e.target.xIdx);
+        if(func == "add") {
+          if(idx < 0) { rows.push(e.target.xIdx); }
+        } else {
+          if(idx >= 0) { rows.splice(idx, 1); }
+        }
+      });
+    });
 
     var action = Gui.div("action");
     action.appendChild(Gui.Button("Accept", {}, function(e) {
+      player.conf.rows = rows.sort();
+      player.layout.resize();
+      popup.guiDismiss();
+      Player.draw(player);
     }));
     action.appendChild(Gui.Button("Cancel", {}, function(e) {
       popup.guiDismiss();
     }));
     keys.appendChild(action);
-    check();
 
     var popup = Gui.Popup(keys, function(e) {
+    });
+    popup.addEventListener("keyup", function(e) {
+      if(e.keyCode == 27) { popup.guiDismiss(); }
     });
     document.body.appendChild(popup);
   };

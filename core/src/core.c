@@ -178,7 +178,6 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 	ml_env_add(&core->env, strdup("Enable"), ml_value_eval(amp_enable_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Merge"), ml_value_eval(amp_merge_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Sched"), ml_value_eval(amp_sched_make, ml_tag_copy(ml_tag_null)));
-	//ml_env_add(&core->env, strdup("Player"), ml_value_impl(amp_player_make0));
 	ml_env_add(&core->env, strdup("Repeat"), ml_value_eval(amp_repeat_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Snap"), ml_value_eval(amp_snap_make, ml_tag_copy(ml_tag_null)));
 	ml_env_add(&core->env, strdup("Toggle"), ml_value_eval(amp_toggle_make, ml_tag_copy(ml_tag_null)));

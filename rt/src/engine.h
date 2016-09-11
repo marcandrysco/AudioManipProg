@@ -4,7 +4,7 @@
 /*
  * exported header
  */
-#include "inc.h"
+#include "export.h"
 
 /**
  * Watch structure.
@@ -19,39 +19,12 @@ struct amp_watch_t {
 	struct amp_watch_t *next;
 };
 
-/**
- * Engine structure.
- *   @run: The run flag.
- *   @core: The core.
- *   @notify: The notifier.
- *   @rev: The revision number.
- *   @lock, sync: The engine lock and synchronizer.
- *   @clock: The clock.
- *   @seq: The sequencer.
- *   @instr: The instrument.
- *   @rt: The AmpRT structure.
- *   @comm: MIDI device communcation.
- *   @watch: The watch list.
- */
-struct amp_engine_t {
-	bool run;
-	struct amp_core_t *core;
-	struct amp_notify_t *notify;
-
-	unsigned int rev;
-	sys_mutex_t lock, sync;
-	struct amp_clock_t clock;
-	struct amp_instr_t instr;
-
-	struct amp_rt_t rt;
-	struct amp_comm_t *comm;
-	struct amp_watch_t *watch;
-};
-
 
 /*
  * engine declarations
  */
+struct amp_audio_t;
+
 struct amp_engine_t *amp_engine_new(const char *file, struct amp_comm_t *comm, struct amp_audio_t audio);
 void amp_engine_delete(struct amp_engine_t *engine);
 
@@ -61,5 +34,6 @@ void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg);
 
 void amp_engine_start(struct amp_engine_t *engine);
 void amp_engine_stop(struct amp_engine_t *engine);
+void amp_engine_seek(struct amp_engine_t *engine, double bar);
 
 #endif

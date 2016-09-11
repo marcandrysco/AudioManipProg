@@ -58,9 +58,10 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path)
 	value = ml_env_lookup(env, "amp.bar");
 	if(value != NULL) {
 		if(ml_value_isnum(value)) {
+			fatal("stub");
 		}
 		else
-			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'bool'.\n");
+			fprintf(stderr, "Type mismatch. Variable 'amp.run' must be a 'number'.\n");
 	}
 
 	value = ml_env_lookup(env, "amp.run");
@@ -125,7 +126,7 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 	}
 
 	amp_engine_update(engine, file);
-	amp_audio_exec(audio, callback, engine);
+	if(1)amp_audio_exec(audio, callback, engine);
 
 	while(!quit) {
 		unsigned int argc;
@@ -152,12 +153,10 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 		argv_free(argv);
 	}
 
-	amp_audio_halt(audio);
+	if(1)amp_audio_halt(audio);
 	amp_engine_delete(engine);
 }
 
-#include <sndfile.h>
-SNDFILE *file = NULL;
 
 /**
  * Audio callback.
@@ -183,16 +182,6 @@ static void callback(double **buf, unsigned int len, void *arg)
 		return;
 	}
 
-	/*
-	run = engine->toggle;
-	if(engine->run != run) {
-		struct amp_seek_t seek;
-
-		engine->run = run;
-		amp_clock_info(engine->clock, (run ? amp_info_start : amp_info_stop)(&seek));
-	}
-	*/
-
 	amp_clock_proc(engine->clock, time, len);
 
 	struct amp_queue_t queue;
@@ -206,12 +195,6 @@ static void callback(double **buf, unsigned int len, void *arg)
 		amp_instr_proc(engine->instr, buf, time, len, &queue);
 	else
 		dsp_zero_d(buf[0], len), dsp_zero_d(buf[1], len);
-
-	static int a = 0;
-	if(a < 96000ull * 45824ull / 44100ull) {
-		sf_write_double(file, buf[0], len);
-		a+=len;
-	}
 
 	sys_mutex_unlock(&engine->lock);
 }
