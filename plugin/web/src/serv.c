@@ -2,21 +2,6 @@
 
 
 /**
- * Server structure.
- *   @rt: The RT core.
- *   @lock: The lock.
- *   @task: The http task.
- *   @inst: The instance tree.
- */
-struct web_serv_t {
-	struct amp_rt_t *rt;
-	struct sys_mutex_t lock;
-
-	struct sys_task_t *task;
-	struct avltree_root_t inst;
-};
-
-/**
  * Instance data union.
  *   @mach: Machine.
  *   @player: Player.
@@ -262,7 +247,7 @@ struct web_inst_t *web_serv_player(struct web_serv_t *serv, const char *id)
 	if(inst == NULL) {
 		char *name = strdup(id);
 
-		inst = inst_new(serv, name, web_player_v, (union web_inst_u){ .player = web_player_new(name) });
+		inst = inst_new(serv, name, web_player_v, (union web_inst_u){ .player = web_player_new(serv, name) });
 		avltree_root_insert(&serv->inst, &inst->node);
 	}
 	else
@@ -479,14 +464,11 @@ bool http_asset_proc(struct http_asset_t *assets, const char *path, struct http_
 static bool serv_handler(const char *path, struct http_args_t *args, void *arg)
 {
 	bool ret;
-	struct web_serv_t *serv = arg;
 
 	if(http_asset_proc(serv_assets, path, args, SHAREDIR "/ampweb/"))
 		return true;
 
-	sys_mutex_lock(&serv->lock);
 	ret = web_serv_req(arg, path, args);
-	sys_mutex_unlock(&serv->lock);
 
 	return ret;
 }

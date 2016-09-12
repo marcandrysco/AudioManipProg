@@ -62,7 +62,7 @@
           var beat = v.beat.toFixed(1);
           Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
 
-          requestAnimationFrame(function() { refresh(); });
+          //requestAnimationFrame(function() { refresh(); });
         });
       };
 
@@ -472,6 +472,8 @@
       player.layout.resize();
       popup.guiDismiss();
       Player.draw(player);
+      Req.post("/" + player.idx + "/player/keys", JSON.stringify(rows), function(v) {
+      });
     }));
     action.appendChild(Gui.Button("Cancel", {}, function(e) {
       popup.guiDismiss();

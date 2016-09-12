@@ -76,9 +76,9 @@ char *hax_vmprintf(const char *restrict format, va_list args)
 
 /**
  * Print to a hax file.
+ *   @file: The output file.
  *   @format: The printf-style format.
  *   @...: The printf-style argument list.
- *   &returns: The allocated string.
  */
 void hax_hprintf(struct io_file_t file, const char *restrict format, ...)
 {
@@ -91,12 +91,14 @@ void hax_hprintf(struct io_file_t file, const char *restrict format, ...)
 
 /**
  * Print to a hax file.
+ *   @file: The output file.
  *   @format: The printf-style format.
  *   @args: The printf-style argument list.
- *   &returns: The allocated string.
  */
 void hax_vhprintf(struct io_file_t file, const char *restrict format, va_list args)
 {
+	hax_vhprintf_custom(file, io_format_def, format, args);
+	/*
 	const char *ptr;
 
 	while((ptr = strchr(format, '%')) != NULL) {
@@ -137,9 +139,92 @@ void hax_vhprintf(struct io_file_t file, const char *restrict format, va_list ar
 	}
 
 	io_file_write(file, format, strlen(format));
+	*/
+}
+
+/**
+ * Print to a hax file with a custom set of printing options.
+ *   @file: The output file.
+ *   @format: The printf-style format.
+ *   @args: The printf-style argument list.
+ */
+void hax_vhprintf_custom(struct io_file_t file, const struct io_print_t *print, const char *restrict format, va_list args)
+{
+	size_t i;
+	struct arglist_t arglist;
+	
+	va_copy(arglist.args, args);
+
+	while(*format != '\0') {
+		if(*format == '%') {
+			format++;
+
+			if(*format != '%') {
+				struct io_print_mod_t mod;
+				const struct io_print_t *search;
+
+				if(*format == '-')
+					mod.neg = true, format++;
+				else
+					mod.neg = false;
+
+				if(*format == '0')
+					mod.zero = true, format++;
+				else
+					mod.zero = false;
+
+				mod.width = mod.prec = 0;
+				while(isdigit(*format))
+					mod.width = mod.width * 10 + *format - '0', format++;
+
+				if(*format == '.') {
+					format++;
+					while(isdigit(*format))
+						mod.prec = mod.prec * 10 + *format - '0', format++;
+				}
+
+				if(*format == ':') {
+					//char name[16];
+					fatal("stub");
+				}
+				else {
+					search = print;
+					while(search->ch != *format) {
+						if(search->callback == NULL)
+							fatal("Invalid printf specifier '%c'.", *format);
+
+						search++;
+					}
+				}
+
+				search->callback(file, &mod, &arglist);
+			}
+			else
+				io_file_write(file, "%", 1);
+
+			format++;
+		}
+		else {
+			i = 0;
+			do
+				i++;
+			while((format[i] != '%') && (format[i] != '\0'));
+
+			io_file_write(file, format, i);
+			format += i;
+		}
+	}
+
+	va_end(arglist.args);
 }
 
 
+/**
+ * Print to a file. 
+ *   @file: The file.
+ *   @format: The printf-style format.
+ *   @...: The printf-style argument list.
+ */
 void hax_fprintf(FILE *file, const char *restrict format, ...)
 {
 	va_list args;
@@ -149,11 +234,24 @@ void hax_fprintf(FILE *file, const char *restrict format, ...)
 	va_end(args);
 }
 
+/**
+ * Print to a file. 
+ *   @file: The file.
+ *   @format: The printf-style format.
+ *   @args: The printf-style argument list.
+ */
 void hax_vfprintf(FILE *file, const char *restrict format, va_list args)
 {
 	hax_vhprintf(io_file_wrap(file), format, args);
 }
 
+
+/**
+ * Print to a standard out. 
+ *   @file: The file.
+ *   @format: The printf-style format.
+ *   @...: The printf-style argument list.
+ */
 void hax_printf(const char *restrict format, ...)
 {
 	va_list args;
@@ -161,6 +259,17 @@ void hax_printf(const char *restrict format, ...)
 	va_start(args, format);
 	hax_vhprintf(io_file_wrap(stdout), format, args);
 	va_end(args);
+}
+
+/**
+ * Print to a standard out. 
+ *   @file: The file.
+ *   @format: The printf-style format.
+ *   @args: The printf-style argument list.
+ */
+void hax_vprintf(const char *restrict format, va_list args)
+{
+	hax_vhprintf(io_file_wrap(stdout), format, args);
 }
 
 

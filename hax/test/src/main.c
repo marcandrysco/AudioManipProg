@@ -6,6 +6,7 @@
  */
 bool test_avltree(void);
 bool test_printf(void);
+bool test_sys_thread(void);
 
 
 /**
@@ -27,7 +28,7 @@ int main(int argc, char **argv)
 	if(suc)
 		printf("success\n");
 	else
-		printf("FAIL\n");
+		printf("=== FAIL ===\n");
 
 	return suc ? 0 : 1;
 }

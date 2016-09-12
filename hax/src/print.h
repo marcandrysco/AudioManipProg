@@ -12,11 +12,13 @@ char *hax_vmprintf(const char *restrict format, va_list args);
 
 void hax_hprintf(struct io_file_t file, const char *restrict format, ...);
 void hax_vhprintf(struct io_file_t file, const char *restrict format, va_list args);;
+void hax_vhprintf_custom(struct io_file_t file, const struct io_print_t *print, const char *restrict format, va_list args);
 
 void hax_fprintf(FILE *file, const char *restrict format, ...);
 void hax_vfprintf(FILE *file, const char *restrict format, va_list args);
 
 void hax_printf(const char *restrict format, ...);
+void hax_vprintf(const char *restrict format, va_list args);
 
 noreturn void hax_vfatal(const char *restrict format, va_list args);
 noreturn void hax_fatal(const char *restrict format, ...);

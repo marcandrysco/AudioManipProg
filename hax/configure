@@ -38,6 +38,7 @@ setconf()
   c_src "src/complex.c"
   c_src "src/crc.c"
   c_src "src/file.c"
+  c_src "src/format.c"
   c_src "src/func.c"
   c_src "src/list.c"
   c_src "src/log.c"
@@ -63,7 +64,7 @@ opt()
 ## end custom options ##
 
 
-##### marc_andrysco configure script, rev 4 #####
+##### marc_andrysco configure script, rev 5 #####
 
 # special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
@@ -100,11 +101,8 @@ lib_target()
   chk_space "$1" || fail "lib_target parameter '$1' has spaces"
   test ${1##*.} != "so" && fail "lib_target argument has invalid extension '.${1##*.}'"
   ldflags="$ldflags -shared"
-  if [ "$windows" ] ; then
-    target="${1%.so}.dll"
-  else
-    target="$1"
-  fi
+
+  test "$windows$cygwin" && target=${1%.so}.dll || target=$1
   install="${install}${nl}${tab}install --mode 0644 -D $target \$(LIBDIR)/$target"
 }
 
@@ -257,6 +255,7 @@ debug=""     #debug flag
 rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
+cygwin=""   #cygwin build
 noinc=""     #disable automated include
 pkgcfg=""    #pkgconfig dependencies
 
@@ -271,7 +270,7 @@ ldflags='-L$(LIBDIR)'
 # parse options
 while [ "$#" -gt 0 ] ; do
   case "$1" in 
-    --release | --debug | --rpath | --windows)
+    --release | --debug | --rpath | --windows | --cygwin)
       eval "${1#--}=1" ; shift
       ;;
     --toolchain=* | --prefix=*)
@@ -373,6 +372,7 @@ echo "#ifndef CONFIG_H" >> "$cfg"
 echo "#define CONFIG_H" >> "$cfg"
 test "$debug" && echo "#define DEBUG 1" >> "$cfg"
 test "$windows" && echo "#define WINDOWS 1" >> "$cfg"
+test "$cygwin" && echo "#define CYGWIN 1" >> "$cfg"
 echo "#define SHAREDIR \"${prefix}/share"\" >> "$cfg"
 echo "#endif" >> "$cfg"
 

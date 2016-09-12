@@ -33,6 +33,7 @@ struct web_player_inst_t {
 
 /**
  * Player structure.
+ *   @serv: The server.
  *   @id: The identifier.
  *   @last: The last location.
  *   @begin, end: The begin and end instance chains.
@@ -40,7 +41,9 @@ struct web_player_inst_t {
  *   @conf: The configuration.
  */
 struct web_player_t {
+	struct web_serv_t *serv;
 	const char *id;
+
 	struct amp_loc_t last;
 	struct web_player_inst_t *begin, *end;
 	struct web_player_inst_t *left, *right;
@@ -57,15 +60,17 @@ static void player_proc(struct io_file_t file, void *arg);
 
 /**
  * Create a new player.
+ *   @serv: The server.
  *   @id: The indetifier.
  *   &returns: The player.
  */
 	#include <sys/stat.h>
-struct web_player_t *web_player_new(const char *id)
+struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id)
 {
 	struct web_player_t *player;
 
 	player = malloc(sizeof(struct web_player_t));
+	player->serv = serv;
 	player->id = id;
 	player->begin = player->end = NULL;
 	player->left = player->right = NULL;
@@ -367,10 +372,13 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
 		if(vel > UINT16_MAX)
 			return false;
 
+		sys_mutex_lock(&player->serv->lock);
 		web_player_remove(player, begin, end, key);
 
 		if(vel > 0)
 			web_player_add(player, begin, end, key, vel);
+
+		sys_mutex_unlock(&player->serv->lock);
 
 		{
 			char path[strlen(player->id) + 9];
@@ -388,6 +396,7 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
 
 		err = json_parse_str(&json, args->body);
 		if(err == NULL) {
+			printf("here\n");
 
 			json_delete(json);
 		}

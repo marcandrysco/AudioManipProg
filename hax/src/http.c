@@ -178,7 +178,7 @@ void http_client_delete(struct http_client_t *client)
 		http_head_destroy(&client->head);
 
 	strbuf_destroy(&client->buf);
-	tcp_client_delete(client->tcp);
+	tcp_client_close(client->tcp);
 	free(client);
 }
 

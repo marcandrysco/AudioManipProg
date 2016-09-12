@@ -5,8 +5,9 @@
  * player declarations
  */
 struct web_player_t;
+struct web_serv_t;
 
-struct web_player_t *web_player_new(const char *id);
+struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id);
 char *web_player_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env);
 void web_player_delete(struct web_player_t *player);
 

@@ -11,6 +11,21 @@ enum web_inst_e {
 	web_player_v
 };
 
+/**
+ * Server structure.
+ *   @rt: The RT core.
+ *   @lock: The lock.
+ *   @task: The http task.
+ *   @inst: The instance tree.
+ */
+struct web_serv_t {
+	struct amp_rt_t *rt;
+	struct sys_mutex_t lock;
+
+	struct sys_task_t *task;
+	struct avltree_root_t inst;
+};
+
 
 /*
  * server declarations
