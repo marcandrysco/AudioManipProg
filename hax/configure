@@ -33,6 +33,7 @@ setconf()
     c_src "src/posix/time.c"
   fi
 
+  c_src "src/argv.c"
   c_src "src/avltree.c"
   c_src "src/chunk.c"
   c_src "src/complex.c"
@@ -103,7 +104,7 @@ lib_target()
   ldflags="$ldflags -shared"
 
   test "$windows$cygwin" && target=${1%.so}.dll || target=$1
-  install="${install}${nl}${tab}install --mode 0644 -D $target \$(LIBDIR)/$target"
+  install="${install}${nl}${tab}install --mode 0755 -D $target \$(LIBDIR)/$target"
 }
 
 # Set the header target

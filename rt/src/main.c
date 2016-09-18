@@ -6,13 +6,6 @@
  */
 static char *optlong(char ***arg, const char *opt);
 
-/*
- * debug variables
- */
-#ifdef DEBUG
-int DBG_memcnt = 0, DBG_rescnt = 0;
-#endif
-
 
 /**
  * Create a string list.
@@ -163,11 +156,6 @@ int main(int argc, char **argv)
 	amp_exec(audio, file, plugin, comm);
 	amp_audio_close(audio);
 	strlist_delete(plugin);
-
-#ifdef DEBUG
-	if(DBG_memcnt != 0)
-		fprintf(stderr, "allocated memory: %d\n", DBG_memcnt);
-#endif
 
 	if(hax_memcnt != 0)
 		fprintf(stderr, "allocated memory: %d\n", hax_memcnt);

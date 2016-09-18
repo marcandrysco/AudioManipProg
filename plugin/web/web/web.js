@@ -62,7 +62,7 @@
           var beat = v.beat.toFixed(1);
           Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
 
-          //requestAnimationFrame(function() { refresh(); });
+          requestAnimationFrame(function() { refresh(); });
         });
       };
 

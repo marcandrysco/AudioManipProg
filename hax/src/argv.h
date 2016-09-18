@@ -2,11 +2,11 @@
 #define ARGV_H
 
 /*
- * argv declarations
+ * argument list declarations
  */
-
 void argv_parse(const char *str, char ***argv, unsigned int *argc);
 void argv_free(char **argv);
-char *argv_serial(char **argv);
+
+char *argv_serial(char *const *argv);
 
 #endif

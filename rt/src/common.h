@@ -27,11 +27,9 @@
 #include <amplib.h>
 
 #include "config.h"
-#include "debug.h"
 #include "defs.h"
 #include "inc.h"
 
-#include "argv.h"
 #include "comm.h"
 #include "engine.h"
 #include "exec.h"

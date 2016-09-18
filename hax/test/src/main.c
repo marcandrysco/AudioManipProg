@@ -21,6 +21,7 @@ int main(int argc, char **argv)
 
 	suc &= test_avltree();
 	suc &= test_printf();
+	suc &= test_sys_thread();
 
 	if(hax_memcnt != 0)
 		suc &= false, fprintf(stderr, "Error. Missed %d allocations.\n", hax_memcnt);

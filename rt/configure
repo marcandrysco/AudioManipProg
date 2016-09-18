@@ -22,7 +22,6 @@ setconf()
 
   c_src "src/main.c"
 
-  c_src "src/argv.c"
   c_src "src/comm.c"
   c_src "src/engine.c"
   c_src "src/exec.c"

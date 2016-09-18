@@ -121,6 +121,18 @@ struct amp_event_t {
 };
 
 /**
+ * Action structure.
+ *   @delay: The delay.
+ *   @event: The event.
+ *   @queue: The queue.
+ */
+struct amp_action_t {
+	unsigned int delay;
+	struct amp_event_t event;
+	struct amp_queue_t *queue;
+};
+
+/**
  * Event function.
  *   @ref: The reference.
  *   @event: The event.
@@ -142,19 +154,6 @@ struct amp_note_t {
 	unsigned int delay;
 	uint16_t key;
 	double freq, vel;
-};
-
-/**
- * Action structure.
- *   @delay: The delay.
- *   @event: The event.
- *   @queue: The queue.
- */
-
-struct amp_action_t {
-	unsigned int delay;
-	struct amp_event_t event;
-	struct amp_queue_t *queue;
 };
 
 /**

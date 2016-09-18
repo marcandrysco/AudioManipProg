@@ -1,40 +1,16 @@
 #include "common.h"
 
 
-char *bufinit(unsigned int len)
-{
-	return malloc(len);
-}
-
-void bufadd(char **str, unsigned int *idx, unsigned int *len, char ch)
-{
-	if(*idx == *len) {
-		*str = realloc(*str, 2 * *len);
-		*len *= 2;
-	}
-
-	(*str)[(*idx)++] = ch;
-}
-
-char *bufdone(char *str, unsigned int *idx, unsigned int *len)
-{
-	bufadd(&str, idx, len, '\0');
-
-	return str;
-}
-
-
 /**
  * Parse an argument array.
  *   @str: The input string.
- *   @argv: The output argument array.
- *   @argc: The output argument count.
+ *   @argv: Ref. The output argument array.
+ *   @argc: Ref. Optional. The output argument count.
  */
-
 void argv_parse(const char *str, char ***argv, unsigned int *argc)
 {
-	char *buf;
-	unsigned int i, len, n = 0;
+	struct strbuf_t buf;
+	unsigned int n = 0;
 
 	*argv = malloc(sizeof(char *));
 
@@ -45,8 +21,7 @@ void argv_parse(const char *str, char ***argv, unsigned int *argc)
 		if(*str == '\0')
 			break;
 
-		i = 0;
-		buf = bufinit(len = 32);
+		buf = strbuf_init(32);
 
 		if(*str == '"') {
 			str++;
@@ -54,7 +29,7 @@ void argv_parse(const char *str, char ***argv, unsigned int *argc)
 				if(*str == '\\')
 					str++;
 
-				bufadd(&buf, &i, &len, *str++);
+				strbuf_addch(&buf, *str++);
 			}
 
 			if(*str != '\0')
@@ -65,11 +40,11 @@ void argv_parse(const char *str, char ***argv, unsigned int *argc)
 				if(*str == '\\')
 					str++;
 
-				bufadd(&buf, &i, &len, *str++);
+				strbuf_addch(&buf, *str++);
 			}
 		}
 
-		(*argv)[n++] = bufdone(buf, &i, &len);
+		(*argv)[n++] = strbuf_done(&buf);
 		*argv = realloc(*argv, (n + 1) * sizeof(char *));
 	}
 
@@ -83,7 +58,6 @@ void argv_parse(const char *str, char ***argv, unsigned int *argc)
  * Delete an argument array.
  *   @argv: The argument array.
  */
-
 void argv_free(char **argv)
 {
 	char **arg;
@@ -97,39 +71,36 @@ void argv_free(char **argv)
 /**
  * Serialize the arguments into a string.
  *   @argv: The argument array.
- *   &reutrns: The arguments in a single allocated string. Must be freed with
- *     'mem_free'.
+ *   &reutrns: The arguments in a single string. Must be freed with 'free'.
  */
-
-char *argv_serial(char **argv)
+char *argv_serial(char *const *argv)
 {
-	char *buf;
+	struct strbuf_t buf;
 	const char *str;
-	unsigned int i, len;
 
 	if(*argv == NULL)
 		return NULL;
 
-	buf = bufinit(len = 32);
+	buf = strbuf_init(32);
 
 	while(true) {
-		bufadd(&buf, &i, &len, '\"');
+		strbuf_addch(&buf, '\"');
 
 		for(str = *argv; *str != '\0'; str++) {
 			if((*str == '"') || (*str == '\\'))
-				bufadd(&buf, &i, &len, '\\');
+				strbuf_addch(&buf, '\\');
 
-			bufadd(&buf, &i, &len, *str);
+			strbuf_addch(&buf, *str);
 		}
 
-		bufadd(&buf, &i, &len, '\"');
+		strbuf_addch(&buf, '\"');
 
 		argv++;
 		if(*argv == NULL)
 			break;
 
-		bufadd(&buf, &i, &len, ' ');
+		strbuf_addch(&buf, ' ');
 	}
 
-	return bufdone(buf, &i, &len);
+	return strbuf_done(&buf);
 }

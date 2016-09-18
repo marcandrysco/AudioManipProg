@@ -5,7 +5,6 @@
  * Constant definitions
  *   @AMP_COMM_LEN: MIDI communications event ring length.
  */
-
 #define AMP_COMM_LEN 32
 
 
@@ -45,7 +44,6 @@ typedef void (*amp_audio_f)(double **buf, unsigned int len, void *arg);
  *   @func: The function.
  *   @arg: The argument.
  */
-
 typedef void (*amp_audio_exec_f)(void *ref, amp_audio_f func, void *arg);
 
 
@@ -54,14 +52,12 @@ typedef void (*amp_audio_exec_f)(void *ref, amp_audio_f func, void *arg);
  *   @conf: The configuration.
  *   &returns: The reference.
  */
-
 typedef void *(*amp_audio_open_f)(const char *conf);
 
 /**
  * Audio close function.
  *   @ref: The reference.
  */
-
 typedef void *(*amp_audio_close_f)(void *ref);
 
 /**
@@ -170,14 +166,12 @@ static inline struct amp_audio_info_t amp_audio_info(struct amp_audio_t audio)
  *   @arg: The argument.
  *   &returns: The reference.
  */
-
 typedef void *(*amp_midi_open_f)(const char *conf, amp_midi_f func, void *arg);
 
 /**
  * MIDI close function.
  *   @ref: The reference.
  */
-
 typedef void *(*amp_midi_close_f)(void *ref);
 
 /**
@@ -185,7 +179,6 @@ typedef void *(*amp_midi_close_f)(void *ref);
  *   @open: Open.
  *   @close: Close.
  */
-
 struct amp_midi_i {
 	amp_midi_open_f open;
 	amp_midi_close_f close;
@@ -196,7 +189,6 @@ struct amp_midi_i {
  *   @ref: The reference.
  *   @iface; The interface.
  */
-
 struct amp_midi_t {
 	void *ref;
 	const struct amp_midi_i *iface;
@@ -210,7 +202,6 @@ struct amp_midi_t {
  *   @arg: The callback argument.
  *   &returns: The MIDI device.
  */
-
 static inline struct amp_midi_t amp_midi_open(const char *conf, amp_midi_f func, void *arg, const struct amp_midi_i *iface)
 {
 	return (struct amp_midi_t){ iface->open(conf, func, arg), iface };
@@ -220,7 +211,6 @@ static inline struct amp_midi_t amp_midi_open(const char *conf, amp_midi_f func,
  * Close a MIDI device.
  *   @midi: The MIDI device.
  */
-
 static inline void amp_midi_close(struct amp_midi_t midi)
 {
 	midi.iface->close(midi.ref);
