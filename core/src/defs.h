@@ -119,6 +119,10 @@ struct amp_id_t {
 struct amp_event_t {
 	uint16_t dev, key, val;
 };
+static inline struct amp_event_t amp_event(uint16_t dev, uint16_t key, uint16_t val)
+{
+	return (struct amp_event_t){ dev, key, val };
+}
 
 /**
  * Action structure.
@@ -131,6 +135,10 @@ struct amp_action_t {
 	struct amp_event_t event;
 	struct amp_queue_t *queue;
 };
+static inline struct amp_action_t amp_action(unsigned int delay, struct amp_event_t event, struct amp_queue_t *queue)
+{
+	return (struct amp_action_t){ delay, event, queue };
+}
 
 /**
  * Event function.
@@ -148,7 +156,6 @@ typedef void (*amp_event_f)(void *ref, struct amp_event_t event, unsigned int de
  *   @key: The key.
  *   @freq, vel: The frequency and velocity.
  */
-
 struct amp_note_t {
 	bool init;
 	unsigned int delay;

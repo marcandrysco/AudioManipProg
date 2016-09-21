@@ -9,11 +9,8 @@ setconf()
   lib_dep "muselang"
   lib_dep "hax"
   lib_dep "pthread"
-  lib_dep "m"
 
   c_src "src/main.c"
-
-  ldflags="${ldflags} -L../ -Wl,-rpath=../"
 }
 ## end configuration options ##
 
@@ -23,6 +20,7 @@ opt()
   return 0
 }
 ## end custom options ##
+
 
 
 ##### marc_andrysco configure script, rev 5 #####

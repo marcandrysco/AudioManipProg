@@ -180,7 +180,7 @@ char *amp_sample_make(struct ml_value_t **ret, struct ml_value_t *value, struct 
 		}
 	}
 
-	*ret = amp_pack_module((struct amp_module_t){ sample, &amp_sample_iface });
+	*ret = amp_pack_module(amp_module(sample, &amp_sample_iface));
 
 	return NULL;
 #undef onexit

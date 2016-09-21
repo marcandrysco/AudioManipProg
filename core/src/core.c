@@ -7,7 +7,6 @@
  *   @id: The identifier.
  *   @func: The function.
  */
-
 struct pair_t {
 	const char *id;
 	ml_eval_f func;
@@ -88,6 +87,7 @@ static const struct pair_t list[] = {
 	/* modules */
 	{ "Beat",  amp_beat_make },
 	{ "Noise", amp_noise_make },
+	{ "Piano", amp_piano_make },
 	{ "Ramp",  amp_ramp_make },
 	/* modules - oscillators */
 	{ "Sine",   amp_sine_make },

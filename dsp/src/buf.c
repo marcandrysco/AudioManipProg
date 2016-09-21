@@ -167,3 +167,48 @@ void dsp_rerate_f(float *out, unsigned int outlen, unsigned int outrate, float *
 		out[i] = ((int)idx < inlen) ? in[(int)idx] : 0.0;
 	}
 }
+
+
+
+/**
+ * Compressed buffer structure.
+ *   @bits: The number of bits.
+ *   @len: The length.
+ *   @next: The next section.
+ *   @data: The data array.
+ */
+struct dsp_cbuf_t {
+	uint8_t bits;
+	unsigned int len, rate;
+
+	struct dsp_cbuf_t *next;
+
+	uint8_t data[];
+};
+
+struct dsp_cbuf_t *dsp_cbuf_load(const char *path)
+{
+	int *arr;
+	struct dsp_cbuf_t *head = NULL;//, **buf = &head;
+
+	SNDFILE *file;
+	SF_INFO info;
+
+	file = sf_open(path, SFM_READ, &info);
+	if(file == NULL)
+		return NULL;
+
+	arr = malloc(info.frames * info.channels * sizeof(int));
+
+	sf_readf_int(file, arr, info.frames);
+
+	free(arr);
+	sf_close(file);
+
+	return head;
+}
+
+void dsp_cbuf_delete(struct dsp_cbuf_t *cbuf)
+{
+	free(cbuf);
+}

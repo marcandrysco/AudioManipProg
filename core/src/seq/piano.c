@@ -116,7 +116,7 @@ void amp_piano_info(struct amp_piano_t *piano, struct amp_info_t info)
  */
 void amp_piano_proc(struct amp_piano_t *piano, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	unsigned int i, n = 0;
+	unsigned int i, k, n = 0;
 	struct amp_action_t *action;
 
 	for(i = 0; i < len; i++) {
@@ -129,6 +129,23 @@ void amp_piano_proc(struct amp_piano_t *piano, struct amp_time_t *time, unsigned
 			key = action->event.key;
 			n = key - piano->init;
 			if(key == piano->pedal) {
+				if(action->event.val > 0) {
+					for(k = 0; k < piano->len; k++) {
+						if(piano->arr[k] != 0)
+							piano->arr[k] |= 0x2;
+					}
+				}
+				else {
+					for(k = 0; k < piano->len; k++) {
+						if(piano->arr[k] == 0)
+							continue;
+
+						piano->arr[k] &= ~0x2;
+
+						if(piano->arr[k] == 0)
+							amp_queue_add(queue, amp_action(i, amp_event(piano->dev, k + piano->init, 0), queue));
+					}
+				}
 			}
 			else if((key >= piano->init) && (n < piano->len)) {
 				if(action->event.val > 0)

@@ -1,7 +1,80 @@
 Clip Effect
 ===========
 
-The clip effect performs a quadratic soft clipping of the input. 
+The clipping effects are used to non-linearly distort the input once it
+exceeds a saturation point. The distortion parameter controls the strength of
+the clipping effect. There are four forms of every clipper.
+
+  * Asymmetric with independent saturation and distortion for positive and
+    negative input.
+  * Symmetric where both positive and negative inputs clipped equally.
+  * Positive where only positive signals are clipped.
+  * Negative where only negative signals are clipped.
+
+
+## Hard Clipping
+
+    HardClipA (satlo:Param, sathi:Param)
+    HardClipS (sat:Param)
+    HardClipP (sat:Param)
+    HardClipN (sat:Param)
+
+Hard clipping prevents the output from exceeding the saturation point -- any
+input beyond saturation will produce an output exactly at saturation. This
+form of clipping generates a very harsh result that typically benefits from
+subsequent low-pass filter.
+
+### Detailed Operation
+
+The hard clipping effect is computed as `y[n] = min(x[n], s[n])` for positive
+input `x[n]` and `y[n] = max(x[n], s[n])` for negative input. The saturation
+is given by `s[n]`, the input by `x[n]`, and the output by `y[n]`.
+
+
+## Linear Clipping
+
+    LinClipA (satlo:Param, distlo:Param, sathi:Param, disthi:Param)
+    LinClipS (sat:Param, dist:Param)
+    LinClipP (sat:Param, dist:Param)
+    LinClipN (sat:Param, dist:Param)
+
+Linear clipping applies a linear scaling of the output beyond the saturation
+point. The `dist` parameter controls the rate at which the output is scaled.
+In terms of clipping, the linear clipper is fairly poor and is better used to
+add small amounts of distortion.
+
+### Detailed Operation
+
+    y[n] = (x[n] - s[n]) / (1 + d[n]) + s[n]
+
+The linear clipper allows the signal to pass through below the saturation
+point. Above `sat` the output `y[n]` exactly follows the above equation,
+producing a output to input ratio of `1/(1+d)`.
+
+
+## Polynomial Clipping
+
+    PolyClipA (satlo:Param, distlo:Param, sathi:Param, disthi:Param)
+    PolyClipP (sat:Param, dist:Param)
+    PolyClipN (sat:Param, dist:Param)
+    PolyClipS (sat:Param, dist:Param)
+
+
+## Root Clipping
+
+    RootClipA (satlo:Param, distlo:Param, sathi:Param, disthi:Param)
+    RootClipP (sat:Param, dist:Param)
+    RootClipN (sat:Param, dist:Param)
+    RootClipS (sat:Param, dist:Param)
+
+
+## Logrithmic Clipping
+
+    LogClipA (satlo:Param, distlo:Param, sathi:Param, disthi:Param)
+    LogClipP (sat:Param, dist:Param)
+    LogClipN (sat:Param, dist:Param)
+    LogClipS (sat:Param, dist:Param)
+
 
 ## Summary
 

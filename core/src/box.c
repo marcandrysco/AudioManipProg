@@ -227,6 +227,7 @@ void match_str(char **str, size_t *len, const char **format)
 	case 'M': snprintf(*str, *len, "Module"); break;
 	case 'P': snprintf(*str, *len, "Param"); break;
 	case 'S': snprintf(*str, *len, "Seq"); break;
+	case 'O': snprintf(*str, *len, "Options"); break;
 		
 	case '(':
 		(*len)--, (*format)++, *(*str)++ = '(';
@@ -330,6 +331,8 @@ static void match_init(const char **format, va_list *args)
 	case 'I': *va_arg(*args, struct amp_instr_t *) = amp_instr_null; break;
 	case 'S': *va_arg(*args, struct amp_seq_t *) = amp_seq_null; break;
 	case 'P': *va_arg(*args, struct amp_param_t **) = NULL; break;
+
+	case 'O': *va_arg(*args, struct ml_value_t **) = NULL; break;
 		
 	case '(':
 		(*format)++;
@@ -380,6 +383,8 @@ static void match_clear(const char **format, va_list *args)
 	case 'I': amp_instr_erase(*va_arg(*args, struct amp_instr_t *)); break;
 	case 'S': amp_seq_erase(*va_arg(*args, struct amp_seq_t *)); break;
 	case 'P': amp_param_erase(*va_arg(*args, struct amp_param_t **)); break;
+
+	case 'O': ml_value_erase(*va_arg(*args, struct ml_value_t **)); break;
 		
 	case '(':
 		(*format)++;
@@ -498,6 +503,12 @@ static bool match_unpack(struct ml_value_t *value, const char **format, va_list 
 		else
 			return false;
 
+		(*format)++;
+
+		return true;
+	}
+	else if(**format == 'O') {
+		*va_arg(*args, struct ml_value_t **) = ml_value_copy(value);
 		(*format)++;
 
 		return true;

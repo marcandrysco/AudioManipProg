@@ -35,6 +35,10 @@ struct amp_module_t {
 	void *ref;
 	const struct amp_module_i *iface;
 };
+static inline struct amp_module_t amp_module(void *ref, const struct amp_module_i *iface)
+{
+	return (struct amp_module_t){ ref, iface };
+}
 
 
 /**

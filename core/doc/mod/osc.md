@@ -5,6 +5,7 @@ The oscilator modules generates a periodic signal. The output signal has a
 period matching the `freq` input, starting and ending at `0` for every period.
 The output covers the range of outputs from `-1` to `1`.
 
+
 ## Summary
 
 MuseLang constructor
@@ -20,6 +21,7 @@ slope of the wave so that a unwarped saw is a triangle waves and a fully
 warped saw is a saw with discontinuities. Warping a pulse wave varies the
 width of the pulse, and a warp of zero is a square wave.
 
+
 ## Pulse
 
 MuseLang constructor
@@ -28,6 +30,7 @@ MuseLang constructor
     Pulse' (freq:Param, warp:Param, low:Param, high:Param)
     Pulse1 (freq:Param, warp:Param)
 
+
 ## Sine
 
 MuseLang constructor
@@ -35,6 +38,7 @@ MuseLang constructor
     Sine (freq:Param, warp:Param)
     Sine' (freq:Param, warp:Param, low:Param, high:Param)
     Sine1 (freq:Param, warp:Param)
+
 
 ## Saw
 
