@@ -5,7 +5,12 @@ ctrl
 filt
 key
 osc
-reverb
+
+efx/gain
+efx/gen
+efx/reverb
+
+mod/piano
 
 fig/osc_ramp.svg
 

@@ -210,5 +210,12 @@ struct dsp_cbuf_t *dsp_cbuf_load(const char *path)
 
 void dsp_cbuf_delete(struct dsp_cbuf_t *cbuf)
 {
-	free(cbuf);
+	struct dsp_cbuf_t *cur;
+
+	while(cbuf != NULL) {
+		cur = cbuf;
+		cbuf = cur->next;
+
+		free(cur);
+	}
 }

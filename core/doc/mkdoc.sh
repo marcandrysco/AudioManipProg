@@ -1,11 +1,13 @@
 #!/bin/sh
 
-FILES="ctrl filt key math osc root reverb synth"
+FILES="ctrl filt key math osc root synth efx/gain efx/gen efx/reverb mod/piano"
 EXTRA=".htaccess style.css"
 
 dir="bld"
 test -e bld || mkdir bld
 test -e bld/fig || mkdir bld/fig
+test -e bld/efx || mkdir bld/efx
+test -e bld/mod || mkdir bld/mod
 
 verb=1
 
@@ -19,7 +21,13 @@ for file in $FILES ; do
   out="$dir/$file"
 
   test "$verb" -eq 1 && echo "MD $in -o $out"
-  test "$file" = "root" && root="core" || root="."
+
+  case "$file" in
+    root ) root="core" ;;
+    */* )  root=".." ;;
+    * )    root="." ;;
+  esac
+
   pandoc "$in" -t html -o "$out" -s --wrap=none --section-divs --template=tpl.xhtml --variable="root:$root"
 done
 

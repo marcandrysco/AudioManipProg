@@ -9,10 +9,14 @@ inc.h
 *.so
 *.user
 *.bak
+*.dll
+*.exe
 
 *.swp
 *.swo
 
+acw/acw.h
+acw/cli/acw
 hax/hax.h
 hax/test/hax-test
 dsp/libdsp.h

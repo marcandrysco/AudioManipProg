@@ -89,14 +89,48 @@ static inline double dsp_db2amp_f(double db)
 
 
 /**
- * Calculate the exponential decay constant as a float.
+ * Calculate the exponential decay constant as a double.
  *   @target: The target value.
  *   @len: The time in samples to reach the target.
  *   &returns: The exponential structure.
  */
 static inline double dsp_decay_d(double target, double len)
 {
-	return (len > 0) ? dsp_pow_d(1.0 - target, 1.0 / len) : 0.0;
+	return (len > 0.0) ? dsp_pow_d(1.0 - target, 1.0 / len) : 0.0;
+}
+
+/**
+ * Calculate the exponential decay constant as a float.
+ *   @target: The target value.
+ *   @len: The time in samples to reach the target.
+ *   &returns: The exponential structure.
+ */
+static inline float dsp_decay_f(float target, float len)
+{
+	return (len > 0.0f) ? dsp_pow_d(1.0f - target, 1.0f / len) : 0.0f;
+}
+
+#define LOGHALF (-0.693147180559945309417232)
+
+
+/**
+ * Calculate the half-life decay constant as a double.
+ *   @len: The length in samples.
+ *   &returns: The decay constant.
+ */
+static inline double dsp_half_d(double len)
+{
+	return (len > 0.0) ? exp(LOGHALF / len) : 0.0;
+}
+
+/**
+ * Calculate the half-life decay constant as a float.
+ *   @len: The length in samples.
+ *   &returns: The decay constant.
+ */
+static inline float dsp_half_f(float len)
+{
+	return (len > 0.0f) ? expf(LOGHALF / len) : 0.0f;
 }
 
 #endif

@@ -10,11 +10,23 @@ struct arglist_t {
 };
 
 /**
+ * Print enumerator.
+ *   @io_print_long_v: Long.
+ *   @io_print_long_v: SizeT.
+ */
+enum io_print_e {
+	io_print_long_v = 0x1,
+	io_print_sizet_v = 0x2
+};
+
+/**
  * Print callback modifiers structure.
+ *   @flags;
  *   @zero, neg: Zero padding, and negative flag.
  *   @width, prec: The field width and precision.
  */
 struct io_print_mod_t {
+	uint16_t flags;
 	bool zero, neg;
 	uint16_t width, prec;
 };

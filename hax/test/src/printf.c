@@ -12,8 +12,8 @@ bool test_printf(void)
 	{
 		char *str;
 
-		str = mprintf("hi %d there %u", 10, 20);
-		suc &= chk(strcmp(str, "hi 10 there 20") == 0, "printf0");
+		str = mprintf("hi %d there %u %lu", 10, 20, 24749814879);
+		suc &= chk(strcmp(str, "hi 10 there 20 24749814879") == 0, "printf0");
 		free(str);
 	}
 

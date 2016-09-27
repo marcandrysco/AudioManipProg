@@ -163,6 +163,7 @@ void hax_vhprintf_custom(struct io_file_t file, const struct io_print_t *print, 
 				struct io_print_mod_t mod;
 				const struct io_print_t *search;
 
+				mod.flags = 0;
 				if(*format == '-')
 					mod.neg = true, format++;
 				else
@@ -182,6 +183,11 @@ void hax_vhprintf_custom(struct io_file_t file, const struct io_print_t *print, 
 					while(isdigit(*format))
 						mod.prec = mod.prec * 10 + *format - '0', format++;
 				}
+
+				if(*format == 'l')
+					(mod.flags |= io_print_long_v), format++;
+				else if(*format == 'z')
+					(mod.flags |= io_print_sizet_v), format++;
 
 				if(*format == ':') {
 					//char name[16];

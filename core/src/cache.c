@@ -154,6 +154,16 @@ struct amp_file_t *amp_file_copy(struct amp_file_t *file)
 	return file;
 }
 
+/**
+ * Delete a reference from a file.
+ *   @file: The file.
+ */
+void amp_file_delete(struct amp_file_t *file)
+{
+	if(--file->refcnt == 0)
+		amp_cache_close(file->cache, file);
+}
+
 
 /**
  * Add a reference to a file.

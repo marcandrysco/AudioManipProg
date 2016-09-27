@@ -168,7 +168,7 @@ let SquareScale'(f,l,h) = SquareScale(Ramp(f),l,h)
  *   &ret (Effect): The generator with muted input.
  *)
 let Gen' m  = Chain[Mute,Gen(m)]
-let Gen0 m  = Chain[Mute,Gen(m)]
+let Gen0 m  = Chain[Mute,Gen(m),Mute]
 
 (**
  * Create synthesizer generator.

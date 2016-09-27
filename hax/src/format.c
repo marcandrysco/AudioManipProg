@@ -178,6 +178,11 @@ void io_format_clib(char ch, struct io_file_t file, struct io_print_mod_t *mod, 
 	if(mod->width > 0)
 		len += sprintf(format + len, ".%d", mod->width);
 
+	if(mod->flags & io_print_long_v)
+		format[len++] = 'l';
+	else if(mod->flags & io_print_sizet_v)
+		format[len++] = 'z';
+
 	format[len++] = ch;
 	format[len] = '\0';
 
@@ -201,7 +206,13 @@ void io_format_clib(char ch, struct io_file_t file, struct io_print_mod_t *mod, 
 	case 'i':
 	case 'u':
 	case 'x':
-		va_arg(list->args, int);
+		if(mod->flags & io_print_long_v)
+			va_arg(list->args, long);
+		else if(mod->flags & io_print_sizet_v)
+			va_arg(list->args, size_t);
+		else
+			va_arg(list->args, int);
+
 		break;
 
 	case 'f':
