@@ -4,7 +4,7 @@
 /*
  * piano declarations
  */
-struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul);
+struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul, float rate);
 struct amp_piano_t *amp_piano_copy(struct amp_piano_t *piano);
 void amp_piano_delete(struct amp_piano_t *piano);
 

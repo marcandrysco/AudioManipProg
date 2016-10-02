@@ -11,6 +11,9 @@ inc.h
 *.bak
 *.dll
 *.exe
+*.flac
+*.wav
+*.acw
 
 *.swp
 *.swo

@@ -22,6 +22,7 @@
 #include <hax.h>
 #include <muselang.h>
 #include <libdsp.h>
+#include <acw.h>
 
 #include "config.h"
 #include "inc.h"

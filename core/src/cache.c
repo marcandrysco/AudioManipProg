@@ -1,6 +1,5 @@
 #include "common.h"
 
-
 /**
  * File cache.
  *   @file: The file.
@@ -21,7 +20,7 @@ struct amp_cache_t {
 struct amp_file_t {
 	char *path;
 	unsigned int chan;
-	struct dsp_buf_t *buf;
+	struct acw_buf_t buf;
 
 	struct amp_cache_t *cache;
 	unsigned int refcnt;
@@ -55,7 +54,7 @@ void amp_cache_delete(struct amp_cache_t *cache)
 	for(cur = cache->file; cur != NULL; cur = next) {
 		next = cur->next;
 
-		dsp_buf_delete(cur->buf);
+		acw_buf_delete(cur->buf);
 		free(cur->path);
 		free(cur);
 	}
@@ -98,10 +97,9 @@ struct amp_file_t *amp_cache_open(struct amp_cache_t *cache, const char *path, u
 
 	file = amp_cache_lookup(cache, path, chan);
 	if(file == NULL) {
-		struct dsp_buf_t *buf;
+		struct acw_buf_t buf;
 
-		buf = dsp_buf_load(path, chan, rate);
-		if(buf == NULL)
+		if(!chkbool(acw_buf_load(&buf, path)))
 			return NULL;
 
 		file = malloc(sizeof(struct amp_file_t));
@@ -136,7 +134,7 @@ void amp_cache_close(struct amp_cache_t *cache, struct amp_file_t *file)
 		break;
 	}
 
-	dsp_buf_delete(file->buf);
+	acw_buf_delete(file->buf);
 	free(file->path);
 	free(file);
 }
@@ -149,7 +147,7 @@ void amp_cache_close(struct amp_cache_t *cache, struct amp_file_t *file)
  */
 struct amp_file_t *amp_file_copy(struct amp_file_t *file)
 {
-	amp_file_ref(file);
+	file->refcnt++;
 
 	return file;
 }
@@ -166,31 +164,105 @@ void amp_file_delete(struct amp_file_t *file)
 
 
 /**
- * Add a reference to a file.
- *   @file: The file.
- */
-void amp_file_ref(struct amp_file_t *file)
-{
-	file->refcnt++;
-}
-
-/**
- * Remove a reference from a file.
- *   @file: The file.
- */
-void amp_file_unref(struct amp_file_t *file)
-{
-	if(--file->refcnt == 0)
-		amp_cache_close(file->cache, file);
-}
-
-
-/**
  * Retrieve the buffer from a file.
  *   @file: The file.
  *   &returns: The buffer.
  */
-struct dsp_buf_t *amp_file_buf(struct amp_file_t *file)
+struct acw_buf_t amp_file_buf(struct amp_file_t *file)
 {
 	return file->buf;
 }
+
+
+#if 0
+/**
+ * Open a new buffer.
+ *   @path: The file path.
+ *   @chan: The channel.
+ *   &returns: The buffer.
+ */
+struct amp_buf_t amp_buf_new(const char *path, unsigned int chan)
+{
+	static uint64_t tm = 0, last = 0;
+	static uint64_t len = 1;
+
+	if(last > 0) {
+		tm += sys_utime() - last;
+		printf("%d\n", tm / len++);
+	}
+	last = sys_utime();
+	return (struct amp_buf_t){ amp_buf_arr_v, { .arr = amp_arr_new(path, chan) } };
+}
+
+/**
+ * Delete a buffer.
+ *   @buf: The buffer.
+ */
+void amp_buf_delete(struct amp_buf_t buf)
+{
+	switch(buf.type) {
+	case amp_buf_arr_v: amp_arr_delete(buf.data.arr); break;
+	}
+}
+
+
+/**
+ * Create a new array.
+ *   @path: The path.
+ *   @chan: The channel.
+ *   &returns: The array.
+ */
+#include <sys/stat.h>
+struct amp_arr_t *amp_arr_new(const char *path, unsigned int chan)
+{
+	SNDFILE *file;
+	SF_INFO info;
+	int *raw;
+	unsigned int i;
+	struct amp_arr_t *arr;
+
+	info.format = 0;
+	file = sf_open(path, SFM_READ, &info);
+	if(file == NULL)
+		return NULL;
+
+	if(info.channels <= chan)
+		return sf_close(file), NULL;
+
+	raw = malloc(info.channels * info.frames * sizeof(int));
+
+	//sf_readf_int(file, raw, info.frames);
+	sf_close(file);
+
+	FILE *fp = fopen(path, "r");
+	unsigned int rd = 0;
+	while(!feof(fp))
+		rd += fread(raw, 1, 10*1024, fp);
+	struct stat st;
+	stat(path, &st);
+	printf("rd: %d %d\n", rd, st.st_size);
+	fclose(fp);
+
+	arr = malloc(sizeof(struct amp_arr_t));
+	arr->len = info.frames;
+	arr->rate = info.samplerate;
+	arr->arr = malloc(3 * arr->len);
+
+	for(i = 0; i < arr->len; i++)
+		;//*(uint32_t *)(arr->arr + i) = (raw[i * info.channels + chan] >> 8) & 0x00FFFFFF;
+
+	free(raw);
+
+	return arr;
+}
+
+/**
+ * Delete a array.
+ *   @arr: The array.
+ */
+void amp_arr_delete(struct amp_arr_t *arr)
+{
+	free(arr->arr);
+	free(arr);
+}
+#endif

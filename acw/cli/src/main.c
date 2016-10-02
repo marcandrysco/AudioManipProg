@@ -1,6 +1,15 @@
 #include "common.h"
 
 
+/*
+ * local declarations
+ */
+static void encode(const char *output, const char *input);
+static void decode(const char *output, const char *input);
+
+static void noreturn error(const char *restrict format, ...);
+
+
 /**
  * Main entry point.
  *   @argc: The number of arguments.
@@ -9,75 +18,160 @@
  */
 int main(int argc, char **argv)
 {
-	struct acw_encode_t *enc;
+	int i;
+	bool dec = false, args = true;
+	const char *input = NULL, *output = NULL;
 
-	enc = acw_encode_new(5);
-	acw_encode_proc(enc, 1);
-	acw_encode_proc(enc, 2);
-	acw_encode_done(enc);
+	for(i = 1; i < argc; i++) {
+		if(args && (argv[i][0] == '-')) {
+			if(argv[i][1] == '-') {
+				if(argv[i][2] == '\0')
+					args = false;
+				else if(strcmp(argv[i] + 2, "decode") == 0)
+					dec = true;
+				else if(strcmp(argv[i] + 2, "output") == 0) {
+					if(output != NULL)
+						error("Output already specified.");
+					else if(argv[++i] == NULL)
+						error("Expected path after '--output'.");
 
-	if(hax_memcnt > 0)
-		fprintf(stderr, "missing %d allocations\n", hax_memcnt), exit(1);
-	/*
-	struct acw_buf_t *buf;
-	int32_t *pcm;
+					output = argv[i];
+				}
+				else if(memcmp(argv[i] + 2, "output=", 7) == 0) {
+					if(output != NULL)
+						error("Output already specified.");
 
-	buf = acw_buf_load("piano1.acw");
-	assert(buf != NULL);
+					output = argv[i] + 9;
+				}
+				else
+					error("Unknown flag '%s'.", argv[i]);
+			}
+			else {
+				bool brk = false;
+				char *ptr = argv[i] + 1;
 
-	pcm = acw_buf_pcm32(buf);
+				while(*ptr != '\0') {
+					switch(*ptr) {
+					case 'd':
+						dec = true;
+						break;
 
-	SNDFILE *file;
-	SF_INFO info;
+					case 'o':
+						if(output != NULL)
+							error("Output already specified.");
 
-	info.samplerate = 44100;
-	info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_24;
-	info.channels = 1;
+						ptr++;
+						if(*ptr == '\0') {
+							ptr = argv[++i];
+							if(ptr == NULL)
+								error("Expected path after '-o'.");
+						}
 
-	file = sf_open("piano1_ref.wav", SFM_WRITE, &info);
-	assert(file != NULL);
+						brk = true;
+						output = ptr;
 
-	for(int i = 0; i < buf->info.ndata; i++)
-		pcm[i] *= 256;
+						break;
 
-	sf_writef_int(file, pcm, buf->info.ndata);
+					default:
+						error("Unknown flag '-%c'.", *ptr);
+					}
 
-	sf_close(file);
+					ptr++;
+					if(brk)
+						break;
+				}
+			}
+		}
+		else {
+			if(input != NULL)
+				error("Input already specified.\n");
 
-	acw_buf_delete(buf);
-
-	{
-		SNDFILE *left, *right;
-		SF_INFO linfo, rinfo;
-
-		linfo.format = rinfo.format = 0;
-		left = sf_open("piano1.flac", SFM_READ, &linfo);
-		right = sf_open("piano1_ref.wav", SFM_READ, &rinfo);
-
-		assert((left != NULL) && (right != NULL));
-		//assert(linfo.format == rinfo.format);
-		assert(linfo.samplerate == rinfo.samplerate);
-		assert(linfo.channels == rinfo.channels);
-		assert(linfo.frames == rinfo.frames);
-
-		int *lval, *rval;
-
-		lval = malloc(linfo.frames * sizeof(int));
-		rval = malloc(rinfo.frames * sizeof(int));
-
-		sf_readf_int(left, lval, linfo.frames);
-		sf_readf_int(right, rval, rinfo.frames);
-
-		for(int i = 0; i < linfo.frames; i++)
-			assert(lval[i] == rval[i]);
-
-		free(lval);
-		free(rval);
-
-		sf_close(left);
-		sf_close(right);
+			input = argv[i];
+		}
 	}
-	*/
+
+	if(input == NULL)
+		error("Missing input path.");
+	else if(output == NULL)
+		error("Missing output path.");
+
+	if(dec)
+		decode(output, input);
+	else
+		encode(output, input);
 
 	return 0;
+}
+
+
+/**
+ * Encode a file.
+ *   @output: The output.
+ *   @input: The input.
+ */
+static void encode(const char *output, const char *input)
+{
+	int *dat, *arr;
+	unsigned int i, shift;
+	SNDFILE *file;
+	SF_INFO info;
+	struct acw_buf_t buf;
+
+	info.format = 0;
+	file = sf_open(input, SFM_READ, &info);
+	if(file == NULL)
+		error("Cannot read '%s'. %s", input, sf_strerror(NULL));
+
+	switch(info.format & 0xF) {
+	case SF_FORMAT_PCM_S8: shift = 24; break;
+	case SF_FORMAT_PCM_16: shift = 16;; break;
+	case SF_FORMAT_PCM_24: shift = 8;; break;
+	case SF_FORMAT_PCM_32: shift = 8;; break;
+	default: return error("Invalid format in '%s'. Expected signed integer format.", input);
+	}
+
+	dat = malloc(info.channels * info.frames * sizeof(int));
+	sf_readf_int(file, dat, info.frames);
+
+	arr = malloc(info.frames * sizeof(int));
+	for(i = 0; i < info.frames; i++)
+		arr[i] = dat[i * info.channels] >> shift;
+
+	free(dat);
+	sf_close(file);
+
+	buf = acw_buf_enc32(arr, info.frames);
+	buf.info.rate = info.samplerate;
+	acw_buf_save(buf, output);
+	acw_buf_delete(buf);
+
+	free(arr);
+}
+
+/**
+ * Decode a file.
+ *   @output: The output.
+ *   @input: The input.
+ */
+static void decode(const char *output, const char *input)
+{
+	fatal("stub");
+}
+
+
+/**
+ * Print an error and exit.
+ *   @format, ...: The printf-style format and arguments.
+ *   &noreturn.
+ */
+static void noreturn error(const char *restrict format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	fprintf(stderr, "\n");
+	va_end(args);
+
+	exit(1);
 }

@@ -1,24 +1,16 @@
 #ifndef PLAY_H
 #define PLAY_H
 
-/**
- * Buffer structure.
- *   @info: The buffer information.
- *   @data: The data.
- */
-struct acw_buf_t {
-	struct acw_info_t info;
-
-	void *data;
-};
-
 /*
  * buffer declarations
  */
-struct acw_buf_t *acw_buf_load(const char *path);
-void acw_buf_delete(struct acw_buf_t *buf);
+char *acw_buf_load(struct acw_buf_t *buf, const char *path);
+char *acw_buf_save(struct acw_buf_t buf, const char *path);
+void acw_buf_delete(struct acw_buf_t buf);
 
-int32_t *acw_buf_pcm32(struct acw_buf_t *buf);
+struct acw_buf_t acw_buf_enc32(int32_t *arr, unsigned int len);
+
+int32_t *acw_buf_pcm32(struct acw_buf_t buf);
 
 
 /*
@@ -50,6 +42,7 @@ static inline void acw_play_block(struct acw_play_t *play)
 	info = *(uint16_t *)play->ptr;
 	play->ptr += 2;
 	play->bits = acw_getbits(info >> 12);
+	assert((int)play->bits >= 0);
 
 	if(play->bits == 24) {
 		play->len = info & 0x0FFF;
@@ -62,6 +55,8 @@ static inline void acw_play_block(struct acw_play_t *play)
 		play->len = *(uint8_t *)play->ptr;
 		play->ptr += 1;
 		play->frac = 0;
+
+		//printf("blk(%d): %d %d  %d\n", play->bits, play->init, play->add, play->len);
 	}
 }
 
@@ -90,10 +85,20 @@ static inline int acw_play_next(struct acw_play_t *play)
 {
 	int val;
 
+	if(play->ptr == NULL)
+		return 0;
+
 	if(play->len == 0) {
 		acw_play_block(play);
 
-		if(play->bits != 24)
+		if(play->bits == 24) {
+			if(play->len == 0) {
+				play->ptr = NULL;
+
+				return 0;
+			}
+		}
+		else
 			return play->init;
 	}
 	
@@ -140,6 +145,16 @@ static inline int acw_play_next(struct acw_play_t *play)
 	}
 
 	fatal("Invalid bit width.");
+}
+
+/**
+ * Check if player is at the end of stream.
+ *   @play: The player.
+ *   &returns: True if EOS.
+ */
+static inline bool acw_play_eos(struct acw_play_t *play)
+{
+	return play->ptr == NULL;
 }
 
 #endif

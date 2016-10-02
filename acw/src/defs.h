@@ -3,13 +3,32 @@
 
 /**
  * ACW information structure.
- *   @nbytes, ndata, nblocks: Size information.
- *   @chksum: Data checksum.
+ *   @magic: Magic constant.
+ *   @nbytes, nblocks, length: Number of bytes, blocks, and total length
+ *   @rate, bits: The sample rate and base bitwidth.
  */
 struct acw_info_t {
-	uint32_t nbytes, ndata, nblocks;
-	uint32_t chksum;
+	uint64_t magic;
+	uint32_t nbytes, nblocks, length;
+	uint16_t rate, bits;
 };
+
+/**
+ * Buffer structure.
+ *   @info: The buffer information.
+ *   @raw: The raw data.
+ */
+struct acw_buf_t {
+	struct acw_info_t info;
+	void *raw;
+};
+
+
+/**
+ * Magic constant values.
+ *   @ACW_MAGIC_1_0: Version 1.0.
+ */
+#define ACW_MAGIC_1_0 0x8821eb30b0f0100
 
 
 /*

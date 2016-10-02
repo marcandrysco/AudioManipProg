@@ -302,13 +302,16 @@
   *   @url: The URL.
   *   @suc: The success function.
   */
-  window.Req.get = function(url, suc, param) {
+  window.Req.get = function(url, suc, fail) {
     var req = new XMLHttpRequest();
     req.addEventListener("load", function() {
       suc(req.responseText);
     });
+    req.addEventListener("error", function() {
+      if(fail) { fail(); }
+    });
     req.open("GET", url);
-    req.send(param);
+    req.send();
   };
 
   /**

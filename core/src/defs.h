@@ -1,6 +1,12 @@
 #ifndef DEFS_H
 #define DEFS_H
 
+/*
+ * prerequisite headers
+ */
+#include <acw.h>
+
+
 /**
  * Time structure.
  *   @idx: The index.

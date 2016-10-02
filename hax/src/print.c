@@ -175,13 +175,21 @@ void hax_vhprintf_custom(struct io_file_t file, const struct io_print_t *print, 
 					mod.zero = false;
 
 				mod.width = mod.prec = 0;
-				while(isdigit(*format))
-					mod.width = mod.width * 10 + *format - '0', format++;
+				if(*format != '*') {
+					while(isdigit(*format))
+						mod.width = mod.width * 10 + *format - '0', format++;
+				}
+				else
+					(mod.flags |= io_print_width_v), format++;
 
 				if(*format == '.') {
 					format++;
-					while(isdigit(*format))
-						mod.prec = mod.prec * 10 + *format - '0', format++;
+					if(*format != '*') {
+						while(isdigit(*format))
+							mod.prec = mod.prec * 10 + *format - '0', format++;
+					}
+					else
+						(mod.flags |= io_print_prec_v), format++;
 				}
 
 				if(*format == 'l')

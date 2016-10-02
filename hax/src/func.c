@@ -38,7 +38,18 @@ int compare_uint16(const void *left, const void *right)
 }
 
 /**
- * Compare two string.
+ * Compare two characters.
+ *   @left: The left characters.
+ *   @right: The right characters.
+ *   &returns: Their order.
+ */
+int compare_char(const void *left, const void *right)
+{
+	return *(const char *)left - *(const char *)right;
+}
+
+/**
+ * Compare two strings.
  *   @left: The left string.
  *   @right: The right string.
  *   &returns: Their order.

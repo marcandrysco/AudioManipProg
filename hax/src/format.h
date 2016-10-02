@@ -12,11 +12,15 @@ struct arglist_t {
 /**
  * Print enumerator.
  *   @io_print_long_v: Long.
- *   @io_print_long_v: SizeT.
+ *   @io_print_size_v: SizeT.
+ *   @io_print_width_v: Variable width.
+ *   @io_print_prec_v: Variable precision.
  */
 enum io_print_e {
 	io_print_long_v = 0x1,
-	io_print_sizet_v = 0x2
+	io_print_sizet_v = 0x2,
+	io_print_width_v = 0x4,
+	io_print_prec_v = 0x8,
 };
 
 /**

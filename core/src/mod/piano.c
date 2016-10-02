@@ -2,82 +2,6 @@
 
 
 /**
- * Playback structure.
- *   @buf: The buffer.
- *   @vol, mul: The volume and multiplier.
- *   @idx: The index.
- */
-struct amp_play_t {
-	struct dsp_buf_t *buf;
-	float vol, mul;
-	int idx;
-};
-
-/**
- * Initialize the playback.
- *   @play: The playback array.
- *   @n: The number of players.
- */
-static inline void amp_play_init(struct amp_play_t *play, unsigned int n)
-{
-	unsigned int i;
-
-	for(i = 0; i < n; i++)
-		play[i] = (struct amp_play_t){ NULL, 0.0f, 1.0f, -1 };
-}
-
-/**
- * Add to a playback.
- *   @play: The playback array.
- *   @n: The number of players.
- *   @buf: The buffer.
- *   @vol: The initial volume.
- *   &returns: The allocated number.
- */
-static inline unsigned int amp_play_add(struct amp_play_t *play, unsigned int n, struct dsp_buf_t *buf, double vol)
-{
-	double min = INFINITY;
-	unsigned int i, sel = 0;
-
-	for(i = 0; i < n; i++) {
-		if(play[i].vol < min)
-			sel = i, min = play[i].vol;
-	}
-
-	play[sel] = (struct amp_play_t){ buf, vol, 1.0f };
-
-	return sel;
-}
-
-/**
- * Process the playback.
- *   @play: The playback array.
- *   @n: The number of players.
- *   &returns: The value.
- */
-static inline double amp_play_proc(struct amp_play_t *play, unsigned int n)
-{
-	unsigned int i;
-	double v = 0.0;
-
-	for(i = 0; i < n; i++) {
-		if(play[i].buf == NULL)
-			continue;
-
-		if(play[i].idx >= 0)
-			v += play[i].buf->arr[play[i].idx] * play[i].vol;
-
-		play[i].idx++;
-		play[i].vol *= play[i].mul;
-		if((play[i].idx >= play[i].buf->len) || (play[i].vol < 0.001))
-			play[i].buf = NULL, play[i].vol = 0.0f;
-	}
-	
-	return v;
-}
-
-
-/**
  * Piano velocity structure.
  *   @idx: The playback index.
  *   @n: The number or round-robins.
@@ -101,14 +25,14 @@ struct amp_piano_key_t {
 
 /**
  * Piano structure.
- *   @mul: The decay multiplier.
+ *   @mul, rate: The decay multiplier and sample rate.
  *   @dev, pedal: The device and pedal key.
  *   @key: The keys array.
  *   @n: The play count.
  *   @play: The playback array.
  */
 struct amp_piano_t {
-	float mul;
+	float mul, rate;
 	uint16_t dev, pedal;
 	struct amp_piano_key_t key[128];
 
@@ -132,9 +56,10 @@ const struct amp_module_i amp_piano_iface = {
  * Create a piano.
  *   @dev: The device.
  *   @simul: The number of simultaneous playback.
+ *   @rate: The sample rate.
  *   &returns: The piano.
  */
-struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul)
+struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul, float rate)
 {
 	struct amp_piano_t *piano;
 	unsigned int i;
@@ -144,6 +69,7 @@ struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul)
 	piano->pedal = 128;
 	piano->n = simul;
 	piano->mul = 0.0f;
+	piano->rate = rate;
 	piano->play = malloc(simul * sizeof(struct amp_play_t));
 	amp_play_init(piano->play, simul);
 
@@ -164,7 +90,7 @@ struct amp_piano_t *amp_piano_copy(struct amp_piano_t *piano)
 	unsigned int i, j, k;
 	struct amp_piano_vel_t *vel;
 	
-	copy = amp_piano_new(piano->dev, piano->n);
+	copy = amp_piano_new(piano->dev, piano->n, piano->rate);
 	copy->mul = piano->mul;
 	copy->pedal = piano->pedal;
 
@@ -223,7 +149,7 @@ char *amp_piano_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 	struct amp_cache_t *cache = amp_core_cache(env);
 
 	chkfail(amp_match_unpack(value, "(d,O,O)", &dev, &list, &opt));
-	piano = amp_piano_new(dev, 24);
+	piano = amp_piano_new(dev, 24, amp_core_rate(env));
 
 	if(list->type != ml_value_list_v)
 		fail("%C: Type mismatch.", ml_tag_chunk(&value->tag));
@@ -246,10 +172,16 @@ char *amp_piano_make(struct ml_value_t **ret, struct ml_value_t *value, struct m
 			vel = amp_piano_vel(key);
 
 			for(link = iter2->value->data.list->head; link != NULL; link = link->next) {
+				struct amp_file_t *file;
+
 				if(link->value->type != ml_value_str_v)
 					fail("%C: Type mismatch.", ml_tag_chunk(&value->tag));
 
-				amp_piano_rr(vel, amp_cache_open(cache, link->value->data.str, 0, amp_core_rate(env)));
+				file = amp_cache_open(cache, link->value->data.str, 0, amp_core_rate(env));
+				if(file == NULL)
+					fail("%C: Unable to open file '%s'.", ml_tag_chunk(&value->tag), link->value->data.str);
+
+				amp_piano_rr(vel, file);
 			}
 		}
 	}
@@ -339,22 +271,20 @@ bool amp_piano_proc(struct amp_piano_t *piano, double *buf, struct amp_time_t *t
 
 			if(event->val > 0) {
 				unsigned int vel;
-				struct dsp_buf_t *buf;
+				struct acw_buf_t buf;
 
 				vel = key->n;
 				vel = event->val / ((UINT16_MAX + vel) / vel);
 
 				buf = amp_file_buf(key->vel[vel].rr[0]);
-				key->idx = amp_play_add(piano->play, piano->n, buf, 1.0f);
+				key->idx = amp_play_add(piano->play, piano->n, buf, 1.0f, piano->rate);
 
 				printf("vel: %d %.1f\n", vel, amp_key_freq_f(event->key));
 			}
 			else {
-				piano->play[key->idx].mul = 0.9998f;
+				piano->play[key->idx].mul = 0.9998f; // TODO :decay constant
 				key->idx = -1;
 			}
-
-			//printf("%d: %d: %d\n", event->key, event->val, piano->key[event->key].n);
 		}
 
 		buf[i] = amp_play_proc(piano->play, piano->n);

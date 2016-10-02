@@ -53,6 +53,7 @@
       time.appendChild(record);
 
       var disp = Gui.div("disp", Gui.text("000:0.0"));
+      disp.addEventListener("click", function(e) { document.body.appendChild(Web.time()); });
       time.appendChild(disp);
 
       var refresh = function() {
@@ -62,7 +63,7 @@
           var beat = v.beat.toFixed(1);
           Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
 
-          requestAnimationFrame(function() { refresh(); });
+          //requestAnimationFrame(function() { refresh(); });
         });
       };
 
@@ -70,6 +71,16 @@
 
       head.appendChild(time);
     });
+  };
+
+  /**
+   * Create the time popup.
+   */
+  window.Web.time = function() {
+    var el = Gui.text("HI");
+    var popup = Gui.Popup(el, function(e) {
+    });
+    return popup;
   };
 
 
@@ -154,21 +165,6 @@
    */
   window.Loc.copy = function(loc) {
     return { bar: loc.bar, beat: loc.beat };
-  };
-
-  /**
-   * Compare two locations for their order.
-   *   @left: The left location.
-   *   @right: The right location.
-   *   &returns: True if properly ordered.
-   */
-  window.Loc.cmp = function(left, right) {
-    if(left.bar < right.bar)
-      return true;
-    else if(left.bar > right.bar)
-      return false;
-    else
-      return left.beat <= right.beat;
   };
 
   /**
@@ -409,7 +405,6 @@
     Player.draw(player);
     window.addEventListener("resize", function() { Player.draw(player); });
 
-    console.log(Key.parse("C4"));
     player.init = true;
     return player;
   };

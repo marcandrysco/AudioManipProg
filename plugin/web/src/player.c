@@ -64,7 +64,6 @@ static void player_proc(struct io_file_t file, void *arg);
  *   @id: The indetifier.
  *   &returns: The player.
  */
-	#include <sys/stat.h>
 struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id)
 {
 	struct web_player_t *player;
@@ -81,7 +80,7 @@ struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id)
 		char path[strlen(player->id) + 9];
 
 		sprintf(path, "web.dat/%s", id);
-		mkdir("web.dat", 0777);
+		fs_mkdir("web.dat", 0775);
 		web_player_load(player, path);
 
 		if(0) {
@@ -384,7 +383,7 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
 			char path[strlen(player->id) + 9];
 
 			sprintf(path, "web.dat/%s", player->id);
-			mkdir("web.dat", 0777);
+			fs_mkdir("web.dat", 0775);
 			web_player_save(player, path);
 		}
 

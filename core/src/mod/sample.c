@@ -121,7 +121,7 @@ void amp_sample_delete(struct amp_sample_t *sample)
 		struct amp_sample_vel_t *vel = &sample->vel[i];
 
 		for(j = 0; j < vel->len; j++)
-			amp_file_unref(vel->inst[j].file);
+			amp_file_delete(vel->inst[j].file);
 
 		free(vel->inst);
 	}
@@ -282,5 +282,6 @@ void amp_sample_inst(struct amp_sample_vel_t *vel, struct amp_file_t *file)
 	vel->inst = realloc(vel->inst, (vel->len + 1) * sizeof(struct amp_sample_inst_t));
 	inst = &vel->inst[vel->len++];
 	inst->file = file;
-	inst->buf = amp_file_buf(file);
+	fatal("stub");
+	//inst->buf = amp_file_buf(file);
 }
