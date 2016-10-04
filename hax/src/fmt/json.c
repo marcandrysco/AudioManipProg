@@ -754,7 +754,7 @@ char *json_parse_path(struct json_t **json, const char *path)
  *   @high: The high end of the range.
  *   &returns: The number if valid, NAN otherwise.
  */
-double json_chk_range(struct json_t *json, double low, double high)
+double json_num_range(struct json_t *json, double low, double high)
 {
 	double val;
 
@@ -766,6 +766,53 @@ double json_chk_range(struct json_t *json, double low, double high)
 		return NAN;
 
 	return val;
+}
+
+
+/**
+ * Check if a value is an integer that falls in a range.
+ *   @json: The JSON value.
+ *   @out: Ref. Optional. The output number.
+ *   &returns: True if success.
+ */
+bool json_int_get(struct json_t *json, int *out)
+{
+	int val;
+
+	if(json->type != json_num_v)
+		return false;
+
+	val = json->data.num;
+	if(val != json->data.num)
+		return false;
+
+	if(out != NULL)
+		*out = val;
+
+	return true;
+}
+
+/**
+ * Check if a value is an integer that falls in a range.
+ *   @json: The JSON value.
+ *   @low: The low end of the range.
+ *   @high: The high end of the range.
+ *   @out: Ref. Optional. The output number.
+ *   &returns: True if success.
+ */
+bool json_int_range(struct json_t *json, int low, int high, int *out)
+{
+	int val;
+
+	if(!json_int_get(json, &val))
+		return false;
+	else if((val < low) || (val > high))
+		return false;
+
+	if(out != NULL)
+		*out = val;
+
+	return true;
 }
 
 /**

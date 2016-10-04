@@ -129,8 +129,23 @@ char *json_parse_path(struct json_t **json, const char *path);
 /*
  * verification declarations
  */
-double json_chk_range(struct json_t *json, double low, double high);
+double json_num_range(struct json_t *json, double low, double high);
+
+bool json_int_get(struct json_t *json, int *out);
+bool json_int_range(struct json_t *json, int low, int high, int *out);
+
 struct json_arr_t *json_chk_arr(struct json_t *json, int len);
 struct json_obj_t *json_chk_obj(struct json_t *json, ...);
+
+
+/**
+ * Delete a JSON object if non-null.
+ *   @json: The JSON object.
+ */
+static inline void json_erase(struct json_t *json)
+{
+	if(json != NULL)
+		json_delete(json);
+}
 
 #endif

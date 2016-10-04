@@ -47,14 +47,26 @@ struct sys_poll_t;
 #define fail(...) do { char *_fail_err = hax_mprintf(__VA_ARGS__); do { onexit } while(0); return _fail_err; } while(0)
 #define chkret(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { return _fail_err; } } while(0)
 #define chkfail(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { do { onexit } while(0); return _fail_err; } } while(0)
-#define chkwarn(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); free(_fail_err); } } while(0)
 #define chkexit(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); exit(1); } } while(0)
 #define chkabort(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); abort(); } } while(0)
 
 void hax_free(void *ptr);
 static inline bool chkbool(char *err)
 {
-	if(err != NULL) hax_free(err);
+	if(err != NULL)
+		hax_free(err);
+
+	return err == NULL;
+}
+
+void hax_fprintf(FILE *file, const char *restrict format, ...);
+static inline bool chkwarn(char *err)
+{
+	if(err != NULL) {
+		hax_fprintf(stderr, "%s\n", err);
+
+		hax_free(err);
+	}
 
 	return err == NULL;
 }

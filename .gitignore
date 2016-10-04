@@ -20,6 +20,7 @@ inc.h
 
 acw/acw.h
 acw/cli/acw
+acw/test/acw-test
 hax/hax.h
 hax/test/hax-test
 dsp/libdsp.h

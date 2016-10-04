@@ -34,7 +34,6 @@ setconf()
   fi
 
   c_src "src/argv.c"
-  c_src "src/avltree.c"
   c_src "src/chunk.c"
   c_src "src/complex.c"
   c_src "src/crc.c"
@@ -48,7 +47,11 @@ setconf()
   c_src "src/print.c"
   c_src "src/rand.c"
   c_src "src/strbuf.c"
+  c_src "src/string.c"
 
+  c_src "src/types/avltree.c"
+
+  c_src "src/fmt/cfg.c"
   c_src "src/fmt/json.c"
   c_src "src/fmt/xml.c"
 

@@ -173,6 +173,9 @@ body {
         .player-keys > .grid > .row > .box.sel {
           background-color: #666;
         }
+      .player-keys > .grid > .row > .box.pedal {
+        flex-grow: 1;
+      }
 
   .player-keys > .action {
     text-align: center;

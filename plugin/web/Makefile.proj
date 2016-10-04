@@ -3,6 +3,8 @@ ASSETS = web/index.xhtml \
          web/gui.js \
          web/gui.css \
 	 web/web.js \
+	 web/web.base.js \
+	 web/web.player.js \
 	 web/web.css \
 
 install: install-assets

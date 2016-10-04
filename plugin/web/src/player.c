@@ -55,6 +55,8 @@ struct web_player_t {
 /*
  * local declarations
  */
+static char *req_keys(struct web_player_t *player, const char *body);
+
 static void player_proc(struct io_file_t file, void *arg);
 
 
@@ -75,26 +77,7 @@ struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id)
 	player->left = player->right = NULL;
 	player->last = amp_loc(0, 0.0);
 	web_player_conf_init(&player->conf);
-	
-	{
-		char path[strlen(player->id) + 9];
-
-		sprintf(path, "web.dat/%s", id);
-		fs_mkdir("web.dat", 0775);
-		web_player_load(player, path);
-
-		if(0) {
-			printf("\n");
-
-			struct web_player_inst_t *inst;
-			for(inst = player->begin; inst != NULL; inst = inst->left)
-				printf("%d:%.1f -> %d:%.1f\n", inst->begin.bar, inst->begin.beat, inst->end.bar, inst->end.beat);
-
-			printf("head\n");
-			printf("%d:%.1f -> %d:%.1f\n", player->left->begin.bar, player->left->begin.beat, player->left->end.bar, player->left->end.beat);
-
-		}
-	}
+	web_player_load(player);
 
 	return player;
 }
@@ -346,22 +329,6 @@ static void player_proc(struct io_file_t file, void *arg)
  *   @args: The arguments.
  *   &returns: True if handled.
  */
-bool req_keys(struct json_t *json)
-{
-	struct json_arr_t *arr;
-	unsigned int i;
-
-	if(json->type != json_arr_v)
-		return false;
-
-	arr = json->data.arr;
-	for(i = 0; i < arr->len; i++) {
-		if(arr->vec[i]->type != json_num_v)
-			return false;
-	}
-
-	return true;
-}
 bool web_player_req(struct web_player_t *player, const char *path, struct http_args_t *args)
 {
 	unsigned int key, vel, n;
@@ -378,74 +345,127 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
 			web_player_add(player, begin, end, key, vel);
 
 		sys_mutex_unlock(&player->serv->lock);
-
-		{
-			char path[strlen(player->id) + 9];
-
-			sprintf(path, "web.dat/%s", player->id);
-			fs_mkdir("web.dat", 0775);
-			web_player_save(player, path);
-		}
+		web_player_save(player);
 
 		return true;
 	}
-	else if(strcmp(path, "/keys") == 0) {
-		char *err;
-		struct json_t *json;
-
-		err = json_parse_str(&json, args->body);
-		if(err == NULL) {
-			printf("here\n");
-
-			json_delete(json);
-		}
-		else
-			free(err);
-
-		return true;
-	}
+	else if(strcmp(path, "/keys") == 0)
+		return chkwarn(req_keys(player, args->body));
 	else
 		return false;
 }
 
+/**
+ * Handle a request to modify the keys.
+ *   @player: The player.
+ *   @body: The document body.
+ *   &returns: Error.
+ */
+static char *req_keys(struct web_player_t *player, const char *body)
+{
+#define onexit json_erase(json);
+	int val;
+	unsigned int i;
+	struct json_t *json = NULL;
+	struct json_arr_t *arr;
+
+	chkfail(json_parse_str(&json, body));
+
+	if(json->type != json_arr_v)
+			fail("Invalid keys request. Expected array of keys.");
+
+	arr = json->data.arr;
+	for(i = 0; i < arr->len; i++) {
+		if(!json_int_range(arr->vec[i], 0, UINT16_MAX, NULL))
+			fail("Invalid keys request. Expected array of keys.");
+	}
+
+	player->conf.keys = realloc(player->conf.keys, arr->len * sizeof(uint16_t));
+	for(i = 0; i < arr->len; i++) {
+		json_int_get(arr->vec[i], &val);
+		player->conf.keys[i] = val;
+	}
+
+	web_player_save(player);
+
+	json_delete(json);
+	return NULL;
+#undef onexit
+}
 
 /**
  * Load a player.
  *   @player: The player.
- *   @path: The path.
+ *   &returns: Error.
  */
-void web_player_load(struct web_player_t *player, const char *path)
+char *web_player_load(struct web_player_t *player)
 {
+#define onexit fclose(file); cfg_line_erase(line);
 	FILE *file;
-	struct amp_loc_t begin, end;
-	unsigned int key, vel;
+	struct cfg_line_t *line;
+	unsigned int lineno = 1;
+	char path[strlen(player->id) + 9];
+
+	sprintf(path, "web.dat/%s", player->id);
 
 	file = fopen(path, "r");
 	if(file == NULL)
-		return;
+		return mprintf("Cannot read from '%s'.", path);
 
-	while(fscanf(file, "%d:%lf,%d:%lf,%u,%u\n", &begin.bar, &begin.beat, &end.bar, &end.beat, &key, &vel) == 6)
-		web_player_add(player, begin, end, key, vel);
+	while(true) {
+		chkfail(cfg_line_parse(&line, file, &lineno));
+		if(line == NULL)
+			break;
+
+		if(strcmp(line->key, "Keys") == 0) {
+			uint16_t *keys;
+			unsigned int nkeys;
+
+			chkfail(cfg_readf(line, "u16* $", &keys, &nkeys));
+
+			free(player->conf.keys);
+			player->conf.keys = keys;
+			player->conf.nkeys = nkeys;
+		}
+		else if(strcmp(line->key, "Event") == 0) {
+			struct amp_loc_t begin, end;
+			uint16_t key, vel;
+
+			chkfail(cfg_readf(line, "df df u16 u16 $", &begin.bar, &begin.beat, &end.bar, &end.beat, &key, &vel));
+
+			web_player_add(player, begin, end, key, vel);
+		}
+		else
+			fail("Unknown directive '%s'.", line->key);
+
+		cfg_line_delete(line);
+	}
 
 	fclose(file);
+	return NULL;
 }
 
 /**
  * Save a player.
  *   @player: The player.
- *   @path: The path.
  */
-void web_player_save(struct web_player_t *player, const char *path)
+void web_player_save(struct web_player_t *player)
 {
 	FILE *file;
 	struct web_player_inst_t *inst;
+	char path[strlen(player->id) + 9];
 
+	sprintf(path, "web.dat/%s", player->id);
+
+	fs_mkdir("web.dat", 0775);
 	file = fopen(path, "w");
 	if(file == NULL)
 		fatal("Failed to save to path '%s'", path);
 
+	cfg_writef(file, "Keys", "u16*", player->conf.keys, player->conf.nkeys);
+
 	for(inst = player->begin; inst != NULL; inst = inst->left)
-		fprintf(file, "%d:%.6f,%d:%.6f,%u,%u\n", inst->begin.bar, inst->begin.beat, inst->end.bar, inst->end.beat, inst->key, inst->vel);
+		cfg_writef(file, "Event", "df df u16 u16", inst->begin.bar, inst->begin.beat, inst->end.bar, inst->end.beat, inst->key, inst->vel);
 
 	fclose(file);
 }
@@ -477,4 +497,3 @@ void web_player_conf_destroy(struct web_player_conf_t *conf)
 {
 	free(conf->keys);
 }
-

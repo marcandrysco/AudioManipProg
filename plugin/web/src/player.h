@@ -23,8 +23,8 @@ struct io_chunk_t web_player_chunk(struct web_player_t *player);
 
 bool web_player_req(struct web_player_t *player, const char *path, struct http_args_t *args);
 
-void web_player_load(struct web_player_t *player, const char *path);
-void web_player_save(struct web_player_t *player, const char *path);
+char *web_player_load(struct web_player_t *player);
+void web_player_save(struct web_player_t *player);
 
 /*
  * player configuration declarations

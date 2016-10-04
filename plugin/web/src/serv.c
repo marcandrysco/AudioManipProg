@@ -411,13 +411,15 @@ struct http_asset_t {
 };
 
 struct http_asset_t serv_assets[] = {
-	{ "/",        "index.xhtml", "application/xhtml+xml" },
-	{ "/draw.js", "draw.js",     "application/javascript" },
-	{ "/gui.js",  "gui.js",      "application/javascript" },
-	{ "/gui.css", "gui.css",     "text/css" },
-	{ "/web.js",  "web.js",      "application/javascript" },
-	{ "/web.css", "web.css",     "text/css" },
-	{ NULL,       NULL,          NULL }
+	{  "/",               "index.xhtml",    "application/xhtml+xml"   },
+	{  "/draw.js",        "draw.js",        "application/javascript"  },
+	{  "/gui.js",         "gui.js",         "application/javascript"  },
+	{  "/gui.css",        "gui.css",        "text/css"                },
+	{  "/web.js",         "web.js",         "application/javascript"  },
+	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
+	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
+	{  "/web.css",        "web.css",        "text/css"                },
+	{  NULL,              NULL,             NULL                      }
 };
 
 /**
