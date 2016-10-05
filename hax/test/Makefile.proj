@@ -1,2 +1,5 @@
 test: all
 	./hax-test
+
+debug: all
+	gdb ./hax-test -ex run

@@ -247,10 +247,14 @@ static void *iface_thread(void *arg)
 
 				switch(event->type) {
 				case SND_SEQ_EVENT_NOTEON:
-				case SND_SEQ_EVENT_NOTEOFF:
 					key = (uint16_t)event->data.note.note;
 					val = (uint16_t)event->data.note.velocity << 9;
 					midi->func(key, val, midi->arg);
+					break;
+
+				case SND_SEQ_EVENT_NOTEOFF:
+					key = (uint16_t)event->data.note.note;
+					midi->func(key, 0, midi->arg);
 					break;
 
 				case SND_SEQ_EVENT_CONTROLLER:

@@ -156,12 +156,6 @@
     });
     document.body.appendChild(popup);
   };
-
-  /**
-   *
-   */
-  window.Player.keys.row = function(conf) {
-  };
   /**
    * Create a box for the keys display.
    *   @conf: The player configuration.
@@ -169,13 +163,13 @@
    *   @rows: The rows arrays.
    */
   window.Player.keys.box = function(conf, idx, rows) {
-        var box = Gui.div("box");
-        box.xIdx = idx;
-        if(conf.rows.indexOf(box.xIdx) >= 0) {
-          box.classList.add("sel");
-          rows.push(box.xIdx);
-        }
-        return box;
+    var box = Gui.div("box");
+    box.xIdx = idx;
+    if(conf.rows.indexOf(box.xIdx) >= 0) {
+      box.classList.add("sel");
+      rows.push(box.xIdx);
+    }
+    return box;
   };
 
   /**

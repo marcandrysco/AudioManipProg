@@ -13,6 +13,8 @@ setconf()
   c_src "src/avltree.c"
   c_src "src/printf.c"
 
+  c_src "src/fmt/cfg.c"
+
   c_src "src/sys/thread.c"
 }
 ## end configuration options ##

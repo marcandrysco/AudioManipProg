@@ -217,6 +217,13 @@ char *cfg_read_double(const char *value, double *ptr)
 	return NULL;
 }
 
+/**
+ * Read formatted input from a configuration line.
+ *   @file: The file.
+ *   @key: The key.
+ *   @fmt, ...: The format and options.
+ *   &returns: Error.
+ */
 char *cfg_readf(struct cfg_line_t *line, const char *restrict fmt, ...)
 {
 #define onexit va_end(args);

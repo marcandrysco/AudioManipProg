@@ -15,11 +15,13 @@ struct amp_piano_vel_t {
 
 /**
  * Piano key structure.
- *   @idx, n: The play index and number of velocities.
+ *   @idx: The play index.
+ *   @n: The number of velocities.
  *   @vel: The velocity array.
  */
 struct amp_piano_key_t {
-	unsigned int idx, n;
+	int idx;
+	unsigned int n;
 	struct amp_piano_vel_t *vel;
 };
 
@@ -28,16 +30,20 @@ struct amp_piano_key_t {
  *   @mul, rate: The decay multiplier and sample rate.
  *   @dev, pedal: The device and pedal key.
  *   @key: The keys array.
+ *   @on: The pedal on flag.
  *   @n: The play count.
  *   @play: The playback array.
+ *   @state: The state array.
  */
 struct amp_piano_t {
 	float mul, rate;
 	uint16_t dev, pedal;
 	struct amp_piano_key_t key[128];
 
+	bool on;
 	unsigned int n;
 	struct amp_play_t *play;
+	int8_t *state;
 };
 
 
@@ -70,8 +76,13 @@ struct amp_piano_t *amp_piano_new(uint16_t dev, unsigned int simul, float rate)
 	piano->n = simul;
 	piano->mul = 0.0f;
 	piano->rate = rate;
+	piano->on = false;
 	piano->play = malloc(simul * sizeof(struct amp_play_t));
 	amp_play_init(piano->play, simul);
+
+	piano->state = malloc(simul * sizeof(int8_t));
+	for(i = 0; i < simul; i++)
+		piano->state[i] = -1;
 
 	for(i = 0; i < 128; i++)
 		piano->key[i] = (struct amp_piano_key_t){ 0, 0, malloc(0) };
@@ -126,6 +137,7 @@ void amp_piano_delete(struct amp_piano_t *piano)
 	}
 
 	free(piano->play);
+	free(piano->state);
 	free(piano);
 }
 
@@ -251,10 +263,13 @@ void amp_piano_info(struct amp_piano_t *piano, struct amp_info_t info)
  */
 bool amp_piano_proc(struct amp_piano_t *piano, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
+	bool on;
 	unsigned int i, n = 0;
 	struct amp_event_t *event;
 
 	dsp_zero_d(buf, len);
+
+	on = piano->on;
 
 	for(i = 0; i < len; i++) {
 		while((event = amp_queue_event(queue, &n, i)) != NULL) {
@@ -262,33 +277,62 @@ bool amp_piano_proc(struct amp_piano_t *piano, double *buf, struct amp_time_t *t
 
 			if(event->dev != piano->dev)
 				continue;
-			else if(event->key >= 128)
+
+			if(event->key == piano->pedal) {
+				int sel;
+				unsigned int k;
+
+				on = (event->val > (UINT16_MAX / 2));
+
+				for(k = 0; k < piano->n; k++) {
+					sel = piano->state[k];
+					if(sel == -1)
+						piano->play[k].mul = on ? 1.0 : 0.9994f; // TODO
+				}
+			}
+
+			if(event->key >= 128)
 				continue;
 
+			event->key += 12;
 			key = &piano->key[event->key];
 			if(key->n == 0)
 				continue;
 
 			if(event->val > 0) {
+				int idx, sel;
 				unsigned int vel;
 				struct acw_buf_t buf;
 
 				vel = key->n;
 				vel = event->val / ((UINT16_MAX + vel) / vel);
 
+				if(key->idx >= 0) {
+					//piano->state[key->idx] = -2;
+					//piano->play[key->idx].mul = 0.9994f;
+				}
 				buf = amp_file_buf(key->vel[vel].rr[0]);
-				key->idx = amp_play_add(piano->play, piano->n, buf, 1.0f, piano->rate);
+				idx = amp_play_add(piano->play, piano->n, buf, 1.0f, piano->rate);
+				sel = piano->state[idx];
+				if(sel >= 0) {
+					piano->play[piano->key[sel].idx].mul = 0.9994f; // TODO
+					piano->key[sel].idx = -1;
+				}
+
+				key->idx = idx;
+				piano->state[idx] = event->key;
 
 				printf("vel: %d %.1f\n", vel, amp_key_freq_f(event->key));
 			}
-			else {
-				piano->play[key->idx].mul = 0.9998f; // TODO :decay constant
-				key->idx = -1;
+			else if(key->idx >= 0) {
+				piano->state[key->idx] = -1;
+				piano->play[key->idx].mul = on ? 1.0 : 0.9994f; // TODO :decay constant
 			}
 		}
 
 		buf[i] = amp_play_proc(piano->play, piano->n);
 	}
 
+	piano->on  = on;
 	return false;
 }

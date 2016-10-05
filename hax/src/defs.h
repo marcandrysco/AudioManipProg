@@ -4,12 +4,13 @@
 /*
  * common headers
  */
-#ifdef WINDOWS
+#if WINDOWS || CYGWIN
 #	define WIN32_LEAN_AND_MEAN
 #	define _WIN32_WINNT 0x600
 #	include <windows.h>
 #	include <winsock2.h>
 #	include <ws2tcpip.h>
+#	define abort() DebugBreak(), exit(1)
 #else
 #	include <pthread.h>
 #	include <netinet/in.h>
@@ -50,7 +51,12 @@ struct sys_poll_t;
 #define chkexit(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); exit(1); } } while(0)
 #define chkabort(ptr) do { char *_fail_err = ptr; if(_fail_err != NULL) { hax_fprintf(stderr, "%s\n", _fail_err); abort(); } } while(0)
 
+/*
+ * function prototypes
+ */
 void hax_free(void *ptr);
+void hax_fprintf(FILE *file, const char *restrict format, ...);
+
 static inline bool chkbool(char *err)
 {
 	if(err != NULL)
@@ -59,7 +65,6 @@ static inline bool chkbool(char *err)
 	return err == NULL;
 }
 
-void hax_fprintf(FILE *file, const char *restrict format, ...);
 static inline bool chkwarn(char *err)
 {
 	if(err != NULL) {

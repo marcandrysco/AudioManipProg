@@ -185,7 +185,11 @@ void io_format_clib(char ch, struct io_file_t file, struct io_print_mod_t *mod, 
 	if(mod->flags & io_print_long_v)
 		format[len++] = 'l';
 	else if(mod->flags & io_print_sizet_v)
+#ifdef WINDOWS
+		format[len++] = 'l', format[len++] = 'l';
+#else
 		format[len++] = 'z';
+#endif
 
 	format[len++] = ch;
 	format[len] = '\0';

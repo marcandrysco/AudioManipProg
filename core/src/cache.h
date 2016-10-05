@@ -1,34 +1,6 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-/**
- * Compact array structure.
- *   @rate: The sample rate.
- *   @arr: The sample array.
- *   @len: The length.
- */
-struct amp_arr_t {
-	unsigned int rate;
-
-	void *arr;
-	unsigned int len;
-};
-
-
-enum amp_buf_e {
-	amp_buf_arr_v
-};
-
-union amp_buf_u {
-	struct amp_arr_t *arr;
-};
-
-struct amp_buf_t {
-	enum amp_buf_e type;
-	union amp_buf_u data;
-};
-
-
 /*
  * cache declarations
  */

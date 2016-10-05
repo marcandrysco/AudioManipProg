@@ -9,7 +9,7 @@ setconf()
 
   h_src "src/defs.h"
 
-  if [ "$windows" ] ; then
+  if [ "$windows$cygwin" ] ; then
     h_src "src/win/defs.h"
 
     lib_dep "ws2_32"
@@ -17,9 +17,11 @@ setconf()
     h_src "src/posix/defs.h"
   fi
 
-  if [ "$windows" ] ; then
+  if [ "$windows$cygwin" ] ; then
     h_src "src/win/defs.h"
+    c_src "src/win/dbg.c"
     c_src "src/win/fs.c"
+    c_src "src/win/notify.c"
     c_src "src/win/poll.c"
     c_src "src/win/sock.c"
     c_src "src/win/thread.c"

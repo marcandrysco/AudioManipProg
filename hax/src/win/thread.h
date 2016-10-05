@@ -2,7 +2,7 @@
 #define THREAD_H
 
 /**
- * Thread structure.
+ * Mutex structure.
  *   @once: One-time initializer.
  *   @lock: The critical section lock.
  */
@@ -24,6 +24,32 @@ bool sys_mutex_trylock(sys_mutex_t *mutex);
 void sys_mutex_unlock(sys_mutex_t *mutex);
 
 #define SYS_MUTEX_INIT { INIT_ONCE_STATIC_INIT }
+
+
+/**
+ * Thread structure.
+ *   @func: The function.
+ *   @arg, ptr: The argument and return values.
+ *   @handle: The handle
+ *   @lock: The lock.
+ *   @detach: Detach flag.
+ */
+struct sys_thread_t {
+	void *(*func)(void *);
+	void *arg, *ret;
+	HANDLE handle;
+	CRITICAL_SECTION lock;
+	bool detach;
+};
+
+/*
+ * thread declarations
+ */
+typedef struct sys_thread_t *sys_thread_t;
+
+sys_thread_t sys_thread_create(unsigned int flags, void *(*func)(void *), void *arg);
+void *sys_thread_join(sys_thread_t *thread);
+void sys_thread_detach(sys_thread_t *thread);
 
 /*
  * task declarations
