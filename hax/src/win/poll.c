@@ -24,10 +24,24 @@ bool sys_poll(struct sys_poll_t *list, unsigned int n, int timeout)
 				handle[i] = list[i].fd;
 		}
 
-		ret = WaitForMultipleObjects(cnt, handle, FALSE, (timeout >= 0) ? (timeout / 1000) : INFINITE);
+		ret = WaitForMultipleObjects(cnt, handle, FALSE, (timeout >= 0) ? timeout : INFINITE);
 
-		return ret < 0x80;
+		if(ret >= 0x80)
+			return false;
+
+		list[ret].revents = (sys_poll_in_e | sys_poll_out_e) & list[ret].events;
+
+		return true;
 	}
+}
 
-	return false;
+/**
+ * Poll a single descriptor.
+ *   @info: The single poll descriptor.
+ *   @timeout: The timeout in milliseconds. Negative waits forever.
+ *   &returns: True if on file wakeup, false on timeout.
+ */
+bool sys_poll1(struct sys_poll_t info, int timeout)
+{
+	return sys_poll(&info, 1, timeout);
 }

@@ -6,6 +6,9 @@
  */
 static BOOL mutex_once(PINIT_ONCE InitOnce, PVOID arg, PVOID *ctx);
 
+static DWORD task_proc(LPVOID arg);
+
+
 /**
  * Initialize a mutex.
  *   @flags: The flags.
@@ -163,14 +166,59 @@ void sys_thread_detach(sys_thread_t *thread)
 	CloseHandle((*thread)->handle);
 }
 
+
+/**
+ * Task structure.
+ *   @sync, thread: The synchronization and thread handles.
+ *   @func: The task function.
+ *   @arg: The argument.
+ */
 struct sys_task_t {
+	HANDLE sync, thread;
+
+	sys_task_f func;
+	void *arg;
 };
 
-struct sys_task_t *sys_task_new(void *p1,void *p2)
+
+/**
+ * Create a new task.
+ *   @func: The task function.
+ *   @arg: The argument.
+ *   &returns: The task.
+ */
+struct sys_task_t *sys_task_new(sys_task_f func, void *arg)
 {
-	return NULL;
+	struct sys_task_t *task;
+
+	task = malloc(sizeof(struct sys_task_t));
+	task->func = func;
+	task->arg = arg;
+	task->sync = CreateEvent(NULL, TRUE, FALSE, NULL);
+	task->thread = CreateThread(NULL, 0, task_proc, task, 0, NULL);
+
+	return task;
 }
 
 void sys_task_delete(struct sys_task_t *task)
 {
+	SetEvent(task->sync);
+	WaitForSingleObject(task->thread, INFINITE);
+	CloseHandle(task->sync);
+	CloseHandle(task->thread);
+	free(task);
+}
+
+/**
+ * Process a task thread.
+ *   @arg: The argument.
+ *   &returns: Always zero.
+ */
+static DWORD task_proc(LPVOID arg)
+{
+	struct sys_task_t *task = arg;
+
+	task->func(task->sync, task->arg);
+
+	return 0;
 }

@@ -4,8 +4,10 @@
 /*
  * file system declarations
  */
+extern sys_fd_t sys_badfd;
+
 bool fs_exists(const char *path);
 
-bool fs_mkdir(const char *path, uint16_t perm);
+char *fs_mkdir(const char *path, uint16_t perm);
 
 #endif

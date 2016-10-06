@@ -28,6 +28,7 @@ setconf()
   else
     h_src "src/posix/defs.h"
     c_src "src/posix/fs.c"
+    c_src "src/posix/notify.c"
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/thread.c"

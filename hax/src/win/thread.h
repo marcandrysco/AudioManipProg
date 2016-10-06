@@ -51,12 +51,20 @@ sys_thread_t sys_thread_create(unsigned int flags, void *(*func)(void *), void *
 void *sys_thread_join(sys_thread_t *thread);
 void sys_thread_detach(sys_thread_t *thread);
 
+
+/**
+ * Task function.
+ *   @fd: The termiantion file descriptor.
+ *   @arg: The argument.
+ */
+typedef void (*sys_task_f)(sys_fd_t fd, void *arg);
+
 /*
  * task declarations
  */
 struct sys_task_t;
 
-struct sys_task_t *sys_task_new(void * ,void *);
+struct sys_task_t *sys_task_new(sys_task_f func, void *arg);
 void sys_task_delete(struct sys_task_t *task);
 
 #endif

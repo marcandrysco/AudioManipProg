@@ -77,6 +77,17 @@
   window.Loc = new Object();
 
   /**
+   * Create a location.
+   *   @bar: The bar.
+   *   @beat: The beat.
+   *   &returns: The location.
+   */
+  window.Loc.create = function(bar, beat) {
+    if(bar != Math.round(bar)) { throw("Loc.create: Bar must be an integer."); }
+    if(beat < 0) { throw("Loc.create: Beat must be nonnegative."); }
+    return { bar: bar, beat: beat, copy: function() { return Loc.create(this.bar, this.beat); } };
+  };
+  /**
    * Copy a location.
    *   @loc: The original location.
    *   &returns: The copied location.

@@ -15,6 +15,7 @@ setconf()
 
   c_src "src/fmt/cfg.c"
 
+  c_src "src/sys/notify.c"
   c_src "src/sys/thread.c"
 }
 ## end configuration options ##
