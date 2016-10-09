@@ -2,12 +2,6 @@
 #include <sys/stat.h>
 
 
-/*
- * global variables
- */
-sys_fd_t sys_badfd = -1;
-
-
 /**
  * Check if a file path exists.
  *   @path: The paht.
@@ -19,20 +13,27 @@ bool fs_exists(const char *path)
 }
 
 
-
 /**
  * Create a directory.
  *   @path: the path.
  *   @perm: The permission.
  *   &returns: Error.
- */ 
+ */
 char *fs_mkdir(const char *path, uint16_t perm)
 {
-	if(mkdir(path, perm) < 0)
+	if(!fs_trymkdir(path, perm))
 		return mprintf("Failed to create directory '%s'. %s.", path, strerror(errno));
 
+	return NULL;
+}
+
+bool fs_trymkdir(const char *path, uint16_t perm)
+{
+	if(mkdir(path, perm) < 0)
+		return false;
+
 	if(chmod(path, perm) < 0)
-		return mprintf("Failed to change permissions on directory '%s'. %s.", path, strerror(errno));
+		return false;
 
 	return NULL;
 }

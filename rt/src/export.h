@@ -12,6 +12,7 @@ typedef void (*amp_watch_f)(struct ml_env_t *env, void *arg);
  * RT structure.
  *   @engine: The engine.
  *   @watch: The watch function.
+ *   @status: The status.
  *   @start: Start the engine.
  *   @stop: Stop the engine.
  *   @seek: Seek to a new time.
@@ -19,6 +20,7 @@ typedef void (*amp_watch_f)(struct ml_env_t *env, void *arg);
 struct amp_rt_t {
 	struct amp_engine_t *engine;
 	void (*watch)(struct amp_engine_t *, amp_watch_f, void *);
+	bool (*status)(struct amp_engine_t *);
 	void (*start)(struct amp_engine_t *);
 	void (*stop)(struct amp_engine_t *);
 	void (*seek)(struct amp_engine_t *, double bar);
@@ -84,6 +86,16 @@ static inline struct amp_rt_t *amp_rt_get(struct amp_core_t *core)
 }
 
 /**
+ * Retrieve the status of the RT core.
+ *   @rt: The RT core.
+ *   &returns: The status.
+ */
+static inline bool amp_rt_status(struct amp_rt_t *rt)
+{
+	return rt->status(rt->engine);
+}
+
+/**
  * Start the RT core.
  *   @rt: The RT core.
  */
@@ -110,7 +122,12 @@ static inline void amp_rt_seek(struct amp_rt_t *rt, double bar)
 	rt->seek(rt->engine, bar);
 }
 
+
+/*
+ * export functions
+ */
 void amp_export_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg);
+bool amp_export_status(struct amp_engine_t *engine);
 void amp_export_start(struct amp_engine_t *engine);
 void amp_export_stop(struct amp_engine_t *engine);
 void amp_export_seek(struct amp_engine_t *engine, double bar);

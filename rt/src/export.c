@@ -7,6 +7,22 @@ void amp_export_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg)
 }
 
 /**
+ * Status of the engine.
+ *   @engine: The engine.
+ *   &returns: The status.
+ */
+bool amp_export_status(struct amp_engine_t *engine)
+{
+	bool run;
+
+	sys_mutex_lock(&engine->lock);
+	run = amp_engine_status(engine);
+	sys_mutex_unlock(&engine->lock);
+
+	return run;
+}
+
+/**
  * Start the engine.
  *   @engine: The engine.
  */

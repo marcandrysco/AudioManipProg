@@ -13,7 +13,7 @@
     Web.data = null;
     Web.cur = 0;
     Web.rec = true;
-    Req.get("/all", function(v) {
+    Req.get("/init", function(v) {
       var page = Gui.byid("page");
       Gui.clear(page);
       Web.data = JSON.parse(v);
@@ -24,7 +24,7 @@
       var sel = Gui.div("sel");
       head.appendChild(sel);
 
-      for(var i = 0; i < Web.data.length; i++) {
+      for(var i = 1; i < Web.data.length; i++) {
         var div = Gui.div("item", Gui.text(Web.data[i].id));
         sel.appendChild(div);
 
@@ -38,49 +38,52 @@
         }
       }
 
-      var time = Gui.div("time");
+      head.appendChild(Time.elem(Web.data[0].data));
 
-      var record = Gui.div("record" + (Web.rec ? " on" : ""), Gui.text("⏺"));
-      record.addEventListener("click", function(e) {
-        if(Web.rec = !Web.rec) {
-          record.classList.add("on");
-          Req.post("/time", "start", function(v) { });
-        } else {
-          record.classList.remove("on");
-          Req.post("/time", "stop", function(v) { });
-        }
+      Web.refresh();
+    });
+  };
+
+  window.Gui.wait = function(delay, func) {
+    setTimeout(func, delay);
+  };
+
+  /**
+   * Refresh the data using an http request.
+   */
+  window.Web.refresh = function() {
+    Req.get("/get", function(resp) {
+      var json = JSON.parse(resp);
+
+      Time.update(json.time);
+      //var bar = Math.floor(json.time.bar).toString();
+      //var beat = json.time.beat.toFixed(1);
+      //var time = { b
+      //Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
+     
+      Gui.wait(500, function() {
+        requestAnimationFrame(function() { Web.refresh(); });
       });
-      time.appendChild(record);
-
-      var disp = Gui.div("disp", Gui.text("000:0.0"));
-      disp.addEventListener("click", function(e) { document.body.appendChild(Web.time()); });
-      time.appendChild(disp);
-
-      var refresh = function() {
-        Req.get("/time", function(v) {
-          v = JSON.parse(v);
-          var bar = Math.floor(v.bar).toString();
-          var beat = v.beat.toFixed(1);
-          Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
-
-          //requestAnimationFrame(function() { refresh(); });
-        });
-      };
-
-      refresh();
-
-      head.appendChild(time);
     });
   };
 
   /**
-   * Create the time popup.
+   * Send a request to put.
+   *   @idx: The target index.
+   *   @data: The data.
    */
-  window.Web.time = function() {
-    var el = Gui.text("HI");
-    var popup = Gui.Popup(el, function(e) {
-    });
-    return popup;
+  window.Web.put = function(idx, data) {
+    var json = JSON.stringify({ id: 1, idx: idx, data: data });
+
+    var suc = function(v) {
+      console.log("SUC");
+    };
+
+    var fail = function(v) {
+      console.log("FAIL");
+    };
+
+    Req.post("/put", json, suc, fail);
   };
 
 

@@ -55,8 +55,8 @@
       for(var i = 0; i < player.sel.length; i++) {
         var dat = player.sel[i];
         dat.vel = player.vel;
-        Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + dat.vel, function() {
-        });
+        //Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + dat.vel, function() {
+        //});
       }
 
       if(player.init) { Player.draw(player); }
@@ -136,7 +136,13 @@
     var dat = Player.curDat(player, x, y);
     if(dat != null) {
       if(player.sel.indexOf(dat) >= 0) {
-        player.sel.splice(player.sel.indexOf(dat), 1);
+        if(e.shiftKey) {
+          player.sel.splice(player.sel.indexOf(dat), 1);
+        } else if(player.sel.length == 1) {
+          player.sel = new Array();
+        } else {
+          player.sel = new Array(dat);
+        }
       } else {
         if(!e.shiftKey) { player.sel = new Array(); }
         player.sel.push(dat);
@@ -180,8 +186,7 @@
         player.data.push(dat);
         Player.draw(player);
 
-        Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + dat.vel, function() {
-        });
+        Web.put(player.idx, { type: "add", data: dat });
         break;
 
       case "done":
@@ -455,8 +460,7 @@
       if(idx < 0) { return; }
 
       var dat = player.data[idx];
-      Req.get("/" + player.idx + "/player/set/" + dat.key + "/" + dat.begin.bar + ":" + dat.begin.beat + "/" + dat.end.bar + ":" + dat.end.beat + "/" + 0, function() {
-      });
+      Web.put(player.idx, { type: "remove", data: dat });
 
       var sel = player.sel.indexOf(dat);
       if(sel >= 0) { player.sel.splice(sel, 1); }

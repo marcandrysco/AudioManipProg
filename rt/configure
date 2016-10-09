@@ -28,6 +28,8 @@ setconf()
   c_src "src/export.c"
   c_src "src/watch.c"
 
+  c_src "src/dummy/audio.c"
+
   if [ "$alsa" ] ; then
     c_src "src/alsa/audio.c"
     c_src "src/alsa/midi.c"

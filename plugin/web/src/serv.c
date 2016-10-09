@@ -45,7 +45,10 @@ const struct amp_seq_i web_iface_seq = {
 /*
  * local declarations
  */
-static bool serv_handler(const char *path, struct http_args_t *args, void *arg);
+static bool req_handler(const char *path, struct http_args_t *args, void *arg);
+static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct json_t *json);
+static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct json_obj_t *obj);
+
 
 
 /**
@@ -61,7 +64,7 @@ struct web_serv_t *web_serv_new(struct amp_rt_t *rt)
 	serv->rt = rt;
 	serv->lock = sys_mutex_init(0);
 	serv->inst = avltree_root_init(compare_str);
-	serv->task = http_server_async(8080, serv_handler, serv);
+	serv->task = http_server_async(8080, req_handler, serv);
 
 	return serv;
 }
@@ -77,80 +80,6 @@ void web_serv_delete(struct web_serv_t *serv)
 	free(serv);
 }
 
-
-/**
- * Handle a request on the server.
- *   @serv: The server.
- *   @path: The path.
- *   @args: The arguments.
- *   &returns: True if handled.
- */
-bool web_serv_req(struct web_serv_t *serv, const char *path, struct http_args_t *args)
-{
-	char type[16];
-	unsigned int n, idx;
-
-	if(strcmp(path, "/all") == 0) {
-		struct web_inst_t *inst;
-
-		hprintf(args->file, "[");
-		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst))
-			hprintf(args->file, "{\"id\":\"%s\",\"type\":\"%s\",\"data\":%C}", inst->id, web_inst_type(inst->type), web_inst_chunk(inst));
-		hprintf(args->file, "]");
-
-		http_head_add(&args->resp, "Content-Type", "application/json");
-
-		return true;
-	}
-	else if(strcmp(path, "/time") == 0) {
-		if(strcasecmp(args->req.verb, "GET") == 0) {
-			struct amp_loc_t loc;
-
-			amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
-
-			hprintf(args->file, "{ \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
-			http_head_add(&args->resp, "Content-Type", "application/json");
-
-			return true;
-		}
-		else if(strcasecmp(args->req.verb, "POST") == 0) {
-			if(strcasecmp(args->body, "start") == 0)
-				amp_rt_start(serv->rt);
-			else if(strcasecmp(args->body, "stop") == 0)
-				amp_rt_stop(serv->rt);
-			else
-				return false;
-
-			hprintf(args->file, "ok");
-			return true;
-		}
-		else
-			return false;
-	}
-	else if(sscanf(path, "/%u/%15[a-z]%n", &idx, type, &n) >= 2) {
-		struct web_inst_t *inst;
-
-		for(inst = web_inst_first(serv); inst != NULL; inst = web_inst_next(inst)) {
-			if(idx-- == 0)
-				break;
-		}
-
-		if(inst == NULL)
-			return false;
-
-		if(strcmp(type, web_inst_type(inst->type)) != 0)
-			return false;
-
-		switch(inst->type) {
-		case web_mach_v: return web_mach_req(inst->data.mach, path + n, args);
-		case web_player_v: return web_player_req(inst->data.player, path + n, args);
-		}
-
-		return false;
-	}
-	else
-		return false;
-}
 
 
 struct web_inst_t *inst_new(struct web_serv_t *serv, char *id, enum web_inst_e type, union web_inst_u data)
@@ -418,7 +347,9 @@ struct http_asset_t serv_assets[] = {
 	{  "/web.js",         "web.js",         "application/javascript"  },
 	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
 	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
+	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
 	{  "/web.css",        "web.css",        "text/css"                },
+	{  "/web.time.css",   "web.time.css",   "text/css"                },
 	{  NULL,              NULL,             NULL                      }
 };
 
@@ -463,14 +394,200 @@ bool http_asset_proc(struct http_asset_t *assets, const char *path, struct http_
  *   @arg: The argument.
  *   &returns: True if handled.
  */
-static bool serv_handler(const char *path, struct http_args_t *args, void *arg)
+static bool req_handler(const char *path, struct http_args_t *args, void *arg)
 {
-	bool ret;
+	struct web_serv_t *serv = arg;
 
 	if(http_asset_proc(serv_assets, path, args, SHAREDIR "/ampweb/"))
 		return true;
+	else if(strcmp(path, "/init") == 0) {
+		bool run;
+		struct amp_loc_t loc;
+		struct web_inst_t *inst;
 
-	ret = web_serv_req(arg, path, args);
+		run = amp_rt_status(serv->rt);
+		amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
 
-	return ret;
+		hprintf(args->file, "[");
+
+		hprintf(args->file, "{\"id\":\"Time\",\"type\":\"time\",\"data\":{\"run\":%s,\"loc\":{\"bar\":%d,\"beat\":%.8f}}}", run ? "true" : "false", loc.bar, loc.beat);
+
+		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst))
+			hprintf(args->file, ",{\"id\":\"%s\",\"type\":\"%s\",\"data\":%C}", inst->id, web_inst_type(inst->type), web_inst_chunk(inst));
+
+		hprintf(args->file, "]");
+		http_head_add(&args->resp, "Content-Type", "application/json");
+
+		return true;
+	}
+	else if(strcmp(path, "/get") == 0) {
+		struct amp_loc_t loc;
+
+		amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
+
+		http_head_add(&args->resp, "Content-Type", "application/json");
+		hprintf(args->file, "{");
+
+		hprintf(args->file, "\"time\": { \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
+
+		hprintf(args->file, "}");
+
+		return true;
+	}
+	else if(strcmp(path, "/put") == 0) {
+		bool suc;
+		struct json_t *json;
+
+		if(!chkbool(json_parse_str(&json, args->body)))
+			return false;
+
+		suc = req_proc(arg, args, json);
+		json_delete(json);
+
+		return suc;
+	}
+	else
+		return false;
 }
+
+/**
+ * Process the request.
+ *   @serv: The server.
+ *   @args: The arguments.
+ *   @json: The JSON object.
+ *   &returns: True if handled.
+ */
+static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct json_t *json)
+{
+	int id, idx;
+	struct web_inst_t *inst;
+
+	if(!json_chk_obj(json, "id", "idx", "data", NULL))
+		return mprintf("Invalid request.");
+
+	chk(json_get_int(json_obj_getval(json->data.obj, "id"), &id));
+	chk(json_get_int(json_obj_getval(json->data.obj, "idx"), &idx));
+
+	json = json_obj_getval(json->data.obj, "data");
+	if(json->type != json_obj_v)
+		return false;
+
+	if(idx == 0)
+		return req_time(serv, args, json->data.obj);
+
+	idx--;
+	for(inst = web_inst_first(serv); inst != NULL; inst = web_inst_next(inst)) {
+		if(idx-- == 0)
+			break;
+	}
+
+	if(inst == NULL)
+		return false;
+
+	switch(inst->type) {
+	case web_mach_v: return false; //web_mach_req(inst->data.mach, path + n, args);
+	case web_player_v: return web_player_req(inst->data.player, args, json);
+	}
+
+	return false;
+}
+
+/**
+ * Process a time request.
+ *   @serv: The server.
+ *   @args: The arguments.
+ *   @obj: The JSON request object.
+ *   &returns: True if handled.
+ */
+static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct json_obj_t *obj)
+{
+	const char *type;
+
+	chk(json_str_objget(obj, "type", &type));
+
+	if(strcasecmp(type, "start") == 0)
+		amp_rt_start(serv->rt);
+	else if(strcasecmp(type, "stop") == 0)
+		amp_rt_stop(serv->rt);
+	else
+		return false;
+	
+	hprintf(args->file, "ok");
+
+	return true;
+}
+
+
+/**
+ * Handle a request on the server.
+ *   @serv: The server.
+ *   @path: The path.
+ *   @args: The arguments.
+ *   &returns: True if handled.
+static bool req_handle(struct web_serv_t *serv, const char *path, struct http_args_t *args)
+{
+	char type[16];
+	unsigned int n, idx;
+
+	if(strcmp(path, "/all") == 0) {
+		struct web_inst_t *inst;
+
+		hprintf(args->file, "[");
+		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst))
+			hprintf(args->file, "{\"id\":\"%s\",\"type\":\"%s\",\"data\":%C}", inst->id, web_inst_type(inst->type), web_inst_chunk(inst));
+		hprintf(args->file, "]");
+
+		http_head_add(&args->resp, "Content-Type", "application/json");
+
+		return true;
+	}
+	else if(strcmp(path, "/time") == 0) {
+		if(strcasecmp(args->req.verb, "GET") == 0) {
+			struct amp_loc_t loc;
+
+			amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
+
+			hprintf(args->file, "{ \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
+			http_head_add(&args->resp, "Content-Type", "application/json");
+
+			return true;
+		}
+		else if(strcasecmp(args->req.verb, "POST") == 0) {
+			if(strcasecmp(args->body, "start") == 0)
+				amp_rt_start(serv->rt);
+			else if(strcasecmp(args->body, "stop") == 0)
+				amp_rt_stop(serv->rt);
+			else
+				return false;
+
+			hprintf(args->file, "ok");
+			return true;
+		}
+		else
+			return false;
+	}
+	else if(sscanf(path, "/%u/%15[a-z]%n", &idx, type, &n) >= 2) {
+		struct web_inst_t *inst;
+
+		for(inst = web_inst_first(serv); inst != NULL; inst = web_inst_next(inst)) {
+			if(idx-- == 0)
+				break;
+		}
+
+		if(inst == NULL)
+			return false;
+
+		if(strcmp(type, web_inst_type(inst->type)) != 0)
+			return false;
+
+		switch(inst->type) {
+		case web_mach_v: return web_mach_req(inst->data.mach, path + n, args);
+		case web_player_v: return web_player_req(inst->data.player, path + n, args);
+		}
+
+		return false;
+	}
+	else
+		return false;
+}
+ */

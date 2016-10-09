@@ -247,7 +247,6 @@ static void audio_conf(struct alsa_conf_t *conf, const char *str)
  *   @func: The ready function.
  *   @arg: The argument.
  */
-
 void alsa_audio_exec(struct alsa_audio_t *audio, amp_audio_f func, void *arg)
 {
 	int err;
@@ -358,15 +357,15 @@ struct amp_audio_info_t alsa_audio_info(struct alsa_audio_t *audio)
 static void pcm_conf(snd_pcm_t *pcm, snd_pcm_stream_t stream, const struct alsa_conf_t *conf, snd_pcm_format_t *format)
 {
 	static snd_pcm_format_t formatlist[] = {
-		//SND_PCM_FORMAT_S24,
+		SND_PCM_FORMAT_S24,
 		//SND_PCM_FORMAT_S24_LE,
 		SND_PCM_FORMAT_S24_3LE,
 		//SND_PCM_FORMAT_S24_BE,
 		//SND_PCM_FORMAT_S24_3BE,
-		//SND_PCM_FORMAT_S32,
+		SND_PCM_FORMAT_S32,
 		//SND_PCM_FORMAT_S32_LE,
 		//SND_PCM_FORMAT_S32_BE,
-		//SND_PCM_FORMAT_S16,
+		SND_PCM_FORMAT_S16,
 		//SND_PCM_FORMAT_S16_LE,
 		//SND_PCM_FORMAT_S16_BE,
 		//SND_PCM_FORMAT_S8,

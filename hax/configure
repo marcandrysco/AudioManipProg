@@ -28,7 +28,7 @@ setconf()
   else
     h_src "src/posix/defs.h"
     c_src "src/posix/fs.c"
-    c_src "src/posix/notify.c"
+    c_src "src/posix/file.c"
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/thread.c"
@@ -53,6 +53,8 @@ setconf()
   c_src "src/string.c"
 
   c_src "src/types/avltree.c"
+
+  c_src "src/sys/poll.c"
 
   c_src "src/fmt/cfg.c"
   c_src "src/fmt/json.c"

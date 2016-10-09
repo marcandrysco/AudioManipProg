@@ -31,15 +31,18 @@
 }
 
   .gui-button.gui-blue {
+    color: #fff;
     background-image: linear-gradient(to bottom,#337ab7 0,#265a88 100%);
   }
 
   .gui-button.gui-green {
+    color: #fff;
     border-color: #3e8f3e;
     background-image: linear-gradient(to bottom,#5cb85c 0,#419641 100%);
   }
 
   .gui-button.gui-red {
+    color: #fff;
     border-color: #b92c28;
     background-image: linear-gradient(to bottom,#d9534f 0,#c12e2a 100%);
   }

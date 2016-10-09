@@ -1,0 +1,13 @@
+.time-popup {
+}
+
+  .time-popup > .action {
+    text-align: center;
+  }
+
+    .time-popup > .action > button {
+    }
+
+      .time-popup > .action > button.hidden {
+        display: none;
+      }

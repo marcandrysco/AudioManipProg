@@ -55,7 +55,7 @@ struct web_player_t {
 /*
  * local declarations
  */
-static char *req_keys(struct web_player_t *player, const char *body);
+//static char *req_keys(struct web_player_t *player, const char *body);
 
 static void player_proc(struct io_file_t file, void *arg);
 
@@ -322,37 +322,70 @@ static void player_proc(struct io_file_t file, void *arg)
 }
 
 
+static bool pwa(struct json_t *json, uint16_t *key, uint16_t *vel, struct amp_loc_t *begin, struct amp_loc_t *end)
+{
+	struct json_t *loc;
+
+	chk(json_chk_obj(json, "key", "vel", "begin", "end", NULL));
+	chk(json_get_uint16(json_obj_getval(json->data.obj, "key"), key));
+	chk(json_get_uint16(json_obj_getval(json->data.obj, "vel"), vel));
+
+	loc = json_obj_getval(json->data.obj, "begin");
+	chk(json_chk_obj(loc, "bar", "beat", NULL));
+	chk(json_get_int(json_obj_getval(loc->data.obj, "bar"), &begin->bar));
+	chk(json_get_double(json_obj_getval(loc->data.obj, "beat"), &begin->beat));
+
+	loc = json_obj_getval(json->data.obj, "end");
+	chk(json_chk_obj(loc, "bar", "beat", NULL));
+	chk(json_get_int(json_obj_getval(loc->data.obj, "bar"), &end->bar));
+	chk(json_get_double(json_obj_getval(loc->data.obj, "beat"), &end->beat));
+
+	return true;
+}
+
 /**
  * Handle a player requeust.
  *   @player: The player.
- *   @path: The path.
  *   @args: The arguments.
+ *   @json: The json object.
  *   &returns: True if handled.
  */
-bool web_player_req(struct web_player_t *player, const char *path, struct http_args_t *args)
+bool web_player_req(struct web_player_t *player, struct http_args_t *args, struct json_t *json)
 {
-	unsigned int key, vel, n;
-	struct amp_loc_t begin, end;
+	const char *type;
 
-	if(sscanf(path, "/set/%u/%u:%lf/%u:%lf/%u%n", &key, &begin.bar, &begin.beat, &end.bar, &end.beat, &vel, &n) >= 6) {
-		if(vel > UINT16_MAX)
-			return false;
+	chk(json_chk_obj(json, "type", "data", NULL));
+	chk(json_str_objget(json->data.obj, "type", &type));
+	json = json_obj_getval(json->data.obj, "data");
+
+	if(strcmp(type, "add") == 0) {
+		uint16_t key, vel;
+		struct amp_loc_t begin, end;
 
 		sys_mutex_lock(&player->serv->lock);
-		web_player_remove(player, begin, end, key);
 
-		if(vel > 0)
-			web_player_add(player, begin, end, key, vel);
+		chk(pwa(json, &key, &vel, &begin, &end));
+		web_player_add(player, begin, end, key, vel);
 
 		sys_mutex_unlock(&player->serv->lock);
 		web_player_save(player);
-
-		return true;
 	}
-	else if(strcmp(path, "/keys") == 0)
-		return chkwarn(req_keys(player, args->body));
+	else if(strcmp(type, "remove") == 0) {
+		uint16_t key, vel;
+		struct amp_loc_t begin, end;
+
+		sys_mutex_lock(&player->serv->lock);
+
+		chk(pwa(json, &key, &vel, &begin, &end));
+		web_player_remove(player, begin, end, key);
+
+		sys_mutex_unlock(&player->serv->lock);
+		web_player_save(player);
+	}
 	else
 		return false;
+
+	return true;
 }
 
 /**
@@ -360,7 +393,6 @@ bool web_player_req(struct web_player_t *player, const char *path, struct http_a
  *   @player: The player.
  *   @body: The document body.
  *   &returns: Error.
- */
 static char *req_keys(struct web_player_t *player, const char *body)
 {
 #define onexit json_erase(json);
@@ -392,6 +424,7 @@ static char *req_keys(struct web_player_t *player, const char *body)
 	return NULL;
 #undef onexit
 }
+ */
 
 /**
  * Load a player.
@@ -455,9 +488,9 @@ void web_player_save(struct web_player_t *player)
 	struct web_player_inst_t *inst;
 	char path[strlen(player->id) + 9];
 
+	fs_trymkdir("web.dat", 0775);
 	sprintf(path, "web.dat/%s", player->id);
 
-	fs_mkdir("web.dat", 0775);
 	file = fopen(path, "w");
 	if(file == NULL)
 		fatal("Failed to save to path '%s'", path);

@@ -29,19 +29,20 @@ struct amp_engine_t *amp_engine_new(const char *path, struct amp_comm_t *comm, s
 	engine->comm = comm ?: amp_comm_new();
 	engine->notify = amp_notify_new(path, notify, engine);
 	engine->watch = NULL;
-	engine->rt = (struct amp_rt_t){ engine, amp_export_watch, amp_export_start, amp_export_stop };
+	engine->rt = (struct amp_rt_t){ engine, amp_export_watch, amp_export_status, amp_export_start, amp_export_stop };
 
 	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt), ml_tag_copy(ml_tag_null)));
 
 	iface = "unk";
 	
+	if(audio.iface == &dummy_audio_iface)
+		iface = "dummy";
 #if ALSA
-	if(audio.iface == &alsa_audio_iface)
+	else if(audio.iface == &alsa_audio_iface)
 		iface = "alsa";
 #endif
-	
 #if PULSE
-	if(audio.iface == &pulse_audio_iface)
+	else if(audio.iface == &pulse_audio_iface)
 		iface = "pulse";
 #endif
 
@@ -104,6 +105,16 @@ static void notify(const char *path, void *arg)
 	amp_engine_update(arg, path);
 }
 
+
+/**
+ * Check the status of the engine.
+ *   @engine: The engine.
+ *   &returns: True if running.
+ */
+bool amp_engine_status(struct amp_engine_t *engine)
+{
+	return engine->run;
+}
 
 /**
  * Start the engine.

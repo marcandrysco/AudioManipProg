@@ -128,6 +128,11 @@ struct sys_task_t *http_server_async(uint16_t port, http_handler_f func, void *a
 
 	return sys_task_new(server_async, async);
 }
+/**
+ * Asynchronous task callback.
+ *   @fd: The synchronization file.
+ *   @arg: The arugment.
+ */
 static void server_async(sys_fd_t fd, void *arg)
 {
 	struct async_t *async = arg;
@@ -139,7 +144,7 @@ static void server_async(sys_fd_t fd, void *arg)
 		poll[0] = sys_poll_fd(fd, sys_poll_in_e);
 		http_server_poll(async->server, poll + 1);
 
-		sys_poll(poll, nfds, 0);
+		sys_poll(poll, nfds, -1);
 		if(poll[0].revents)
 			break;
 

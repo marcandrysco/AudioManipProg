@@ -32,6 +32,7 @@ void amp_engine_update(struct amp_engine_t *engine, const char *path);
 
 void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg);
 
+bool amp_engine_status(struct amp_engine_t *engine);
 void amp_engine_start(struct amp_engine_t *engine);
 void amp_engine_stop(struct amp_engine_t *engine);
 void amp_engine_seek(struct amp_engine_t *engine, double bar);

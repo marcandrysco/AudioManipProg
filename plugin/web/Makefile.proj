@@ -5,7 +5,9 @@ ASSETS = web/index.xhtml \
 	 web/web.js \
 	 web/web.base.js \
 	 web/web.player.js \
+	 web/web.time.js \
 	 web/web.css \
+	 web/web.time.css \
 
 install: install-assets
 

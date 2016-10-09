@@ -82,6 +82,17 @@ int main(int argc, char **argv)
 		else if((*arg)[1] == '-') {
 			if((val = optlong(&arg, "--plugin")) != NULL)
 				strlist_add(&plugin, strdup(val));
+			else if((val = optlong(&arg, "--dummy")) != NULL) {
+				if(iface != NULL)
+					fprintf(stderr, "Cannot specify multiple audio interfaces.\n"), exit(1);
+
+#if ALSA
+				conf = val;
+				iface = &dummy_audio_iface;
+#else
+				fprintf(stderr, "ALSA is unavailable.\n"), exit(1);
+#endif
+			}
 			else if((val = optlong(&arg, "--alsa")) != NULL) {
 				if(iface != NULL)
 					fprintf(stderr, "Cannot specify multiple audio interfaces.\n"), exit(1);

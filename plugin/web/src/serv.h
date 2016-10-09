@@ -33,8 +33,6 @@ struct web_serv_t {
 struct web_serv_t *web_serv_new(struct amp_rt_t *rt);
 void web_serv_delete(struct web_serv_t *serv);
 
-bool web_serv_req(struct web_serv_t *serv, const char *path, struct http_args_t *args);
-
 struct web_inst_t *web_inst_first(struct web_serv_t *serv);
 struct web_inst_t *web_inst_next(struct web_inst_t *inst);
 struct web_inst_t *web_serv_lookup(struct web_serv_t *serv, const char *id);

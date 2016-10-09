@@ -50,6 +50,7 @@ void cfg_write_uint(FILE *file, unsigned int val);
 void cfg_write_uint16(FILE *file, uint16_t val);
 void cfg_write_uint16vec(FILE *file, uint16_t *vec, unsigned int len);
 void cfg_write_double(FILE *file, double val);
+void cfg_write_string(FILE *file, const char *val);
 void cfg_writef(FILE *file, const char *restrict key, const char *restrict fmt, ...);
 
 /**

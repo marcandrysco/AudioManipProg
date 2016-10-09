@@ -361,6 +361,26 @@ void cfg_write_double(FILE *file, double val)
 }
 
 /**
+ * Write string.
+ *   @file: The file.
+ *   @val: The value.
+ */
+void cfg_write_string(FILE *file, const char *val)
+{
+	const char *fnd;
+
+	fprintf(file, " \"");
+
+	while((fnd = strpbrk(val, "\"\\")) != NULL) {
+		fwrite(val, 1, fnd - val, file);
+		fprintf(file, "\\%c", *fnd);
+		val = fnd + 1;
+	}
+
+	fprintf(file, "%s\"", val);
+}
+
+/**
  * Write formatted output to a configuration file.
  *   @file: The file.
  *   @key: The key.
@@ -395,6 +415,8 @@ void cfg_writef(FILE *file, const char *restrict key, const char *restrict fmt, 
 			cfg_write_uint(file, va_arg(args, unsigned int));
 		else if((endptr = strprefix(fmt, "f")) != NULL)
 			cfg_write_double(file, va_arg(args, double));
+		else if((endptr = strprefix(fmt, "s")) != NULL)
+			cfg_write_string(file, va_arg(args, const char *));
 		else
 			fatal("Invalid format specifier '%c'.", *fmt);
 

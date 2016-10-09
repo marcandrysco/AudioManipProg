@@ -126,13 +126,29 @@ char *json_parse_file(struct json_t **json, struct io_file_t file);
 char *json_parse_str(struct json_t **json, const char *str);
 char *json_parse_path(struct json_t **json, const char *path);
 
+/**
+ * Retrieve the number of children in an object.
+ *   @obj: The object.
+ *   &returns: The number of children.
+ */
+static inline unsigned int json_obj_cnt(struct json_obj_t *obj)
+{
+	return obj->root.count;
+}
+
 /*
  * verification declarations
  */
 double json_num_range(struct json_t *json, double low, double high);
 
-bool json_int_get(struct json_t *json, int *out);
+bool json_str_get(struct json_t *json, const char **out);
+bool json_str_objget(struct json_obj_t *obj, const char *id, const char **out);
+
 bool json_int_range(struct json_t *json, int low, int high, int *out);
+
+bool json_get_double(struct json_t *json, double *out);
+bool json_get_int(struct json_t *json, int *out);
+bool json_get_uint16(struct json_t *json, uint16_t *out);
 
 struct json_arr_t *json_chk_arr(struct json_t *json, int len);
 struct json_obj_t *json_chk_obj(struct json_t *json, ...);

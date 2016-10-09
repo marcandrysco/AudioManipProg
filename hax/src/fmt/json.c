@@ -697,7 +697,7 @@ char *json_parse_file(struct json_t **json, struct io_file_t file)
  */
 char *json_parse_str(struct json_t **json, const char *str)
 {
-#define onexit read_destroy(&read);
+#define onexit read_destroy(&read); io_file_close(file);
 	struct read_t read;
 	struct io_file_t file;
 
@@ -770,12 +770,85 @@ double json_num_range(struct json_t *json, double low, double high)
 
 
 /**
+ * Check if a value is a string.
+ *   @json: The JSON value.
+ *   @out: Ref. Optional. The output string.
+ *   &returns: True if success.
+ */
+bool json_str_get(struct json_t *json, const char **out)
+{
+	if(json->type != json_str_v)
+		return false;
+
+	if(out != NULL)
+		*out = json->data.str;
+
+	return true;
+}
+
+/**
+ * Check if a value is a string.
+ *   @json: The JSON value.
+ *   @out: Ref. Optional. The output string.
+ *   &returns: True if success.
+ */
+bool json_str_objget(struct json_obj_t *obj, const char *id, const char **out)
+{
+	struct json_t *json;
+
+	json = json_obj_getval(obj, id);
+	return json ? json_str_get(json, out) : false;
+}
+
+
+/**
  * Check if a value is an integer that falls in a range.
+ *   @json: The JSON value.
+ *   @low: The low end of the range.
+ *   @high: The high end of the range.
+ *   @out: Ref. Optional. The output number.
+ *   &returns: True if success.
+ */
+bool json_int_range(struct json_t *json, int low, int high, int *out)
+{
+	int val;
+
+	if(!json_get_int(json, &val))
+		return false;
+	else if((val < low) || (val > high))
+		return false;
+
+	if(out != NULL)
+		*out = val;
+
+	return true;
+}
+
+
+/**
+ * Check if a value is an double.
  *   @json: The JSON value.
  *   @out: Ref. Optional. The output number.
  *   &returns: True if success.
  */
-bool json_int_get(struct json_t *json, int *out)
+bool json_get_double(struct json_t *json, double *out)
+{
+	if(json->type != json_num_v)
+		return false;
+
+	if(out != NULL)
+		*out = json->data.num;
+
+	return true;
+}
+
+/**
+ * Check if a value is an integer.
+ *   @json: The JSON value.
+ *   @out: Ref. Optional. The output number.
+ *   &returns: True if success.
+ */
+bool json_get_int(struct json_t *json, int *out)
 {
 	int val;
 
@@ -793,20 +866,20 @@ bool json_int_get(struct json_t *json, int *out)
 }
 
 /**
- * Check if a value is an integer that falls in a range.
+ * Check if a value is a 16-bit unsigned integer.
  *   @json: The JSON value.
- *   @low: The low end of the range.
- *   @high: The high end of the range.
  *   @out: Ref. Optional. The output number.
  *   &returns: True if success.
  */
-bool json_int_range(struct json_t *json, int low, int high, int *out)
+bool json_get_uint16(struct json_t *json, uint16_t *out)
 {
-	int val;
+	uint16_t val;
 
-	if(!json_int_get(json, &val))
+	if(json->type != json_num_v)
 		return false;
-	else if((val < low) || (val > high))
+
+	val = json->data.num;
+	if(val != json->data.num)
 		return false;
 
 	if(out != NULL)
@@ -814,6 +887,7 @@ bool json_int_range(struct json_t *json, int low, int high, int *out)
 
 	return true;
 }
+
 
 /**
  * Verify a JSON value is an array with the proper length.

@@ -126,7 +126,7 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 	}
 
 	amp_engine_update(engine, file);
-	if(1)amp_audio_exec(audio, callback, engine);
+	amp_audio_exec(audio, callback, engine);
 
 	while(!quit) {
 		unsigned int argc;
@@ -153,7 +153,7 @@ void amp_exec(struct amp_audio_t audio, const char *file, char **plugin, struct 
 		argv_free(argv);
 	}
 
-	if(1)amp_audio_halt(audio);
+	amp_audio_halt(audio);
 	amp_engine_delete(engine);
 }
 

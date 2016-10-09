@@ -304,8 +304,12 @@
   */
   window.Req.get = function(url, suc, fail) {
     var req = new XMLHttpRequest();
-    req.addEventListener("load", function() {
-      suc(req.responseText);
+    req.addEventListener("load", function(e) {
+      if(req.status == 200) {
+        suc(req.responseText);
+      } else if(fail) {
+        fail();
+      }
     });
     req.addEventListener("error", function() {
       if(fail) { fail(); }
@@ -320,10 +324,17 @@
    *   @param: The post parameter.
    *   @suc: The success function.
    */
-  window.Req.post = function(url, param, suc) {
+  window.Req.post = function(url, param, suc, fail) {
     var req = new XMLHttpRequest();
-    req.addEventListener("load", function() {
-      suc(req.responseText);
+    req.addEventListener("load", function(e) {
+      if(req.status == 200) {
+        suc(req.responseText);
+      } else if(fail) {
+        fail();
+      }
+    });
+    req.addEventListener("error", function() {
+      if(fail) { fail(); }
     });
     req.open("POST", url);
     req.send(param);

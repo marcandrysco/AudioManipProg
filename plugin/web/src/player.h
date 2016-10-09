@@ -21,7 +21,7 @@ bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsig
 void web_player_print(struct web_player_t *player, struct io_file_t file);
 struct io_chunk_t web_player_chunk(struct web_player_t *player);
 
-bool web_player_req(struct web_player_t *player, const char *path, struct http_args_t *args);
+bool web_player_req(struct web_player_t *player, struct http_args_t *args, struct json_t *json);
 
 char *web_player_load(struct web_player_t *player);
 void web_player_save(struct web_player_t *player);
