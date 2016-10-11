@@ -22,6 +22,7 @@
 /* standard elements */
 
 .gui-button {
+  cursor: pointer;
   font-size: 16px;
   border-radius: 3px;
   padding: 6px 12px;
@@ -45,6 +46,13 @@
     color: #fff;
     border-color: #b92c28;
     background-image: linear-gradient(to bottom,#d9534f 0,#c12e2a 100%);
+  }
+
+  .gui-button:disabled {
+    cursor: default;
+    color: #8d8d8d;
+    border-color: #bbb;
+    background-image: linear-gradient(to bottom,#f0f0f0 0,#d3d3d3 100%);
   }
 
 /* toggle widget */

@@ -19,20 +19,23 @@ setconf()
 
   if [ "$windows$cygwin" ] ; then
     h_src "src/win/defs.h"
+    c_src "src/win/dynlib.c"
     c_src "src/win/dbg.c"
     c_src "src/win/fs.c"
     c_src "src/win/notify.c"
     c_src "src/win/poll.c"
     c_src "src/win/sock.c"
     c_src "src/win/thread.c"
+    c_src "src/win/time.c"
   else
     h_src "src/posix/defs.h"
+    c_src "src/posix/dynlib.c"
     c_src "src/posix/fs.c"
     c_src "src/posix/file.c"
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
-    c_src "src/posix/thread.c"
     c_src "src/posix/spawn.c"
+    c_src "src/posix/thread.c"
     c_src "src/posix/time.c"
   fi
 
@@ -53,6 +56,7 @@ setconf()
   c_src "src/string.c"
 
   c_src "src/types/avltree.c"
+  c_src "src/types/strtrie.c"
 
   c_src "src/sys/poll.c"
 
@@ -264,7 +268,7 @@ debug=""     #debug flag
 rpath=""     #rpath build
 obj=""       #object files
 windows=""   #windows build
-cygwin=""   #cygwin build
+cygwin=""    #cygwin build
 noinc=""     #disable automated include
 pkgcfg=""    #pkgconfig dependencies
 

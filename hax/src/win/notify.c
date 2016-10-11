@@ -26,7 +26,7 @@ struct sys_notify_inst_t {
 	OVERLAPPED async;
 	union {
 		FILE_NOTIFY_INFORMATION info;
-		uint8_t buf[sizeof(FILE_NOTIFY_INFORMATION) + 2 * MAX_PATH];
+		uint8_t buf[sizeof(FILE_NOTIFY_INFORMATION) + 2 * MAX_PATH + 2];
 	} data;
 
 	struct sys_notify_inst_t *next;
@@ -97,23 +97,6 @@ char *sys_notify_add(struct sys_notify_t *notify, const char *path, int *id)
 
 	ReadDirectoryChangesW(handle, &inst->data, sizeof(inst->data), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &inst->async, 0);
 
-	/*
-	HANDLE handle;
-
-	handle = FindFirstChangeNotification(path, FALSE, FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);
-	if(handle == NULL)
-		return mprintf("Failed to watch '%s'. %C.", w32_errstr());
-
-	inst = malloc(sizeof(struct sys_notify_inst_t));
-	inst->id = notify->id++;
-	inst->handle = handle;
-	inst->next = notify->inst;
-	notify->inst = inst;
-
-	if(id != NULL)
-		*id = inst->id;
-
-		*/
 	return NULL;
 }
 
@@ -141,32 +124,18 @@ void sys_notify_proc(struct sys_notify_t *notify, struct sys_poll_t *poll)
 		DWORD len;
 
 		GetOverlappedResult(inst->handle, &inst->async, &len, FALSE);
-		ResetEvent(notify->event);
-		ReadDirectoryChangesW(inst->handle, &inst->data, sizeof(inst->data), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &inst->async, 0);
-		printf("Yay! [%ls]\n", inst->data.info.FileName);
-	}
+		inst->data.info.FileName[inst->data.info.FileNameLength/2] = L'\0';
 
-	/*
-	unsigned int i = 0;
-	struct sys_notify_inst_t *inst;
-	for(inst = notify->inst; inst != NULL; inst = inst->next) {
-		if(poll[i].revents & sys_poll_in_e) {
-			FILE_NOTIFY_INFORMATION info;
-			DWORD flags = FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_DIR_NAME;
-			DWORD n;
+		{
+			char path[w32_win2unix(NULL, inst->data.info.FileName)+1];
 
-			BOOL ret;
-
-			printf("READ\n");
-			ret = ReadDirectoryChangesW(inst->handle, &info, sizeof(info), FALSE, flags, &n, NULL, NULL);
-			printf("HI %d\n", ret);
-
-			return;
+			w32_win2unix(path, inst->data.info.FileName);
+			d_printf("change [%.*s]\n", inst->data.info.FileNameLength/2, path);
 		}
 
-		i++;
+		ResetEvent(notify->event);
+		ReadDirectoryChangesW(inst->handle, &inst->data, sizeof(inst->data), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &inst->async, 0);
 	}
-	*/
 }
 
 /**
@@ -232,11 +201,9 @@ static void notify_task(sys_fd_t fd, void *arg)
 		fds[1] = sys_poll_fd(sys_notify_fd(info.notify), sys_poll_in_e);
 		sys_poll(fds, 2, -1);
 
-		printf("wake\n");
 		if(fds[0].revents)
 			break;
 		else if(fds[1].revents) {
-			printf("HERE?\n");
 			sys_notify_proc(info.notify, fds + 1);
 			info.func(NULL, info.arg);
 		}

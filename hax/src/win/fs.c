@@ -61,3 +61,31 @@ int w32_unix2win(wchar_t *restrict out, const char *restrict in)
 
 	return len;
 }
+
+int w32_win2unix(char *restrict out, const wchar_t *restrict in)
+{
+	size_t i, len;
+
+	if(iswalpha(in[0]) && (in[1] == L':') && (in[2] == L'\\')) {
+		if(out != NULL) {
+			*out++ = '/';
+			*out++ = in[0];
+			*out++ = '/';
+		}
+
+		in += 3;
+		len = 3;
+	}
+	else
+		len = 0;
+
+	len += w32_utf16to8(out, in);
+	if(out != NULL) {
+		for(i = 0; i < len; i++) {
+			if(out[i] == '\\')
+				out[i] = '/';
+		}
+	}
+
+	return len;
+}

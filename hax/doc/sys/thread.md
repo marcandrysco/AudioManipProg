@@ -35,9 +35,6 @@ terminates.
     sys_mutex_t;
     sys_mutex_t sys_mutex_init(unsigned int flags);
     void sys_mutex_destroy(sys_mutex_t *mutex);
-    void sys_mutex_lock(sys_mutex_t *mutex);
-    bool sys_mutex_trylock(sys_mutex_t *mutex);
-    void sys_mutex_unlock(sys_mutex_t *mutex);
     #define PTHREAD_MUTEX_INIT
 
 Mutex provide locking between threads, yielding to the scheduler as necessary.
@@ -51,6 +48,10 @@ The `sys_mutex_destroy` function destroys the mutex. All calls to
 `sys_mutex_init` must be matched with a call to `sys_mutex_destroy` to prevent
 leaking resources.
 
+    void sys_mutex_lock(sys_mutex_t *mutex);
+    bool sys_mutex_trylock(sys_mutex_t *mutex);
+    void sys_mutex_unlock(sys_mutex_t *mutex);
+
 The `sys_mutex_lock` function locks the mutex, waiting if the lock is already
 held by another thread.
 
@@ -60,3 +61,38 @@ lock is acquired, `false` if the attempt failed.
 
 The `sys_mutex_unlock` function unlocks the mutex that was acquired by
 `sys_mutex_lock` or a successful call to `sys_mutex_trylock`.
+
+
+## Condition Variable
+
+    sys_cond_t;
+
+    sys_cond_t sys_cond_init(unsigned int flags);
+    void sys_cond_destroy(sys_cond_t *cond);
+
+The condition variable APIs provide an interface for using condition variables
+as a primitive for multithreading. The `sys_cond_t` type is defined as an
+opaque type that may be implemented as a native type of a strcture.
+
+The `sys_cond_init` function initializes the condition variable.  The `flags`
+value should be set to zero -- future changes may use the flags variables.
+
+The `sys_cond_destroy` function destroys the conditoin variable. All calls to
+`sys_cond_init` must be matched with a call to `sys_cond_destroy` to prevent
+leaking resources.
+
+    void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex);
+    void sys_cond_signal(sys_cond_t *cond);
+    void sys_cond_broadcast(sys_cond_t *cond);
+
+The `sys_cond_wait` function waits for the condition variable `cond` to be
+woken up. The `mutex` lock should be held before waiting, and the lock will be
+held after the call returns.
+
+The `sys_cond_signal` signals to wake up a single thread waiting on the
+condition variable. The `sys_cond_broadcast` wakes up all thread currently
+waiting on the condition variable.
+
+
+## Thread Task
+

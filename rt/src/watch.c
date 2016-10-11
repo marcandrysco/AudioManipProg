@@ -1,6 +1,4 @@
 #include "common.h"
-#include <poll.h>
-#include <pthread.h>
 #include <sys/inotify.h>
 
 

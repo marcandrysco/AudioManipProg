@@ -56,6 +56,6 @@ bool test_sys_task(void)
 }
 static void task0(sys_fd_t fd, void *ptr)
 {
-	sys_poll1(sys_poll_fd(fd, sys_poll_in_e), -1);
+	sys_poll1(fd, sys_poll_in_e, -1);
 	*(int *)ptr = 5;
 }

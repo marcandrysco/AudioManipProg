@@ -90,6 +90,16 @@
   };
 
   /**
+   * Crete a 'span' tag.
+   *   @cls: Optional. Class list.
+   *   @child: Optional. The child.
+   *   &returns: The node.
+   */
+  window.Gui.span = function(cls, child) {
+    return Gui.tag("span", cls, child);
+  };
+
+  /**
    * Create a button.
    *   @text: The button text.
    *   @cls: Optional. Class list.

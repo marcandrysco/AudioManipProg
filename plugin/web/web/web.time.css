@@ -1,5 +1,14 @@
 .time-popup {
+  font-size: 20px;
 }
+
+  .time-popup {
+    text-align: center;
+  }
+
+  .time-popup > *:not(:first-child) {
+    margin-top: 6px;
+  }
 
   .time-popup > .action {
     text-align: center;
@@ -11,3 +20,43 @@
       .time-popup > .action > button.hidden {
         display: none;
       }
+
+    .time-popup > .cur > .display,
+    .time-popup > .saved > .line > .display {
+      font-family: monospace;
+      font-size: 20px;
+      width: 120px;
+      padding: 2px 5px;
+    }
+
+    .time-popup > .cur > .set,
+    .time-popup > .saved > .line > .set {
+      margin-left: 8px;
+    }
+
+    .time-popup > .saved {
+      margin-top: 16px;
+    }
+
+      .time-popup > .saved > .line {
+        margin-top: 4px;
+      }
+
+        .time-popup > .saved > .line > .num {
+          margin-left: 3px;
+          margin-right: 6px;
+        }
+
+  .time-popup > .cur {
+    text-align: center;
+  }
+
+  .time-popup > .seek {
+    text-align: center;
+  }
+
+  .time-popup > .line {
+  }
+  .time-popup > .line:first-of-type {
+    margin-top: 32px;
+  }

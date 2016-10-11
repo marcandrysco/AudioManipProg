@@ -25,6 +25,18 @@ void sys_mutex_unlock(sys_mutex_t *mutex);
 
 #define SYS_MUTEX_INIT { INIT_ONCE_STATIC_INIT }
 
+/*
+ * condition variable declarations
+ */
+typedef CONDITION_VARIABLE sys_cond_t;
+
+sys_cond_t sys_cond_init(unsigned int flags);
+void sys_cond_destroy(sys_cond_t *cond);
+
+void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex);
+void sys_cond_signal(sys_cond_t *cond);
+void sys_cond_broadcast(sys_cond_t *cond);
+
 
 /**
  * Thread structure.

@@ -1,5 +1,4 @@
 #include "common.h"
-#include <dlfcn.h>
 
 
 /**
@@ -206,11 +205,11 @@ void amp_core_delete(struct amp_core_t *core)
 	for(cur = core->plugin; cur != NULL; cur = next) {
 		next = cur->next;
 
-		func = dlsym(cur->ref, "amp_plugin_unload");
+		func = sys_dynlib_sym(cur->ref, "amp_plugin_unload");
 		if(func != NULL)
 			func(core);
 
-		dlclose(cur->ref);
+		sys_dynlib_close(cur->ref);
 		free(cur);
 	}
 
@@ -309,16 +308,14 @@ struct ml_env_t *amp_core_eval(struct amp_core_t *core, const char *path, char *
  */
 char *amp_core_plugin(struct amp_core_t *core, const char *path)
 {
-#define onexit if(lib != NULL) dlclose(lib);
-	void *lib;
+#define onexit sys_dynlib_close(lib);
+	sys_dynlib_t lib;
 	amp_plugin_f func;
 	struct amp_plugin_t *plugin;
 
-	lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
-	if(lib == NULL)
-		fail("Failed to open plugin '%s'. %s.", path, dlerror());
+	chkret(sys_dynlib_open(&lib, path));
 
-	func = dlsym(lib, "amp_plugin_load");
+	func = sys_dynlib_sym(lib, "amp_plugin_load");
 	if(func == NULL)
 		fail("Failed to open plugin '%s'. Library missing 'amp_plugin' symbol.", path);
 

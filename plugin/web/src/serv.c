@@ -401,16 +401,16 @@ static bool req_handler(const char *path, struct http_args_t *args, void *arg)
 	if(http_asset_proc(serv_assets, path, args, SHAREDIR "/ampweb/"))
 		return true;
 	else if(strcmp(path, "/init") == 0) {
-		bool run;
+		const char *run;
 		struct amp_loc_t loc;
 		struct web_inst_t *inst;
 
-		run = amp_rt_status(serv->rt);
+		run = amp_rt_status(serv->rt) ? "true" : "false";
 		amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
 
 		hprintf(args->file, "[");
 
-		hprintf(args->file, "{\"id\":\"Time\",\"type\":\"time\",\"data\":{\"run\":%s,\"loc\":{\"bar\":%d,\"beat\":%.8f}}}", run ? "true" : "false", loc.bar, loc.beat);
+		hprintf(args->file, "{\"id\":\"Time\",\"type\":\"time\",\"data\":{\"run\":%s,\"loc\":{\"bar\":%d,\"beat\":%.8f}}}", run, loc.bar, loc.beat);
 
 		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst))
 			hprintf(args->file, ",{\"id\":\"%s\",\"type\":\"%s\",\"data\":%C}", inst->id, web_inst_type(inst->type), web_inst_chunk(inst));
@@ -421,14 +421,16 @@ static bool req_handler(const char *path, struct http_args_t *args, void *arg)
 		return true;
 	}
 	else if(strcmp(path, "/get") == 0) {
+		const char *run;
 		struct amp_loc_t loc;
 
+		run = amp_rt_status(serv->rt) ? "true" : "false";
 		amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
 
 		http_head_add(&args->resp, "Content-Type", "application/json");
 		hprintf(args->file, "{");
 
-		hprintf(args->file, "\"time\": { \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
+		hprintf(args->file, "\"time\": { \"run\": %s, \"loc\": { \"bar\": %d, \"beat\": %.8f } }", run, loc.bar, loc.beat);
 
 		hprintf(args->file, "}");
 

@@ -34,14 +34,3 @@ bool sys_poll(struct sys_poll_t *list, unsigned int n, int timeout)
 		return true;
 	}
 }
-
-/**
- * Poll a single descriptor.
- *   @info: The single poll descriptor.
- *   @timeout: The timeout in milliseconds. Negative waits forever.
- *   &returns: True if on file wakeup, false on timeout.
- */
-bool sys_poll1(struct sys_poll_t info, int timeout)
-{
-	return sys_poll(&info, 1, timeout);
-}

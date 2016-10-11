@@ -70,6 +70,58 @@ void sys_mutex_unlock(struct sys_mutex_t *mutex)
 
 
 /**
+ * Initialize a conditional variable.
+ *   @flags: The flags.
+ *   &returns: The conditional variable.
+ */
+sys_cond_t sys_cond_init(unsigned int flags)
+{
+	sys_cond_t cond;
+
+	InitializeConditionVariable(&cond);
+
+	return cond;
+}
+
+/**
+ * Destroy a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_destroy(sys_cond_t *cond)
+{
+}
+
+
+/**
+ * Wait on a conditional variable.
+ *   @cond: The conditional variable.
+ *   @mutex: The associated mutex.
+ */
+void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex)
+{
+	SleepConditionVariableCS(cond, &mutex->lock, INFINITE);
+}
+
+/**
+ * Signal a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_signal(sys_cond_t *cond)
+{
+	WakeConditionVariable(cond);
+}
+
+/**
+ * Broadcast a conditional variable.
+ *   @cond: The conditional variable.
+ */
+void sys_cond_broadcast(sys_cond_t *cond)
+{
+	WakeAllConditionVariable(cond);
+}
+
+
+/**
  * Once callback for mutexes.
  *   @once: The init once object.
  *   @arg: The argument (critical section).

@@ -5,19 +5,7 @@
  * common headers
  */
 
-#define _GNU_SOURCE
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include "config.h"
 
 #include <hax.h>
 #include <muselang.h>

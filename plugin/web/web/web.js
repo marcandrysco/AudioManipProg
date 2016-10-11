@@ -11,8 +11,9 @@
    */
   window.Web.init = function() {
     Web.data = null;
-    Web.cur = 0;
+    Web.cur = 1;
     Web.rec = true;
+    Time.init();
     Req.get("/init", function(v) {
       var page = Gui.byid("page");
       Gui.clear(page);
@@ -41,7 +42,19 @@
       head.appendChild(Time.elem(Web.data[0].data));
 
       Web.refresh();
+      window.addEventListener("keydown", Web.keypress);
     });
+  };
+
+  /**
+   * Handle hot keys from a keypress.
+   *   @e: The event.
+   */
+  window.Web.keypress = function(e) {
+    switch(Web.data[Web.cur].type) {
+    //case "mach": Mach.keypress(work, Web.data[Web.cur].data); break;
+    //case "player": Player.keypress(work, Web.data[i].data); break;
+    }
   };
 
   window.Gui.wait = function(delay, func) {
@@ -56,10 +69,6 @@
       var json = JSON.parse(resp);
 
       Time.update(json.time);
-      //var bar = Math.floor(json.time.bar).toString();
-      //var beat = json.time.beat.toFixed(1);
-      //var time = { b
-      //Gui.replace(disp, Gui.text("0".repeat(3 - bar.length) + bar + ":" + beat));
      
       Gui.wait(500, function() {
         requestAnimationFrame(function() { Web.refresh(); });

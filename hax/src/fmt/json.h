@@ -144,8 +144,6 @@ double json_num_range(struct json_t *json, double low, double high);
 bool json_str_get(struct json_t *json, const char **out);
 bool json_str_objget(struct json_obj_t *obj, const char *id, const char **out);
 
-bool json_int_range(struct json_t *json, int low, int high, int *out);
-
 bool json_get_double(struct json_t *json, double *out);
 bool json_get_int(struct json_t *json, int *out);
 bool json_get_uint16(struct json_t *json, uint16_t *out);
