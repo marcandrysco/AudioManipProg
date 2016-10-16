@@ -175,10 +175,10 @@ void amp_player_add(struct amp_player_t *player, struct amp_time_t time, double 
 void amp_player_info(struct amp_player_t *player, struct amp_info_t info)
 {
 	switch(info.type) {
-	case amp_info_start_e:
-		player->cur = amp_player_atleast(player, info.data.seek->time);
+	case amp_info_start_v:
+		//player->cur = amp_player_atleast(player, info.data.seek->loc);
 		break;
-	case amp_info_stop_e:
+	case amp_info_stop_v:
 		break;
 
 	default:

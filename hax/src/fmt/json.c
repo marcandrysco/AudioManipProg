@@ -386,13 +386,13 @@ struct json_prop_t *json_obj_next(struct json_prop_t *prop)
  *   @obj: The object.
  *   &returns: The chunk.
  */
-struct io_chunk_t json_obj_chunk(const struct json_t *json)
+struct io_chunk_t json_obj_chunk(const struct json_obj_t *json)
 {
 	return (struct io_chunk_t){ obj_proc, (void *)json };
 }
 static void obj_proc(struct io_file_t file, void *arg)
 {
-	json_print(arg, file);
+	json_obj_print(arg, file);
 }
 
 /**

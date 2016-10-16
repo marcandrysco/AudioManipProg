@@ -226,6 +226,24 @@ void web_player_remove(struct web_player_t *player, struct amp_loc_t begin, stru
  */
 void web_player_info(struct web_player_t *player, struct amp_info_t info)
 {
+	if(info.type == amp_info_seek_v) {
+		struct web_player_inst_t *inst;
+		struct amp_loc_t loc = info.data.seek->loc;
+
+		for(inst = player->begin; inst != NULL; inst = inst->left) {
+			if(amp_loc_cmp(inst->begin, loc) >= 0)
+				break;
+		}
+
+		player->left = inst;
+
+		for(inst = player->end; inst != NULL; inst = inst->right) {
+			if(amp_loc_cmp(inst->end, loc) >= 0)
+				break;
+		}
+
+		player->right = inst;
+	}
 }
 
 /**

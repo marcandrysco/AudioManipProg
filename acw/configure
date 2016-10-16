@@ -8,7 +8,6 @@ setconf()
   inc_target "src/inc.h"
 
   lib_dep "hax"
-  lib_dep "pthread"
 
   h_src "src/defs.h"
 

@@ -82,19 +82,58 @@
    *   @beat: The beat.
    *   &returns: The location.
    */
-  window.Loc.create = function(bar, beat) {
-    if(bar != Math.round(bar)) { throw("Loc.create: Bar must be an integer."); }
-    if(beat < 0) { throw("Loc.create: Beat must be nonnegative."); }
-    return { bar: bar, beat: beat, copy: function() { return Loc.create(this.bar, this.beat); } };
+  window.Loc.make = function(bar, beat) {
+    if(bar != Math.round(bar)) { throw("Loc.make: Bar must be an integer."); }
+    if(isNaN(beat) || (beat < 0)) { throw("Loc.make: Beat must be nonnegative."); }
+
+    return { bar: bar, beat: beat, copy: function() { return Loc.make(this.bar, this.beat); } };
   };
+
   /**
-   * Copy a location.
-   *   @loc: The original location.
-   *   &returns: The copied location.
+   * Make a location using a fractional bar and number of beats.
+   *   @bar: The bar as a float.
+   *   @nbeats: The number of beats.
+   *   &returns: The location.
    */
-  window.Loc.copy = function(loc) {
-    return { bar: loc.bar, beat: loc.beat };
+  window.Loc.makef = function(bar, nbeats) {
+    return Loc.make(Math.floor(bar), (bar - Math.floor(bar)) * nbeats);
   };
+
+
+  /**
+   * Compute the floating-point bar for a location.
+   *   @loc: The location.
+   *   @nbeats: The number of bytes.
+   *   &return: The bar.
+   */
+  window.Loc.bar = function(loc, nbeats) {
+    return loc.bar + loc.beat / nbeats;
+  };
+
+  /**
+   * Parse a location.
+   *   @str: The string.
+   *   @nbeats: The number of beats.
+   *   &returns: The location or null.
+   */
+  window.Loc.parse = function(str, nbeats) {
+    var sep = str.indexOf(":");
+    if(sep < 0) {
+      var bar = Number(str);
+      if(isNaN(bar)) { return null; }
+
+      return Loc.makef(bar, nbeats);
+    } else {
+      var bar = Number(str.substr(0, sep));
+      if(bar != Math.round(bar)) { return null; }
+
+      var beat = Number(str.substr(sep+1));
+      if((beat < 0) || (beat >= nbeats) || isNaN(beat)) { return null; }
+
+      return Loc.make(bar, beat);
+    }
+  };
+
 
   /**
    * Compare two locations for their order.

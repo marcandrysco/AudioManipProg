@@ -10,13 +10,19 @@ setconf()
   inc_target "src/inc.h"
 
   lib_dep "ampcore"
+  lib_dep "ampcore"
   lib_dep "muselang"
   lib_dep "dsp"
   lib_dep "hax"
-  lib_dep "pthread"
-  lib_dep "m"
-  lib_dep "dl"
   lib_dep "sndfile"
+  lib_dep "m"
+
+  if [ "$windows" ];  then
+    :
+  else
+    lib_dep "pthread"
+    lib_dep "dl"
+  fi
 
   pkgcfg="${pkgcfg} sndfile"
 

@@ -137,21 +137,22 @@ void amp_basic_info(struct amp_basic_t *basic, struct amp_info_t info)
 		*info.data.loc = amp_loc(basic->cur.bar, basic->cur.beat);
 		break;
 
-	case amp_info_seek_e:
+	case amp_info_seek_v:
 		amp_basic_seek(basic, *info.data.flt);
 		basic->cur = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
+		info.data.seek->loc = amp_loc(basic->cur.bar, basic->cur.beat);
 		break;
 
-	case amp_info_start_e:
+	case amp_info_start_v:
 		basic->run = true;
 		info.data.seek->idx = basic->idx;
-		info.data.seek->time = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
+		info.data.seek->loc = amp_loc_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
-	case amp_info_stop_e:
+	case amp_info_stop_v:
 		basic->run = false;
 		info.data.seek->idx = basic->idx;
-		info.data.seek->time = amp_time_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
+		info.data.seek->loc = amp_loc_calc(basic->idx, basic->bpm, basic->nbeats, basic->rate);
 		break;
 
 	default:

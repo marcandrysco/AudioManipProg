@@ -4,6 +4,7 @@
 /*
  * common headers
  */
+#include "config.h"
 #include <hax.h>
 #include "inc.h"
 

@@ -1,7 +1,7 @@
 #include "common.h"
-#include <sys/inotify.h>
 
 
+#if 0
 /**
  * Retrieve the basename from the path. The returned pointer points into the
  * string passed in as 'path'; the returned value is valid so long as 'path'
@@ -147,3 +147,4 @@ static void *notify_thread(void *arg)
 
 	return NULL;
 }
+#endif

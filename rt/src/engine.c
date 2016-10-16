@@ -3,7 +3,7 @@
 /*
  * local declarations
  */
-static void notify(const char *path, void *arg);
+static void notify_proc(struct sys_change_t *change, void *arg);
 
 
 /**
@@ -27,9 +27,9 @@ struct amp_engine_t *amp_engine_new(const char *path, struct amp_comm_t *comm, s
 	engine->clock = amp_basic_clock(amp_basic_new(120.0, 4.0, amp_audio_info(audio).rate));
 	engine->instr = amp_instr_null;
 	engine->comm = comm ?: amp_comm_new();
-	engine->notify = amp_notify_new(path, notify, engine);
+	engine->notify = sys_notify_async1(path, notify_proc, engine);
 	engine->watch = NULL;
-	engine->rt = (struct amp_rt_t){ engine, amp_export_watch, amp_export_status, amp_export_start, amp_export_stop };
+	engine->rt = (struct amp_rt_t){ engine, amp_export_watch, amp_export_status, amp_export_start, amp_export_stop, amp_export_seek };
 
 	ml_env_add(&engine->core->env, strdup("amp.rt"), ml_value_box(amp_box_ref(&engine->rt), ml_tag_copy(ml_tag_null)));
 
@@ -59,6 +59,8 @@ void amp_engine_delete(struct amp_engine_t *engine)
 {
 	struct amp_watch_t *watch;
 
+	sys_task_delete(engine->notify);
+
 	while(engine->watch != NULL) {
 		watch = engine->watch;
 		engine->watch = watch->next;
@@ -66,7 +68,6 @@ void amp_engine_delete(struct amp_engine_t *engine)
 		free(watch);
 	}
 
-	amp_notify_delete(engine->notify);
 	amp_comm_delete(engine->comm);
 	amp_clock_delete(engine->clock);
 	amp_instr_erase(engine->instr);
@@ -97,12 +98,12 @@ void amp_engine_watch(struct amp_engine_t *engine, amp_watch_f func, void *arg)
 
 /**
  * Handle a change notification.
- *   @path: The path.
+ *   @change: The change.
  *   @arg: The argument.
  */
-static void notify(const char *path, void *arg)
+static void notify_proc(struct sys_change_t *change, void *arg)
 {
-	amp_engine_update(arg, path);
+	//amp_engine_update(arg, path);
 }
 
 

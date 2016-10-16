@@ -5,6 +5,7 @@
  * Change notification structure.
  */
 struct sys_change_t {
+	char *name;
 };
 
 /*
@@ -16,15 +17,7 @@ void sys_notify_delete(struct sys_notify_t *notify);
 char *sys_notify_add(struct sys_notify_t *notify, const char *path, int *id);
 
 unsigned int sys_notify_poll(struct sys_notify_t *notify, struct sys_poll_t *poll);
-void sys_notify_proc(struct sys_notify_t *notify, struct sys_poll_t *poll);
-
-
-/**
- * Change notification function.
- *   @chnage: The change structure.
- *   @arg: The argument.
- */
-typedef void (*sys_change_f)(struct sys_change_t *change, void *arg);
+struct sys_change_t *sys_notify_proc(struct sys_notify_t *notify, struct sys_poll_t *poll);
 
 /*
  * change notifier declarations

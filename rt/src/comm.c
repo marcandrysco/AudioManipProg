@@ -13,7 +13,7 @@ struct amp_comm_t {
 	struct amp_event_t event[AMP_COMM_LEN];
 	volatile unsigned int rd, wr;
 
-	pthread_mutex_t lock;
+	sys_mutex_t lock;
 
 	struct inst_t *inst;
 };
@@ -51,7 +51,7 @@ struct amp_comm_t *amp_comm_new(void)
 	comm = malloc(sizeof(struct amp_comm_t));
 	comm->rd = comm->wr = 0;
 	comm->inst = NULL;
-	pthread_mutex_init(&comm->lock, NULL);
+	comm->lock = sys_mutex_init(0);
 
 	return comm;
 }
@@ -71,7 +71,7 @@ void amp_comm_delete(struct amp_comm_t *comm)
 		free(inst);
 	}
 
-	pthread_mutex_destroy(&comm->lock);
+	sys_mutex_destroy(&comm->lock);
 	free(comm);
 }
 
@@ -127,11 +127,11 @@ static void callback(uint16_t key, uint16_t val, void *arg)
 	struct inst_t *inst = arg;
 	struct amp_comm_t *comm = inst->comm;
 
-	pthread_mutex_lock(&comm->lock);
+	sys_mutex_lock(&comm->lock);
 
 	comm->event[comm->wr] = (struct amp_event_t){ inst->dev, key, val };
 	__sync_synchronize();
 	comm->wr = (comm->wr + 1) % AMP_COMM_LEN;
 
-	pthread_mutex_unlock(&comm->lock);
+	sys_mutex_unlock(&comm->lock);
 }

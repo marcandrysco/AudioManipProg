@@ -14,12 +14,14 @@
    *   @dialog: Popup dialog UI elements.
    */
   window.Time.init = function() {
-    Time.run = false;
-    Time.loc = Loc.create(0, 0.0);
+    Time.run = true;
+    Time.loc = Loc.make(0, 0.0);
     Time.save = new Object();
     Time.dialog = null;
+    Time.record = null;
+    Time.nbeats = 4.0;
     for(var i = 1; i <= 9; i++) {
-      Time.save[i] = Loc.create(0, 0.0);
+      Time.save[i] = Loc.make(0, 0.0);
     }
   };
 
@@ -29,49 +31,70 @@
    *   &returns: The DOM element.
    */
   window.Time.elem = function(data) {
-    Time.run = data.run;
-
     var time = Gui.div("time");
-    var record = Gui.div("record" + (Time.run ? " on" : ""), Gui.text("⏺"));
-    record.addEventListener("click", function(e) {
-      if(Web.rec = !Web.rec) {
-        record.classList.add("on");
-        Req.post("/time", "start", function(v) { });
-      } else {
-        record.classList.remove("on");
-        Req.post("/time", "stop", function(v) { });
-      }
+    Time.record = Gui.div("record", Gui.text("⏺"));
+    Time.record.addEventListener("click", function(e) {
+      Web.put(0, { type: Time.run ? "stop" : "start" });
     });
-    time.appendChild(record);
+    time.appendChild(Time.record);
 
     Time.display = Gui.div("display", Gui.text("000:0.0"));
     Time.display.addEventListener("click", function(e) { document.body.appendChild(Time.popup()); });
     time.appendChild(Time.display);
 
-    document.body.appendChild(Time.popup());
+    //document.body.appendChild(Time.popup());
 
     return time;
   };
 
   /**
-   * Update the time elements.
+   * Handle a keypress for the time.
+   *   @e: The key press event.
+   *   &returns: True if handled.
+   */
+  window.Time.keypress = function(e) {
+    switch(e.key) {
+    case "S":
+      if(Status.mode != Mode.view) { break; }
+
+      Web.put(0, { type: Time.run ? "stop" : "start" });
+      return true;
+
+    case "G":
+      if(Time.run || (Status.mode != Mode.num)) { break; }
+
+      Web.put(0, { type: "seek", bar: Status.num  });
+      Status.update(Mode.view, "Seeked to " + Status.num);
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * Update the time elements. The run flag is updated last to ensure the last
+   * "tick" from the server updates the display.
    *   @data: The time data.
    */
   window.Time.update = function(data) {
-    Time.run = data.run;
-    Time.loc = Loc.create(data.loc.bar, data.loc.beat);
+    Time.loc = Loc.make(data.loc.bar, data.loc.beat);
 
     var bar = Math.floor(data.loc.bar).toString();
     var beat = data.loc.beat.toFixed(1);
     var time = "0".repeat(3 - bar.length) + bar + ":" + beat;
+
     Gui.replace(Time.display, Gui.text(time));
 
     if(Time.dialog) {
-      Time.dialog.display.value = time;
-      Time.dialog.start.classList[!Time.run ? "remove" : "add"]("hidden");
-      Time.dialog.stop.classList[!Time.run ? "add" : "remove"]("hidden");
-      Time.dialog.display.disabled = Time.run;
+      if(Time.run) { Time.dialog.display.value = time; }
+      Time.dialog.start.classList[!data.run ? "remove" : "add"]("hidden");
+      Time.dialog.stop.classList[!data.run ? "add" : "remove"]("hidden");
+      Time.dialog.display.disabled = data.run;
     }
+
+    if(Time.record) { Time.record.classList[data.run ? "add" : "remove"]("on"); }
+
+    Time.run = data.run;
   };
 
   /**
@@ -95,7 +118,7 @@
     var el = Gui.div("time-popup");
 
     el.appendChild(Time.popupAction());
-    el.appendChild(Time.popupCur());
+    el.appendChild(Time.popupInput());
 
     var seek = Gui.div("seek");
     seek.appendChild(Gui.button("⏮", "begin gui-button", function(e) {
@@ -110,21 +133,8 @@
 
     var saved = Gui.div("saved");
 
-    for(var i = 1; i < 9; i++) {
-      var line = Gui.div("line");
-      line.appendChild(Gui.span("num", Gui.text(i)));
-
-      var input = Gui.tag("input", "display");
-      input.type = "text";
-      input.value = Time.string(Time.save[i]);
-      line.appendChild(input);
-
-      line.appendChild(Gui.button("✓", "set gui-button", function(e) {
-      }));
-      line.appendChild(Gui.button("✗", "reset gui-button", function(e) {
-      }));
-
-      saved.appendChild(line);
+    for(var i = 1; i <= 9; i++) {
+      saved.appendChild(Time.popupInput(i));
     }
 
     el.appendChild(saved);
@@ -156,32 +166,48 @@
     return action;
   };
   /**
-   * Create the current time display.
-   *   &returns: The current time element.
+   * Create the element for displaying and editing time.
+   *   &returns: The time element.
    */
-  window.Time.popupCur = function() {
-    var cur = Gui.div("cur");
+  window.Time.popupInput = function(idx) {
+    var el = Gui.div(idx ? "line" : "cur");
+
+    if(idx != null) { el.appendChild(Gui.span("num", Gui.text(idx))); }
 
     var display = Gui.tag("input", "display");
-    display.disabled = Time.run;
+    display.disabled = idx ? false : Time.run;
     display.type = "text";
-    display.value = Time.string(Time.loc);
+    display.value = Time.string(idx ? Time.save[idx] : Time.loc);
     display.addEventListener("input", function() {
+      reset.disabled = save.disabled = false;
     });
-    cur.appendChild(display);
+    el.appendChild(display);
 
-    var button = Gui.button("✓", "set gui-button gui-green", function(e) {
+    var save = Gui.button("✓", "set gui-button gui-green", function(e) {
+      var loc = Loc.parse(display.value, Time.nbeats);
+      if(loc == null) { return; }
+
+      if(idx) {
+        Time.save[idx] = loc;
+      } else {
+        Time.loc = loc;
+        Web.put(0, { type: "seek", bar: Loc.bar(loc, Time.nbeats) });
+      }
+      
+      display.value = Time.string(loc);
+      reset.disabled = save.disabled = true;
     });
-    button.disabled = true;
-    cur.appendChild(button);
+    save.disabled = true;
+    el.appendChild(save);
 
-    var button = Gui.button("✗", "reset gui-button gui-red", function(e) {
+    var reset = Gui.button("✗", "reset gui-button gui-red", function(e) {
+      reset.disabled = save.disabled = true;
     });
-    button.disabled = true;
-    cur.appendChild(button);
+    reset.disabled = true;
+    el.appendChild(reset);
 
-    Time.dialog.display = display;
+    if(idx == null) { Time.dialog.display = display; }
 
-    return cur;
+    return el;
   };
 })();

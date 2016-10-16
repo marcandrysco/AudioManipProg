@@ -172,11 +172,11 @@ struct amp_note_t {
 /**
  * Seek structure.
  *   @idx: The index.
- *   @time: The time.
+ *   @loc: The locatin.
  */
 struct amp_seek_t {
 	int idx;
-	struct amp_time_t time;
+	struct amp_loc_t loc;
 };
 
 /**
@@ -198,9 +198,9 @@ enum amp_info_e {
 	amp_info_note_e,
 	amp_info_tell_e,
 	amp_info_loc_v,
-	amp_info_seek_e,
-	amp_info_start_e,
-	amp_info_stop_e,
+	amp_info_seek_v,
+	amp_info_start_v,
+	amp_info_stop_v,
 };
 
 /**
@@ -304,7 +304,7 @@ static inline struct amp_info_t amp_info_loc(struct amp_loc_t *loc)
  */
 static inline struct amp_info_t amp_info_seek(double *bar)
 {
-	return (struct amp_info_t){ amp_info_seek_e, (union amp_info_u){ .flt = bar } };
+	return (struct amp_info_t){ amp_info_seek_v, (union amp_info_u){ .flt = bar } };
 }
 
 /**
@@ -314,7 +314,7 @@ static inline struct amp_info_t amp_info_seek(double *bar)
  */
 static inline struct amp_info_t amp_info_start(struct amp_seek_t *seek)
 {
-	return (struct amp_info_t){ amp_info_start_e, (union amp_info_u){ .seek = seek } };
+	return (struct amp_info_t){ amp_info_start_v, (union amp_info_u){ .seek = seek } };
 }
 
 /**
@@ -324,7 +324,7 @@ static inline struct amp_info_t amp_info_start(struct amp_seek_t *seek)
  */
 static inline struct amp_info_t amp_info_stop(struct amp_seek_t *seek)
 {
-	return (struct amp_info_t){ amp_info_stop_e, (union amp_info_u){ .seek = seek } };
+	return (struct amp_info_t){ amp_info_stop_v, (union amp_info_u){ .seek = seek } };
 }
 
 

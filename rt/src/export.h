@@ -43,7 +43,7 @@ struct amp_rt_t {
 struct amp_engine_t {
 	bool run;
 	struct amp_core_t *core;
-	struct amp_notify_t *notify;
+	struct sys_task_t *notify;
 
 	unsigned int rev;
 	sys_mutex_t lock, sync;

@@ -86,12 +86,8 @@ int main(int argc, char **argv)
 				if(iface != NULL)
 					fprintf(stderr, "Cannot specify multiple audio interfaces.\n"), exit(1);
 
-#if ALSA
 				conf = val;
 				iface = &dummy_audio_iface;
-#else
-				fprintf(stderr, "ALSA is unavailable.\n"), exit(1);
-#endif
 			}
 			else if((val = optlong(&arg, "--alsa")) != NULL) {
 				if(iface != NULL)

@@ -119,7 +119,7 @@ struct json_prop_t *json_obj_last(struct json_obj_t *obj);
 struct json_prop_t *json_obj_prev(struct json_prop_t *prop);
 struct json_prop_t *json_obj_next(struct json_prop_t *prop);
 
-struct io_chunk_t json_obj_chunk(const struct json_t *json);
+struct io_chunk_t json_obj_chunk(const struct json_obj_t *json);
 void json_obj_print(struct json_obj_t *obj, struct io_file_t file);
 
 char *json_parse_file(struct json_t **json, struct io_file_t file);

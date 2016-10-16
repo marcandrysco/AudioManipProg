@@ -16,7 +16,7 @@
     player.active = null;
     player.sel = new Array();
     player.x = 0;
-    player.conf.rows = player.conf.keys;
+    player.conf.rows = Player.sort(player.conf.keys);
     player.vel = 32768;
 
     player.layout = {
@@ -158,8 +158,8 @@
     player.sel = new Array();
     player.active = {
       row: player.conf.rows[xy.row],
-      begin: { bar: xy.bar, beat: xy.beat },
-      end: { bar: xy.bar, beat: xy.beat }
+      begin: Loc.make(xy.bar, xy.beat),
+      end: Loc.make(xy.bar, xy.beat)
     };
 
     Player.draw(player);
@@ -169,7 +169,7 @@
       case "move":
         var xy = Player.getxy(player, e.offsetX - box.x, e.offsetY - box.y, true);
         if(xy == null) { return; }
-        player.active.end = { bar: xy.bar, beat: xy.beat };
+        player.active.end = Loc.make(xy.bar, xy.beat)
         Player.draw(player);
         break;
 
@@ -178,7 +178,7 @@
 
       case "up":
         var active = player.active;
-        var begin = Loc.copy(active.begin), end = Loc.copy(active.end);
+        var begin = active.begin.copy(), end = active.end.copy();
         Loc.reorder(begin, end);
         end.beat += 1 / player.conf.ndivs;
 
@@ -227,7 +227,7 @@
     var beat = (round ? Math.floor(div) : div) / conf.ndivs;
     if(beat >= conf.nbeats) { bar++; beat = 0; }
 
-    return Loc.create(bar, beat);
+    return Loc.make(bar, beat);
   };
 
   /**
@@ -312,7 +312,7 @@
 
     var action = Gui.div("action");
     action.appendChild(Gui.Button("Accept", {}, function(e) {
-      player.conf.rows = rows.sort(function(a,b) { return a - b; });
+      player.conf.rows = Player.sort(rows);
       player.layout.resize();
       popup.guiDismiss();
       Player.draw(player);
@@ -558,7 +558,7 @@
 
     // active box
     if(player.active) {
-      var begin = Loc.copy(player.active.begin), end = Loc.copy(player.active.end);
+      var begin = player.active.begin.copy(), end = player.active.end.copy();
       Loc.reorder(begin, end);
       end.beat += 1 / conf.ndivs;
 
@@ -608,5 +608,14 @@
       Draw.text(pack, ctx, key, {x: 2, y: 1, font: "16px sans-serif", align: "right", color: (key.length > 2) ? "#fff" : "#000"});
       Draw.fill(Pack.vert(label, 1), ctx, "#000");
     }
+  };
+
+  /**
+   * Sort keys.
+   *   @keys: The unsorted keys.
+   *   &returns: The sorted keys.
+   */
+  window.Player.sort = function(keys) {
+    return keys.sort(function(a,b) { return ((a < 128) && (b < 128)) ? (b - a) : (a - b); });
   };
 })();

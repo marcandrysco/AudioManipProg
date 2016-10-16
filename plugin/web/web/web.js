@@ -12,11 +12,14 @@
   window.Web.init = function() {
     Web.data = null;
     Web.cur = 1;
-    Web.rec = true;
+
     Time.init();
+    Status.init();
+
     Req.get("/init", function(v) {
       var page = Gui.byid("page");
       Gui.clear(page);
+
       Web.data = JSON.parse(v);
 
       var head = Gui.div("head");
@@ -40,10 +43,12 @@
       }
 
       head.appendChild(Time.elem(Web.data[0].data));
+      page.appendChild(Status.elem());
 
       Web.refresh();
       window.addEventListener("keydown", Web.keypress);
     });
+
   };
 
   /**
@@ -51,6 +56,9 @@
    *   @e: The event.
    */
   window.Web.keypress = function(e) {
+    Status.keypress(e);
+    Time.keypress(e);
+
     switch(Web.data[Web.cur].type) {
     //case "mach": Mach.keypress(work, Web.data[Web.cur].data); break;
     //case "player": Player.keypress(work, Web.data[i].data); break;

@@ -345,10 +345,12 @@ struct http_asset_t serv_assets[] = {
 	{  "/gui.js",         "gui.js",         "application/javascript"  },
 	{  "/gui.css",        "gui.css",        "text/css"                },
 	{  "/web.js",         "web.js",         "application/javascript"  },
+	{  "/web.css",        "web.css",        "text/css"                },
 	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
 	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
+	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
+	{  "/web.status.css", "web.status.css", "text/css"                },
 	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
-	{  "/web.css",        "web.css",        "text/css"                },
 	{  "/web.time.css",   "web.time.css",   "text/css"                },
 	{  NULL,              NULL,             NULL                      }
 };
@@ -511,6 +513,17 @@ static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct j
 		amp_rt_start(serv->rt);
 	else if(strcasecmp(type, "stop") == 0)
 		amp_rt_stop(serv->rt);
+	else if(strcasecmp(type, "seek") == 0) {
+		double bar;
+		struct json_t *json;
+
+		json = json_obj_getval(obj, "bar");
+		if(json == NULL)
+			return false;
+
+		chk(json_get_double(json, &bar));
+		amp_rt_seek(serv->rt, bar);
+	}
 	else
 		return false;
 	

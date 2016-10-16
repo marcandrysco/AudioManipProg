@@ -35,7 +35,7 @@ opt()
 ## end custom options ##
 
 
-##### marc_andrysco configure script, rev 5 #####
+##### marc_andrysco configure script, rev 6 #####
 
 # special characters
 nl="`printf '\nX'`" ; nl="${nl%X}"
@@ -74,7 +74,7 @@ lib_target()
   ldflags="$ldflags -shared"
 
   test "$windows$cygwin" && target=${1%.so}.dll || target=$1
-  install="${install}${nl}${tab}install --mode 0644 -D $target \$(LIBDIR)/$target"
+  install="${install}${nl}${tab}install --mode 0755 -D $target \$(LIBDIR)/$target"
 }
 
 # Set the header target
@@ -300,7 +300,7 @@ SHAREDIR = ${sharedir}
 all: $target $hdr
 
 $target:$obj
-	\$(CC)  $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
+	\$(CC) $^ -o \$@ \$(CFLAGS) \$(LDFLAGS)
 
 %.o: %.c Makefile configure
 	\$(CC) -c $< -o \$@ \$(CFLAGS)

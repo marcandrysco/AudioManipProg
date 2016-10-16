@@ -32,6 +32,7 @@ setconf()
     c_src "src/posix/dynlib.c"
     c_src "src/posix/fs.c"
     c_src "src/posix/file.c"
+    c_src "src/posix/notify.c"
     c_src "src/posix/poll.c"
     c_src "src/posix/sock.c"
     c_src "src/posix/spawn.c"
@@ -58,6 +59,7 @@ setconf()
   c_src "src/types/avltree.c"
   c_src "src/types/strtrie.c"
 
+  c_src "src/sys/notify.c"
   c_src "src/sys/poll.c"
 
   c_src "src/fmt/cfg.c"

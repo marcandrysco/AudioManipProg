@@ -3,10 +3,12 @@ ASSETS = web/index.xhtml \
          web/gui.js \
          web/gui.css \
 	 web/web.js \
+	 web/web.css \
 	 web/web.base.js \
 	 web/web.player.js \
+	 web/web.status.js \
+	 web/web.status.css \
 	 web/web.time.js \
-	 web/web.css \
 	 web/web.time.css \
 
 install: install-assets

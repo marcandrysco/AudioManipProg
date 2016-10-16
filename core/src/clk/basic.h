@@ -134,6 +134,32 @@ static inline struct amp_time_t amp_time_calc(int idx, double bpm, double nbeats
 	return time;
 }
 
+/**
+ * Calculate a location given an index and beat parameters.
+ *   @idx: The index.
+ *   @bpm: The beats-per-minute.
+ *   @nbeats: The beats-per-measure.
+ *   @rate: The sample rate.
+ *   &returns: The location.
+ */
+static inline struct amp_loc_t amp_loc_calc(int idx, double bpm, double nbeats, unsigned int rate)
+{
+	double beat;
+	struct amp_loc_t loc;
+	
+	beat = (idx * bpm) / (rate * 60);
+
+	loc.bar = beat / nbeats;
+	loc.beat = beat - (int)loc.bar * nbeats;
+
+	if(loc.beat < 0) {
+		loc.beat += nbeats;
+		loc.bar -= 1.0;
+	}
+
+	return loc;
+}
+
 static inline bool amp_time_isequal(struct amp_time_t left, struct amp_time_t right)
 {
 	return (left.bar == right.bar) && (left.beat == right.beat);
