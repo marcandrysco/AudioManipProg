@@ -21,7 +21,6 @@ enum sys_poll_e {
  */
 struct sys_poll_t {
 	sys_fd_t fd;
-	sys_sock_t sock;
 	enum sys_poll_e events, revents;
 };
 
@@ -33,18 +32,7 @@ struct sys_poll_t {
  */
 static inline struct sys_poll_t sys_poll_fd(sys_fd_t fd, enum sys_poll_e events)
 {
-	return (struct sys_poll_t){ fd, INVALID_SOCKET, events, 0 };
-}
-
-/**
- * Create a poll structure for a socket.
- *   @sock: The socket.
- *   @events: The events.
- *   &returns: The poll structure.
- */
-static inline struct sys_poll_t sys_poll_sock(sys_sock_t sock, enum sys_poll_e events)
-{
-	return (struct sys_poll_t){ NULL, sock, events, 0 };
+	return (struct sys_poll_t){ fd, events, 0 };
 }
 
 

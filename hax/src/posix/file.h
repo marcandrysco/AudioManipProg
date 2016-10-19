@@ -6,6 +6,7 @@
  */
 extern sys_fd_t sys_badfd;
 
+bool sys_isfd(sys_fd_t fd);
 void sys_close(sys_fd_t fd);
 
 #endif

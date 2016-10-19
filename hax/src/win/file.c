@@ -3,7 +3,7 @@
 /*
  * global variables
  */
-sys_fd_t sys_badfd = -1;
+sys_fd_t sys_badfd = { NULL, INVALID_SOCKET };
 
 /*
  * local declarations
@@ -20,16 +20,7 @@ static void fd_close(void *ref);
  */
 bool sys_isfd(sys_fd_t fd)
 {
-	return fd >= 0;
-}
-
-/**
- * Close a file descriptor.
- *   @fd: The file descriptor.
- */
-void sys_close(sys_fd_t fd)
-{
-	close(fd);
+	return fd.handle != NULL;
 }
 
 
@@ -42,7 +33,7 @@ struct io_file_t io_file_fd(sys_fd_t fd)
 {
 	static const struct io_file_i iface = { fd_read, fd_write, fd_close };
 
-	return (struct io_file_t){ (void *)(intptr_t)fd, &iface };
+	return (struct io_file_t){ (void *)(intptr_t)fd.handle, &iface };
 }
 
 /**

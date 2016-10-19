@@ -4,31 +4,18 @@
 /*
  * socket declarations
  */
-extern sys_sock_t sys_badsock;
+char *sys_socket(sys_fd_t *fd, int af, int type, int prot);
+char *sys_connect(sys_fd_t *fd, int type, const char *host, uint16_t port);
+void sys_closesocket(sys_fd_t fd);
 
-char *sys_socket(sys_sock_t *sock, int af, int type, int prot);
-char *sys_connect(sys_sock_t *sock, int type, const char *host, uint16_t port);
-void sys_closesocket(sys_sock_t sock);
+size_t sys_recv(sys_fd_t fd, void *buf, size_t nbytes, int flags);
+size_t sys_send(sys_fd_t fd, const void *buf, size_t nbytes, int flags);
 
-size_t sys_recv(sys_sock_t sock, void *buf, size_t nbytes, int flags);
-size_t sys_send(sys_sock_t sock, const void *buf, size_t nbytes, int flags);
-
-char *sys_bind(sys_sock_t sock, const struct sockaddr *addr, int len);
-char *sys_listen(sys_sock_t sock, int backlog);
-char *sys_accept(sys_sock_t sock, sys_sock_t *client, struct sockaddr *addr, int *len);
-char *sys_setsockopt(sys_sock_t sock, int level, int opt, const void *val, int len);
+char *sys_bind(sys_fd_t fd, const struct sockaddr *addr, int len);
+char *sys_listen(sys_fd_t fd, int backlog);
+char *sys_accept(sys_fd_t fd, sys_fd_t *client, struct sockaddr *addr, int *len);
+char *sys_setsockopt(sys_fd_t fd, int level, int opt, const void *val, int len);
 
 struct io_chunk_t sys_sockerr(void);
-
-
-/**
- * Check if a file descriptor is valid.
- *   @sock: The socket.
- *   &returns: True if valid, false otherwise.
- */
-static inline bool sys_issock(sys_sock_t sock)
-{
-	return sock != INVALID_SOCKET;
-}
 
 #endif

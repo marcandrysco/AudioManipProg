@@ -1,5 +1,52 @@
 #include "../common.h"
 
+
+
+/**
+ * Check if a file path exists.
+ *   @path: The paht.
+ *   &returns: The exists.
+ */
+bool fs_exists(const char *path)
+{
+	wchar_t wpath[w32_unix2win(NULL, path) + 1];
+
+	w32_unix2win(wpath, path);
+
+	return GetFileAttributesW(wpath) != INVALID_FILE_ATTRIBUTES;
+}
+
+
+/**
+ * Create a directory.
+ *   @path: the path.
+ *   @perm: The permission.
+ *   &returns: Error.
+ */
+char *fs_mkdir(const char *path, uint16_t perm)
+{
+	if(!fs_trymkdir(path, perm))
+		return mprintf("Failed to create directory '%s'. %C.", path, w32_errstr());
+
+	return NULL;
+}
+
+/**
+ * Attempt to create a directory.
+ *   @path: the path.
+ *   @perm: The permission.
+ *   &returns: True if successful.
+ */
+bool fs_trymkdir(const char *path, uint16_t perm)
+{
+	wchar_t wpath[w32_unix2win(NULL, path) + 1];
+
+	w32_unix2win(wpath, path);
+
+	return CreateDirectoryW(wpath, NULL);
+}
+
+
 size_t w32_utf8to16(wchar_t *restrict out, const char *restrict in)
 {
 	return MultiByteToWideChar(CP_UTF8, 0, in, -1, out, out ? INT_MAX : 0) - 1;
@@ -62,6 +109,12 @@ int w32_unix2win(wchar_t *restrict out, const char *restrict in)
 	return len;
 }
 
+/**
+ * Convert a windows path to a unix path.
+ *   @out: Optional. The output.
+ *   @in: The input.
+ *   &returns: The number of bytes necessary, or negative on input path.
+ */
 int w32_win2unix(char *restrict out, const wchar_t *restrict in)
 {
 	size_t i, len;

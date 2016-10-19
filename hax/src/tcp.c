@@ -9,13 +9,13 @@
 
 /**
  * Client structure.
- *   @sock: The socket.
+ *   @fd: The file descriptor.
  *   @defsize: The default read size.
  *   @in, out: The input and output data lists.
  *   @events: The pending events.
  */
 struct tcp_client_t {
-	sys_sock_t sock;
+	sys_fd_t fd;
 
 	size_t defsize;
 	struct data_t *in, *out;
@@ -25,10 +25,10 @@ struct tcp_client_t {
 
 /**
  * Server structure.
- *   @sock: The socket.
+ *   @fd: The file descriptor.
  */
 struct tcp_server_t {
-	sys_sock_t sock;
+	sys_fd_t fd;
 };
 
 /**
@@ -46,16 +46,16 @@ struct data_t {
 
 
 /**
- * Create a client from a socket.
- *   @sock: The socket.
+ * Create a client from a file descriptor.
+ *   @fd: The file descriptor.
  *   &returns: The client.
  */
-struct tcp_client_t *tcp_client_new(sys_sock_t sock)
+struct tcp_client_t *tcp_client_new(sys_fd_t fd)
 {
 	struct tcp_client_t *client;
 
 	client = malloc(sizeof(struct tcp_client_t));
-	*client = (struct tcp_client_t){ sock, 16*1024, NULL, NULL, 0 };
+	*client = (struct tcp_client_t){ fd, 16*1024, NULL, NULL, 0 };
 
 	return client;
 }
@@ -92,10 +92,10 @@ void tcp_client_delete(struct tcp_client_t *client)
 char *tcp_client_open(struct tcp_client_t **client, const char *host, uint16_t port)
 {
 #define onexit
-	sys_sock_t sock;
+	sys_fd_t fd;
 
-	chkfail(sys_connect(&sock, SOCK_STREAM, host, port));
-	*client = tcp_client_new(sock);
+	chkfail(sys_connect(&fd, SOCK_STREAM, host, port));
+	*client = tcp_client_new(fd);
 
 	return NULL;
 #undef onexit
@@ -107,7 +107,7 @@ char *tcp_client_open(struct tcp_client_t **client, const char *host, uint16_t p
  */
 void tcp_client_close(struct tcp_client_t *client)
 {
-	sys_closesocket(client->sock);
+	sys_closesocket(client->fd);
 	tcp_client_delete(client);
 }
 
@@ -117,9 +117,9 @@ void tcp_client_close(struct tcp_client_t *client)
  *   @client: The client.
  *   &returns: The file descriptor.
  */
-sys_sock_t tcp_client_sock(struct tcp_client_t *client)
+sys_fd_t tcp_client_fd(struct tcp_client_t *client)
 {
-	return client->sock;
+	return client->fd;
 }
 
 /**
@@ -129,7 +129,7 @@ sys_sock_t tcp_client_sock(struct tcp_client_t *client)
  */
 struct sys_poll_t tcp_client_poll(struct tcp_client_t *client)
 {
-	return sys_poll_sock(client->sock, sys_poll_in_e | sys_poll_err_e | (client->out ? sys_poll_out_e : 0));
+	return sys_poll_fd(client->fd, sys_poll_in_e | sys_poll_err_e | (client->out ? sys_poll_out_e : 0));
 }
 
 /**
@@ -241,7 +241,7 @@ bool tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
 
 		data = malloc(sizeof(struct data_t) + DEFSIZE);
 
-		ret = sys_recv(client->sock, data->buf, DEFSIZE, 0);
+		ret = sys_recv(client->fd, data->buf, DEFSIZE, 0);
 		if(ret <= 0) {
 			free(data);
 			return false;
@@ -268,7 +268,7 @@ bool tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
 			ssize_t ret;
 
 			data = client->out;
-			ret = sys_send(client->sock, data->buf + data->idx, data->len - data->idx, 0);
+			ret = sys_send(client->fd, data->buf + data->idx, data->len - data->idx, 0);
 			if(ret <= 0)
 				return false;
 
@@ -295,25 +295,25 @@ bool tcp_client_proc(struct tcp_client_t *client, enum sys_poll_e events)
  */
 char *tcp_server_open(struct tcp_server_t **server, uint16_t port)
 {
-#define onexit if(sys_issock(sock)) sys_closesocket(sock);
+#define onexit if(sys_isfd(fd)) sys_closesocket(fd);
 	int val;
 	struct sockaddr_in addr;
-	sys_sock_t sock = sys_badsock;
+	sys_fd_t fd = sys_badfd;
 
-	chkfail(sys_socket(&sock, AF_INET, SOCK_STREAM, 0));
+	chkfail(sys_socket(&fd, AF_INET, SOCK_STREAM, 0));
 
 	val = 1;
-	chkfail(sys_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(int)));
+	chkfail(sys_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(int)));
 
 	memset(&addr, 0x00, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_port = htons(port);
 
-	chkfail(sys_bind(sock, (struct sockaddr *)&addr, sizeof(addr)));
+	chkfail(sys_bind(fd, (struct sockaddr *)&addr, sizeof(addr)));
 
 	*server = malloc(sizeof(struct tcp_server_t));
-	(*server)->sock = sock;
+	(*server)->fd = fd;
 
 	return NULL;
 #undef onexit
@@ -325,7 +325,7 @@ char *tcp_server_open(struct tcp_server_t **server, uint16_t port)
  */
 void tcp_server_close(struct tcp_server_t *server)
 {
-	sys_closesocket(server->sock);
+	sys_closesocket(server->fd);
 	free(server);
 }
 
@@ -335,9 +335,9 @@ void tcp_server_close(struct tcp_server_t *server)
  *   @server: The server.
  *   &returns: The file descriptor.
  */
-sys_sock_t tcp_server_sock(struct tcp_server_t *server)
+sys_fd_t tcp_server_fd(struct tcp_server_t *server)
 {
-	return server->sock;
+	return server->fd;
 }
 
 /**
@@ -347,7 +347,7 @@ sys_sock_t tcp_server_sock(struct tcp_server_t *server)
  */
 struct sys_poll_t tcp_server_poll(struct tcp_server_t *server)
 {
-	return sys_poll_sock(server->sock, sys_poll_in_e);
+	return sys_poll_fd(server->fd, sys_poll_in_e);
 }
 
 
@@ -359,7 +359,7 @@ struct sys_poll_t tcp_server_poll(struct tcp_server_t *server)
 char *tcp_server_listen(struct tcp_server_t *server)
 {
 #define onexit
-	chkfail(sys_listen(server->sock, SOMAXCONN));
+	chkfail(sys_listen(server->fd, SOMAXCONN));
 	
 	return NULL;
 #undef onexit
@@ -371,14 +371,15 @@ char *tcp_server_listen(struct tcp_server_t *server)
  *   @fd: Ref. The output file descriptor.
  *   &returns: Error.
  */
-char *tcp_server_accept(struct tcp_server_t *server, sys_sock_t *fd)
+char *tcp_server_accept(struct tcp_server_t *server, sys_fd_t *fd)
 {
 #define onexit
 	socklen_t size;
 	struct sockaddr_in addr;
-	
+
+	printf("accept\n");
 	size = sizeof(addr);
-	chkfail(sys_accept(server->sock, fd, (struct sockaddr *)&addr, &size));
+	chkfail(sys_accept(server->fd, fd, (struct sockaddr *)&addr, &size));
 
 	return NULL;
 #undef onexit

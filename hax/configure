@@ -18,17 +18,16 @@ setconf()
   fi
 
   if [ "$windows$cygwin" ] ; then
-    h_src "src/win/defs.h"
     c_src "src/win/dynlib.c"
     c_src "src/win/dbg.c"
     c_src "src/win/fs.c"
+    c_src "src/win/file.c"
     c_src "src/win/notify.c"
     c_src "src/win/poll.c"
     c_src "src/win/sock.c"
     c_src "src/win/thread.c"
     c_src "src/win/time.c"
   else
-    h_src "src/posix/defs.h"
     c_src "src/posix/dynlib.c"
     c_src "src/posix/fs.c"
     c_src "src/posix/file.c"

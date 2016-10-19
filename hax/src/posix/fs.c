@@ -27,6 +27,12 @@ char *fs_mkdir(const char *path, uint16_t perm)
 	return NULL;
 }
 
+/**
+ * Attempt to create a directory.
+ *   @path: the path.
+ *   @perm: The permission.
+ *   &returns: True if successful.
+ */
 bool fs_trymkdir(const char *path, uint16_t perm)
 {
 	if(mkdir(path, perm) < 0)
@@ -35,5 +41,5 @@ bool fs_trymkdir(const char *path, uint16_t perm)
 	if(chmod(path, perm) < 0)
 		return false;
 
-	return NULL;
+	return true;
 }

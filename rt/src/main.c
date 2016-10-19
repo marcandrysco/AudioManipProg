@@ -67,6 +67,12 @@ int main(int argc, char **argv)
 	const struct amp_audio_i *iface = NULL;
 	char **arg, *file = NULL, **plugin, *val, *conf = NULL;
 
+#if DEBUG
+	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
+#endif
+
+	setlocale(LC_CTYPE, "");
 	srand(sys_utime());
 
 	plugin = strlist_new();

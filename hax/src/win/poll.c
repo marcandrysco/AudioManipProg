@@ -10,27 +10,19 @@
  */
 bool sys_poll(struct sys_poll_t *list, unsigned int n, int timeout)
 {
-	unsigned int i, cnt = 0;
+	unsigned int i;
+	DWORD ret;
+	HANDLE handle[n];
 
 	for(i = 0; i < n; i++)
-		cnt += (list[i].fd != NULL) ? 1 : 0;
+		handle[i] = list[i].fd.handle;
 
-	{
-		DWORD ret;
-		HANDLE handle[cnt];
+	ret = WaitForMultipleObjects(n, handle, FALSE, (timeout >= 0) ? timeout : INFINITE);
 
-		for(i = 0; i < n; i++) {
-			if(list[i].fd != NULL)
-				handle[i] = list[i].fd;
-		}
+	if(ret >= 0x80)
+		return false;
 
-		ret = WaitForMultipleObjects(cnt, handle, FALSE, (timeout >= 0) ? timeout : INFINITE);
+	list[ret].revents = (sys_poll_in_e | sys_poll_out_e) & list[ret].events;
 
-		if(ret >= 0x80)
-			return false;
-
-		list[ret].revents = (sys_poll_in_e | sys_poll_out_e) & list[ret].events;
-
-		return true;
-	}
+	return true;
 }

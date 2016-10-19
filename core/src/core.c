@@ -185,10 +185,14 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 	for(cur = list; cur->id != NULL; cur++)
 		ml_env_add(&core->env, strdup(cur->id), ml_value_eval(cur->func, ml_tag_copy(ml_tag_null)));
-	
+
+#ifdef WINDOWS
+	err = ml_parse_file(&core->env, "ml/core.ml");
+#else
 	err = ml_parse_file(&core->env, SHAREDIR "/amp/core.ml");
+#endif
 	if(err != NULL)
-		fprintf(stderr, "Failed to parse 'core.ml'. %s\n", err);
+		fprintf(stderr, "Failed to parse 'core.ml'. %s\n", err), free(err);
 
 	return core;
 }

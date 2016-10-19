@@ -252,6 +252,10 @@ struct sys_task_t *sys_task_new(sys_task_f func, void *arg)
 	return task;
 }
 
+/**
+ * Delete a task.
+ *   @task: The task.
+ */
 void sys_task_delete(struct sys_task_t *task)
 {
 	SetEvent(task->sync);
@@ -270,7 +274,7 @@ static DWORD task_proc(LPVOID arg)
 {
 	struct sys_task_t *task = arg;
 
-	task->func(task->sync, task->arg);
+	task->func(w32_fd(task->sync), task->arg);
 
 	return 0;
 }

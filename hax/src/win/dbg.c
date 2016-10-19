@@ -18,6 +18,10 @@ static void errstr_proc(struct io_file_t file, void *arg)
 {
 	char str[1024];
 
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), str, sizeof(str), NULL);
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), str, sizeof(str), NULL);
+
+	if(strlen(str) >= 3)
+		str[strlen(str) - 3] = '\0';
+
 	hprintf(file, "%s", str);
 }

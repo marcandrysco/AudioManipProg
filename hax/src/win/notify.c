@@ -108,7 +108,7 @@ char *sys_notify_add(struct sys_notify_t *notify, const char *path, int *id)
  */
 sys_fd_t sys_notify_fd(struct sys_notify_t *notify)
 {
-	return notify->event;
+	return (sys_fd_t){ notify->event, INVALID_SOCKET };
 }
 
 /**
@@ -136,4 +136,6 @@ struct sys_change_t *sys_notify_proc(struct sys_notify_t *notify, struct sys_pol
 		ResetEvent(notify->event);
 		ReadDirectoryChangesW(inst->handle, &inst->data, sizeof(inst->data), TRUE, FILE_NOTIFY_CHANGE_LAST_WRITE, NULL, &inst->async, 0);
 	}
+
+	return NULL;
 }

@@ -6,13 +6,13 @@
  */
 struct tcp_client_t;
 
-struct tcp_client_t *tcp_client_new(sys_sock_t sock);
+struct tcp_client_t *tcp_client_new(sys_fd_t fd);
 void tcp_client_delete(struct tcp_client_t *client);
 
 char *tcp_client_open(struct tcp_client_t **client, const char *host, uint16_t port);
 void tcp_client_close(struct tcp_client_t *client);
 
-sys_sock_t tcp_client_sock(struct tcp_client_t *client);
+sys_fd_t tcp_client_fd(struct tcp_client_t *client);
 struct sys_poll_t tcp_client_poll(struct tcp_client_t *client);
 
 size_t tcp_client_avail(struct tcp_client_t *client);
@@ -31,9 +31,9 @@ char *tcp_server_open(struct tcp_server_t **server, uint16_t port);
 void tcp_server_close(struct tcp_server_t *server);
 
 char *tcp_server_listen(struct tcp_server_t *server);
-char *tcp_server_accept(struct tcp_server_t *server, sys_sock_t *fd);
+char *tcp_server_accept(struct tcp_server_t *server, sys_fd_t *fd);
 
-sys_sock_t tcp_server_sock(struct tcp_server_t *server);
+sys_fd_t tcp_server_fd(struct tcp_server_t *server);
 struct sys_poll_t tcp_server_poll(struct tcp_server_t *server);
 
 #endif

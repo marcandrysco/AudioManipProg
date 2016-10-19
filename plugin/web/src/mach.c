@@ -62,7 +62,7 @@ struct web_mach_t *web_mach_new(const char *id)
 		char path[strlen(mach->id) + 9];
 
 		sprintf(path, "web.dat/%s", id);
-		mkdir("web.dat", 0777);
+		fs_trymkdir("web.dat", 0777);
 		web_mach_load(mach, path);
 	}
 
@@ -334,7 +334,7 @@ bool web_mach_req(struct web_mach_t *mach, const char *path, struct http_args_t 
 			char path[strlen(mach->id) + 9];
 
 			sprintf(path, "web.dat/%s", mach->id);
-			mkdir("web.dat", 0777);
+			fs_trymkdir("web.dat", 0777);
 			web_mach_save(mach, path);
 		}
 

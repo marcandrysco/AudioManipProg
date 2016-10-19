@@ -96,7 +96,7 @@
     /*
       var dbg = Gui.byid("debug");
     
-      var xy = Player.curLoc(player, e.offsetX, true);
+      var xy = Player.getLoc(player, e.offsetX, true);
       Gui.replace(dbg, Gui.text(JSON.stringify(xy)));
       */
     };
@@ -133,7 +133,7 @@
    *   @box: The bounding box.
    */
   window.Player.mouseRoll = function(player, e, x, y, box) {
-    var dat = Player.curDat(player, x, y);
+    var dat = Player.getDat(player, x, y);
     if(dat != null) {
       if(player.sel.indexOf(dat) >= 0) {
         if(e.shiftKey) {
@@ -204,7 +204,7 @@
    *   @y: The y-coordinate.
    *   &returns: The row number, or '-1' if not over a row.
    */
-  window.Player.curRow = function(player, y) {
+  window.Player.getRow = function(player, y) {
     var rowHeight = player.layout.cell.height + 1;
     var rowLimit = player.conf.rows.length;
     var row = Math.floor((y - player.layout.head - 2) / rowHeight);
@@ -216,7 +216,7 @@
    * Retrieve the current location.
    *   @player
    */
-  window.Player.curLoc = function(player, x, round) {
+  window.Player.getLoc = function(player, x, round) {
     var layout = player.layout, conf = player.conf;
 
     x -= layout.label + 2;
@@ -237,9 +237,9 @@
    *   @y: The y-coordinate.
    *   &returns: The datum or null.
    */
-  window.Player.curDat = function(player, x, y) {
-    var loc = Player.curLoc(player, x, false);
-    var row = Player.curRow(player, y);
+  window.Player.getDat = function(player, x, y) {
+    var loc = Player.getLoc(player, x, false);
+    var row = Player.getRow(player, y);
 
     if((loc == null) || (row < 0)) { return null; }
 
@@ -491,12 +491,11 @@
     player.roll.width = player.roll.clientWidth;
     player.roll.height = player.roll.clientHeight;
 
-    var ctx = player.roll.getContext("2d", {alpha: false});
     var conf = player.conf;
     var layout = player.layout;
-    ctx.fillStyle = "#fff";
-    ctx.rect(0, 0, player.roll.width, player.roll.height);
-    ctx.fill();
+    var ctx = player.roll.getContext("2d", {alpha: false});
+
+    Player.drawBlank(player, ctx);
 
     var box = Pack.canvas(player.roll);
     var scroll = Pack.vert(box, layout.scroll, true);
@@ -507,14 +506,7 @@
     var label = Pack.horiz(box, layout.label);
     Pack.horiz(box, 2);
 
-    // background colors
-    var cur = box.copy();
-    for(var i = 0; i < conf.rows.length; i++) {
-      var row = Pack.vert(cur, layout.cell.height);
-      Pack.vert(cur, 1);
-
-      if((i % 2) == 0) { Draw.fill(row, ctx, "#eee"); }
-    }
+    Player.drawBack(ctx, box, conf, layout);
 
     // vertical lines and heading
     var blank = Pack.horiz(head, layout.label);
@@ -609,6 +601,33 @@
       Draw.fill(Pack.vert(label, 1), ctx, "#000");
     }
   };
+  /**
+   * Draw the blank background.
+   *   @player: The player.
+   *   @ctx: The context.
+   */
+  window.Player.drawBlank = function(player, ctx) {
+    ctx.fillStyle = "#fff";
+    ctx.rect(0, 0, player.roll.width, player.roll.height);
+    ctx.fill();
+  };
+  /**
+   * Draw the background stripes.
+   *   @ctx: The context.
+   *   @box: The rener area box.
+   *   @conf: The configuration.
+   *   @layout: The layout.
+   */
+  window.Player.drawBack = function(ctx, box, conf, layout) {
+    var cur = box.copy();
+    for(var i = 0; i < conf.rows.length; i++) {
+      var row = Pack.vert(cur, layout.cell.height);
+      Pack.vert(cur, 1);
+
+      if((i % 2) == 0) { Draw.fill(row, ctx, "#eee"); }
+    }
+  };
+
 
   /**
    * Sort keys.

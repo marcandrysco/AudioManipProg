@@ -258,7 +258,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 	struct http_args_t args;
 	struct http_pair_t *pair;
 
-	file = io_file_fd(tcp_client_sock(client->tcp));
+	file = io_file_fd(tcp_client_fd(client->tcp));
 
 	args.body = strbuf_finish(&client->buf);
 	args.req = client->head;
@@ -313,7 +313,6 @@ char *http_server_proc(struct http_server_t *server, struct sys_poll_t *fds, htt
 		assert(i < server->cnt);
 
 		cont[i] = true;
-		if((fds != NULL) && (fds[i+1].revents == 0))
 		if(fds[i+1].revents == 0)
 			continue;
 
@@ -334,12 +333,12 @@ char *http_server_proc(struct http_server_t *server, struct sys_poll_t *fds, htt
 	}
 
 	if((fds == NULL) || (fds[0].revents != 0)) {
-		sys_sock_t sock;
+		sys_fd_t fd;
 		struct http_client_t *client;
 
-		chkfail(tcp_server_accept(server->tcp, &sock));
+		chkabort(tcp_server_accept(server->tcp, &fd));
 
-		client = http_client_new(tcp_client_new(sock));
+		client = http_client_new(tcp_client_new(fd));
 		client->next = server->client;
 		server->client = client;
 		server->cnt++;

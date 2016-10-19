@@ -11,7 +11,7 @@ char *sys_dynlib_open(sys_dynlib_t *lib, const char *path)
 {
 	*lib = sys_dynlib_tryopen(path);
 	if(*lib == NULL)
-		return mprintf("Cannot open dynamic library '%s'. %s", w32_errstr());
+		return mprintf("Cannot open dynamic library '%s'. %C", path, w32_errstr());
 
 	return NULL;
 }
@@ -23,7 +23,11 @@ char *sys_dynlib_open(sys_dynlib_t *lib, const char *path)
  */
 sys_dynlib_t sys_dynlib_tryopen(const char *path)
 {
-	return LoadLibrary(path);
+	wchar_t wpath[w32_unix2win(NULL, path) + 1];
+
+	w32_unix2win(wpath, path);
+
+	return LoadLibraryW(wpath);
 }
 
 /**
