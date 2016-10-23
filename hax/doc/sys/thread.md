@@ -66,7 +66,6 @@ The `sys_mutex_unlock` function unlocks the mutex that was acquired by
 ## Condition Variable
 
     sys_cond_t;
-
     sys_cond_t sys_cond_init(unsigned int flags);
     void sys_cond_destroy(sys_cond_t *cond);
 
@@ -96,3 +95,6 @@ waiting on the condition variable.
 
 ## Thread Task
 
+Tasks are a special form of thread that provide tools for synchronization.
+Under the hood, tasks are simply threads that paired with a file descriptor
+for messaging asynchronous tasks for graceful shutdown.

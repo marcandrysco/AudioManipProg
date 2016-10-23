@@ -249,6 +249,7 @@ static void *iface_thread(void *arg)
 				case SND_SEQ_EVENT_NOTEON:
 					key = (uint16_t)event->data.note.note;
 					val = (uint16_t)event->data.note.velocity << 9;
+					printf("on: %d\n", key);
 					midi->func(key, val, midi->arg);
 					break;
 
@@ -260,7 +261,11 @@ static void *iface_thread(void *arg)
 				case SND_SEQ_EVENT_CONTROLLER:
 					key = (uint16_t)event->data.control.param + 0x100;
 					val = (uint16_t)event->data.control.value << 9;
-					midi->func(key, val, midi->arg);
+
+					if(key == 320)
+						midi->func(128, val, midi->arg);
+					else
+						midi->func(key, val, midi->arg);
 					break;
 
 				case SND_SEQ_EVENT_PGMCHANGE:

@@ -49,6 +49,25 @@ static bool req_handler(const char *path, struct http_args_t *args, void *arg);
 static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct json_t *json);
 static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct json_obj_t *obj);
 
+static struct http_asset_t serv_assets[] = {
+	{  "/",               "index.xhtml",    "application/xhtml+xml"   },
+	{  "/draw.js",        "draw.js",        "application/javascript"  },
+	{  "/gui.js",         "gui.js",         "application/javascript"  },
+	{  "/gui.css",        "gui.css",        "text/css"                },
+	{  "/web.js",         "web.js",         "application/javascript"  },
+	{  "/web.css",        "web.css",        "text/css"                },
+	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
+	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
+	{  "/web.player.css", "web.player.css", "text/css"                },
+	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
+	{  "/web.status.css", "web.status.css", "text/css"                },
+	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
+	{  "/web.time.css",   "web.time.css",   "text/css"                },
+	{  "/web.train.js",   "web.train.js",   "application/javascript"  },
+	{  "/web.train.css",  "web.train.css",  "text/css"                },
+	{  NULL,              NULL,             NULL                      }
+};
+
 
 
 /**
@@ -332,64 +351,6 @@ char *fs_getfile_send(const char *path, struct io_file_t file)
 
 
 /**
- * Asset structure.
- *   @req, path, type: The request, path, and type.
- */
-struct http_asset_t {
-	const char *req, *path, *type;
-};
-
-struct http_asset_t serv_assets[] = {
-	{  "/",               "index.xhtml",    "application/xhtml+xml"   },
-	{  "/draw.js",        "draw.js",        "application/javascript"  },
-	{  "/gui.js",         "gui.js",         "application/javascript"  },
-	{  "/gui.css",        "gui.css",        "text/css"                },
-	{  "/web.js",         "web.js",         "application/javascript"  },
-	{  "/web.css",        "web.css",        "text/css"                },
-	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
-	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
-	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
-	{  "/web.status.css", "web.status.css", "text/css"                },
-	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
-	{  "/web.time.css",   "web.time.css",   "text/css"                },
-	{  NULL,              NULL,             NULL                      }
-};
-
-/**
- * Process an asset list.
- *   @assets: The asset list.
- *   @path: The path.
- *   @args: The argument.
- *   @prefix: The prefix.
- *   &returns: True if handled, false otherwise.
- */
-bool http_asset_proc(struct http_asset_t *assets, const char *path, struct http_args_t *args, const char *prefix)
-{
-	while(assets->req != NULL) {
-		if(strcmp(path, assets->req) == 0)
-			break;
-
-		assets++;
-	}
-
-	if(assets->req == NULL)
-		return false;
-
-	{
-		unsigned int len = lprintf("%s%s", prefix, assets->path);
-		char buf[len+1];
-
-		sprintf(buf, "%s%s", prefix, assets->path);
-		chkwarn(fs_getfile_send(buf, args->file));
-	}
-
-	http_head_add(&args->resp, "Content-Type", assets->type);
-
-	return true;
-}
-
-
-/**
  * Handle requests on the server.
  *   @path: The path.
  *   @args: The arguments.
@@ -400,7 +361,11 @@ static bool req_handler(const char *path, struct http_args_t *args, void *arg)
 {
 	struct web_serv_t *serv = arg;
 
+#ifdef WINDOWS
+	if(http_asset_proc(serv_assets, path, args, "ampweb/"))
+#else
 	if(http_asset_proc(serv_assets, path, args, SHAREDIR "/ampweb/"))
+#endif
 		return true;
 	else if(strcmp(path, "/init") == 0) {
 		const char *run;

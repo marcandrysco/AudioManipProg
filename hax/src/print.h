@@ -21,7 +21,9 @@ void hax_printf(const char *restrict format, ...);
 void hax_vprintf(const char *restrict format, va_list args);
 
 noreturn void hax_vfatal(const char *restrict format, va_list args);
+noreturn void hax_vfatal_dbg(const char *file, unsigned int line, const char *restrict format, va_list args);
 noreturn void hax_fatal(const char *restrict format, ...);
+noreturn void hax_fatal_dbg(const char *file, unsigned int line, const char *restrict format, ...);
 
 
 /**
@@ -112,7 +114,12 @@ static inline size_t d_vsnprintf(char *restrict str, size_t nbytes, const char *
 #define printf hax_printf
 #define vprintf hax_vprintf
 
-#define fatal hax_fatal
-#define vfatal hax_vfatal
+#ifdef DEBUG
+#	define fatal(...) hax_fatal_dbg(__FILE__, __LINE__, __VA_ARGS__)
+#	define vfatal(...) hax_vfatal_dbg(__FILE__, __LINE__, __VA_ARGS__)
+#else
+#	define fatal hax_fatal
+#	define vfatal hax_vfatal
+#endif
 
 #endif

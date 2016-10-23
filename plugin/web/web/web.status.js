@@ -7,8 +7,9 @@
    *   @insert: Insert/interactive.
    *   @num: Number.
    *   @frac: Fraction.
+   *   @copy: Copy.
    */
-  window.Mode = { view: 0, insert: 1, num: 2, frac: 3 };
+  window.Mode = { view: 0, insert: 1, num: 2, frac: 3, copy: 4 };
 
   /*
    * Status namespace
@@ -51,7 +52,8 @@
 
     switch(Status.mode) {
     case Mode.view: text = "View"; break;
-    case Mode.insert: text = "Insert/Interact"; break;
+    case Mode.insert: text = "Insert"; break;
+    case Mode.copy: text = "Copy"; break;
     case Mode.num: text = Status.num; break;
     }
 
@@ -62,6 +64,7 @@
 
   /**
    * Handle a keypress with the status.
+   *   @e: The event.
    */
   window.Status.keypress = function(e) {
     Status.msg = null;
@@ -79,7 +82,6 @@
 
     case Mode.insert:
       if(e.code == "Escape") { Status.mode = Mode.view; }
-
       break;
 
     case Mode.num:
@@ -91,6 +93,10 @@
       break;
 
     case Mode.frac:
+      break;
+
+    case Mode.copy:
+      if(e.code == "Escape") { Status.mode = Mode.view; }
       break;
     }
 

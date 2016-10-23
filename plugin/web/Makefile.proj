@@ -6,10 +6,13 @@ ASSETS = web/index.xhtml \
 	 web/web.css \
 	 web/web.base.js \
 	 web/web.player.js \
+	 web/web.player.css \
 	 web/web.status.js \
 	 web/web.status.css \
 	 web/web.time.js \
 	 web/web.time.css \
+	 web/web.train.js \
+	 web/web.train.css \
 
 install: install-assets
 

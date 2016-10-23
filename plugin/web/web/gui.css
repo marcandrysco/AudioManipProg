@@ -1,7 +1,6 @@
 /* generic styles */
 
-.noselect,
-.gui-noselect {
+.noselect, .gui-noselect {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -9,6 +8,15 @@
   -ms-user-select: none;
   user-select: none;
 }
+
+.gui-hide {
+  display: none;
+}
+
+.gui-noshow {
+  visibility: hidden;
+}
+
 
 .gui-bottom {
   display: flex;
@@ -53,6 +61,9 @@
     color: #8d8d8d;
     border-color: #bbb;
     background-image: linear-gradient(to bottom,#f0f0f0 0,#d3d3d3 100%);
+  }
+
+  .gui-button > .gui-fit {
   }
 
 /* toggle widget */

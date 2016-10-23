@@ -16,6 +16,7 @@ setconf()
   c_src "src/player.c"
   c_src "src/plugin.c"
   c_src "src/serv.c"
+  c_src "src/train.c"
 }
 ## end configuration options ##
 

@@ -148,7 +148,7 @@ bool json_get_double(struct json_t *json, double *out);
 bool json_get_int(struct json_t *json, int *out);
 bool json_get_uint16(struct json_t *json, uint16_t *out);
 
-struct json_arr_t *json_chk_arr(struct json_t *json, int len);
+struct json_arr_t *json_get_arr(struct json_t *json, int len);
 struct json_obj_t *json_chk_obj(struct json_t *json, ...);
 
 

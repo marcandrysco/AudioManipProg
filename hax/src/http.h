@@ -83,4 +83,18 @@ void http_head_add(struct http_head_t *head, const char *key, const char *value)
 
 char *http_head_parse(struct http_head_t *head, const char *str);
 
+
+/**
+ * Asset structure.
+ *   @req, path, type: The request, path, and type.
+ */
+struct http_asset_t {
+	const char *req, *path, *type;
+};
+
+/*
+ * asset declarations
+ */
+bool http_asset_proc(struct http_asset_t *assets, const char *path, struct http_args_t *args, const char *prefix);
+
 #endif

@@ -36,6 +36,8 @@ static void json_proc(struct io_file_t file, void *arg);
 static void arr_proc(struct io_file_t file, void *arg);
 static void obj_proc(struct io_file_t file, void *arg);
 
+static void prop_delete(void *ptr);
+
 static struct read_t read_init(struct io_file_t file);
 static void read_destroy(struct read_t *read);
 static int16_t read_ch(struct read_t *read);
@@ -265,17 +267,16 @@ struct json_obj_t *json_obj_new(void)
  */
 void json_obj_delete(struct json_obj_t *obj)
 {
-	struct json_prop_t *cur, *next;
-
-	for(cur = json_obj_first(obj); cur != NULL; cur = next) {
-		next = json_obj_next(cur);
-
-		json_delete(cur->value);
-		free(cur->key);
-		free(cur);
-	}
-
+	avltree_root_destroy(&obj->root, offsetof(struct json_prop_t, node), prop_delete);
 	free(obj);
+}
+static void prop_delete(void *ptr)
+{
+	struct json_prop_t *prop = ptr;
+
+	json_delete(prop->value);
+	free(prop->key);
+	free(prop);
 }
 
 

@@ -127,13 +127,11 @@ size_t sys_recv(sys_fd_t fd, void *buf, size_t nbytes, int flags)
 {
 	int ret;
 
-	do
-		ret = recv(fd.sock, buf, nbytes, flags);
-	while((ret < 0) && (errno == EINTR));
-
-	if(ret == SOCKET_ERROR)
+	ret = recv(fd.sock, buf, nbytes, flags);
+	if((ret == SOCKET_ERROR) && (WSAGetLastError() != WSAEWOULDBLOCK))
 		fatal("Failed to read data on socket. %C.\n", sys_sockerr());
 
+	WSAResetEvent(fd.handle);
 	return ret;
 }
 
@@ -149,13 +147,11 @@ size_t sys_send(sys_fd_t fd, const void *buf, size_t nbytes, int flags)
 {
 	int ret;
 
-	do
-		ret = send(fd.sock, buf, nbytes, flags);
-	while((ret < 0) && (errno == EINTR));
-
-	if(ret == SOCKET_ERROR)
+	ret = send(fd.sock, buf, nbytes, flags);
+	if((ret == SOCKET_ERROR) && (WSAGetLastError() != WSAEWOULDBLOCK))
 		fatal("Failed to write data to socket. %C.\n", sys_sockerr());
 
+	WSAResetEvent(fd.handle);
 	return ret;
 }
 

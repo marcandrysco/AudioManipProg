@@ -37,8 +37,8 @@
         page.appendChild(work);
 
         switch(Web.data[i].type) {
-        case "mach": Mach.init(work, Web.data[i].data).idx = i; break;
-        case "player": Player.init(work, Web.data[i].data).idx = i; break;
+        //case "mach": Mach.init(work, Web.data[i].data).idx = i; break;
+        case "player": work.appendChild(Player.elem(Web.data[i].data, i)); break;
         }
       }
 
@@ -61,7 +61,7 @@
 
     switch(Web.data[Web.cur].type) {
     //case "mach": Mach.keypress(work, Web.data[Web.cur].data); break;
-    //case "player": Player.keypress(work, Web.data[i].data); break;
+    case "player": Player.keypress(Web.data[Web.cur].data, e); break;
     }
   };
 
@@ -77,8 +77,15 @@
       var json = JSON.parse(resp);
 
       Time.update(json.time);
-     
-      Gui.wait(500, function() {
+
+      for(var i = 1; i < Web.data.length; i++) {
+        switch(Web.data[i].type) {
+        case "mach":  break;
+        case "player": Player.update(Web.data[i].data); break;
+        }
+      }
+
+      Gui.wait(50, function() {
         requestAnimationFrame(function() { Web.refresh(); });
       });
     });

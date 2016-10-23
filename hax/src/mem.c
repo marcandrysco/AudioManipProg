@@ -23,7 +23,7 @@ void *hax_malloc(size_t nbytes)
 #undef malloc
 	void *ptr;
 
-	ptr = malloc(nbytes ?: 1);
+	ptr = _malloc(nbytes ?: 1);
 	if(ptr == NULL)
 		fatal("Memory allocation failed, %s.", strerror(errno));
 
@@ -34,6 +34,20 @@ void *hax_malloc(size_t nbytes)
 #endif
 
 	return ptr;
+}
+
+/**
+ * Reallocate memory.
+ *   @ptr: The original pointer.
+ *   @nbytes: The number of bytes.
+ *   &returns: The new pointer.
+ */
+void *hax_realloc(void *ptr, size_t nbytes)
+{
+	if(ptr == NULL)
+		fatal("Cannot realloc null pointer.");
+
+	return _realloc(ptr, nbytes ?: 1);
 }
 
 /**

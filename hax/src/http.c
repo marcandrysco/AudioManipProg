@@ -253,7 +253,8 @@ bool http_client_proc(struct http_client_t *client, http_handler_f func, void *a
 static void client_resp(struct http_client_t *client, http_handler_f func, void *arg)
 {
 	bool suc;
-	char *buf;
+	void *buf;
+	size_t nbytes;
 	struct io_file_t file;
 	struct http_args_t args;
 	struct http_pair_t *pair;
@@ -263,7 +264,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 	args.body = strbuf_finish(&client->buf);
 	args.req = client->head;
 	args.resp = http_head_init();
-	args.file = io_file_accum(&buf);
+	args.file = io_file_buf(&buf, &nbytes);
 	suc = func(args.req.path, &args, arg);
 	io_file_close(args.file);
 
@@ -275,7 +276,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 		if(http_head_lookup(&args.resp, "Content-Type") == NULL)
 			http_head_add(&args.resp, "Content-Type", "application/xhtml+xml");
 
-		snprintf(len, sizeof(len), "%zu", strlen(buf));
+		snprintf(len, sizeof(len), "%u", (unsigned int)nbytes);
 		http_head_add(&args.resp, "Content-Length", len);
 		http_head_add(&args.resp, "Connection", "close");
 
@@ -283,7 +284,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 			hprintf(file, "%s: %s\n", pair->key, pair->value);
 
 		hprintf(file, "\n");
-		hprintf(file, "%s", buf);
+		io_file_write(file, buf, nbytes);
 	}
 	else
 		hprintf(file, "HTTP/1.1 404 Not Found\nContent-Length: 9\nConnection: close\n\nNot Found");
@@ -563,4 +564,57 @@ static int16_t skiphspace(const char **str)
 		(*str)++;
 
 	return **str;
+}
+
+
+/**
+ * Process an asset list.
+ *   @assets: The asset list.
+ *   @path: The path.
+ *   @args: The argument.
+ *   @prefix: The prefix.
+ *   &returns: True if handled, false otherwise.
+ */
+bool http_asset_proc(struct http_asset_t *assets, const char *path, struct http_args_t *args, const char *prefix)
+{
+	while(assets->req != NULL) {
+		if(strcmp(path, assets->req) == 0)
+			break;
+
+		assets++;
+	}
+
+	if(assets->req == NULL)
+		return false;
+
+	if(prefix == NULL)
+		prefix = "";
+
+	{
+		unsigned int len = lprintf("%s%s", prefix, assets->path);
+		char full[len+1];
+		FILE *file;
+		size_t rd;
+		uint8_t buf[4096];
+
+		sprintf(full, "%s%s", prefix, assets->path);
+
+		file = fopen(full, "r");
+		if(file == NULL)
+			return false;
+
+		while(true) {
+			rd = fread(buf, 1, 4096, file);
+			if(rd == 0)
+				break;
+
+			io_file_write(args->file, buf, rd);
+		}
+
+		fclose(file);
+	}
+
+	http_head_add(&args->resp, "Content-Type", assets->type);
+
+	return true;
 }

@@ -13,8 +13,7 @@ counter that is incremented for every allocation and decremented for every
 free. Developers can check the count at the very end of a program to verify
 that all resources were freed.
 
-
-### Allocation Counter
+### Allocation Counter -- `hax_memcnt` `hax_inc` `hax_dec`
 
     int hax_memcnt = 0;
 
@@ -32,8 +31,7 @@ The `hax_%act%` functions adjust the counter automatically. It is useful to
 check that `hax_memcnt` is exactly zero before exitting the program to verify
 there are no memory leaks.
 
-
-### Basic Allocation
+### Basic Allocation -- `hax_alloc` `hax_realloac` `hax_free`
 
     void *hax_alloc(size_t len);
     void *hax_realloc(void *ptr, size_t len);
@@ -49,14 +47,12 @@ memory counter.
 The `hax_free` function frees the memory pointed to by `ptr` and decrements
 the memory counter.
 
-
-### Extra Functions
+### Extra Functions `hax_strdup`
 
     void *hax_strdup(const char *str);
 
 The `hax_strdup` function duplicates the string `str` and increments the
 memory counter.
-
 
 ### Macro Renaming
 
@@ -71,7 +67,7 @@ will prevent renaming these memory management functions.
 The functions for managing memory closely mimic the standard C library with a
 few small additions.
 
-### Allocation and Free
+### Allocation and Free -- `malloc` `realloc` `free` `erase`
 
     void *malloc(size_t nbytes);
     void *realloc(size_t nbytes);

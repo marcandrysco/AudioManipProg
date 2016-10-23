@@ -77,7 +77,7 @@ struct web_player_t *web_player_new(struct web_serv_t *serv, const char *id)
 	player->left = player->right = NULL;
 	player->last = amp_loc(0, 0.0);
 	web_player_conf_init(&player->conf);
-	web_player_load(player);
+	chkbool(web_player_load(player));
 
 	return player;
 }
@@ -272,8 +272,6 @@ bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsig
 			else if(((int)time[i].bar == left->begin.bar) && (time[i].beat < left->begin.beat))
 				break;
 
-			//printf("begin! %d .. %d:%.3f %d:%.3f\n", left->key, left->begin.bar, left->begin.beat, (int)time[i].bar, time[i].beat);
-
 			amp_queue_add(queue, (struct amp_action_t){ i, { player->conf.dev, left->key, left->vel }, queue });
 			left = left->left;
 		}
@@ -284,7 +282,6 @@ bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsig
 			else if(((int)time[i].bar == right->end.bar) && (time[i].beat < right->end.beat))
 				break;
 
-			//printf("end!   %d .. %d:%.3f %d:%.3f\n", right->key, right->end.bar, right->end.beat, (int)time[i].bar, time[i].beat);
 			amp_queue_add(queue, (struct amp_action_t){ i, { player->conf.dev, right->key, 0 }, queue });
 			right = right->right;
 		}
@@ -340,26 +337,22 @@ static void player_proc(struct io_file_t file, void *arg)
 }
 
 
-static bool pwa(struct json_t *json, uint16_t *key, uint16_t *vel, struct amp_loc_t *begin, struct amp_loc_t *end)
+/**
+ * Retrieve a location from a JSON value.
+ *   @json: The JSON value.
+ *   @loc: Ref. The location.
+ *   &returns: True if successful.
+ */
+// TODO: move this
+bool web_json_loc(struct json_t *json, struct amp_loc_t *loc)
 {
-	struct json_t *loc;
-
-	chk(json_chk_obj(json, "key", "vel", "begin", "end", NULL));
-	chk(json_get_uint16(json_obj_getval(json->data.obj, "key"), key));
-	chk(json_get_uint16(json_obj_getval(json->data.obj, "vel"), vel));
-
-	loc = json_obj_getval(json->data.obj, "begin");
-	chk(json_chk_obj(loc, "bar", "beat", NULL));
-	chk(json_get_int(json_obj_getval(loc->data.obj, "bar"), &begin->bar));
-	chk(json_get_double(json_obj_getval(loc->data.obj, "beat"), &begin->beat));
-
-	loc = json_obj_getval(json->data.obj, "end");
-	chk(json_chk_obj(loc, "bar", "beat", NULL));
-	chk(json_get_int(json_obj_getval(loc->data.obj, "bar"), &end->bar));
-	chk(json_get_double(json_obj_getval(loc->data.obj, "beat"), &end->beat));
+	chk(json_chk_obj(json, "bar", "beat", NULL));
+	chk(json_get_int(json_obj_getval(json->data.obj, "bar"), &loc->bar));
+	chk(json_get_double(json_obj_getval(json->data.obj, "beat"), &loc->beat));
 
 	return true;
 }
+
 
 /**
  * Handle a player requeust.
@@ -376,32 +369,36 @@ bool web_player_req(struct web_player_t *player, struct http_args_t *args, struc
 	chk(json_str_objget(json->data.obj, "type", &type));
 	json = json_obj_getval(json->data.obj, "data");
 
-	if(strcmp(type, "add") == 0) {
-		uint16_t key, vel;
-		struct amp_loc_t begin, end;
+	if(strcmp(type, "edit") == 0) {
+		unsigned int i;
 
-		sys_mutex_lock(&player->serv->lock);
+		chk(json->type == json_arr_v);
 
-		chk(pwa(json, &key, &vel, &begin, &end));
-		web_player_add(player, begin, end, key, vel);
+		for(i = 0; i < json->data.arr->len; i++) {
+			uint16_t key, vel;
+			struct amp_loc_t begin, end;
+			struct json_obj_t *obj;
 
-		sys_mutex_unlock(&player->serv->lock);
-		web_player_save(player);
-	}
-	else if(strcmp(type, "remove") == 0) {
-		uint16_t key, vel;
-		struct amp_loc_t begin, end;
+			chk(obj = json_chk_obj(json->data.arr->vec[i], "key", "vel", "begin", "end", NULL));
+			chk(json_get_uint16(json_obj_getval(obj, "key"), &key));
+			chk(json_get_uint16(json_obj_getval(obj, "vel"), &vel));
+			chk(web_json_loc(json_obj_getval(obj, "begin"), &begin));
+			chk(web_json_loc(json_obj_getval(obj, "end"), &end));
 
-		sys_mutex_lock(&player->serv->lock);
+			sys_mutex_lock(&player->serv->lock);
 
-		chk(pwa(json, &key, &vel, &begin, &end));
-		web_player_remove(player, begin, end, key);
+			if(vel > 0)
+				web_player_add(player, begin, end, key, vel);
+			else
+				web_player_remove(player, begin, end, key);
 
-		sys_mutex_unlock(&player->serv->lock);
-		web_player_save(player);
+			sys_mutex_unlock(&player->serv->lock);
+		}
 	}
 	else
 		return false;
+
+	web_player_save(player);
 
 	return true;
 }

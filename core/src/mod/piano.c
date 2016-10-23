@@ -294,7 +294,6 @@ bool amp_piano_proc(struct amp_piano_t *piano, double *buf, struct amp_time_t *t
 			if(event->key >= 128)
 				continue;
 
-			event->key += 12;
 			key = &piano->key[event->key];
 			if(key->n == 0)
 				continue;

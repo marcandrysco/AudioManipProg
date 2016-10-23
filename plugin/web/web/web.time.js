@@ -48,30 +48,6 @@
   };
 
   /**
-   * Handle a keypress for the time.
-   *   @e: The key press event.
-   *   &returns: True if handled.
-   */
-  window.Time.keypress = function(e) {
-    switch(e.key) {
-    case "S":
-      if(Status.mode != Mode.view) { break; }
-
-      Web.put(0, { type: Time.run ? "stop" : "start" });
-      return true;
-
-    case "G":
-      if(Time.run || (Status.mode != Mode.num)) { break; }
-
-      Web.put(0, { type: "seek", bar: Status.num  });
-      Status.update(Mode.view, "Seeked to " + Status.num);
-      return true;
-    }
-
-    return false;
-  };
-
-  /**
    * Update the time elements. The run flag is updated last to ensure the last
    * "tick" from the server updates the display.
    *   @data: The time data.
@@ -97,16 +73,31 @@
     Time.run = data.run;
   };
 
+
   /**
-   * Create a string time using a location.
-   *   @loc: The location.
-   *   &returns: The string.
+   * Handle a keypress for the time.
+   *   @e: The key press event.
+   *   &returns: True if handled.
    */
-  window.Time.string = function(loc) {
-    var bar = Math.floor(loc.bar).toString();
-    var beat = loc.beat.toFixed(1);
-    return "0".repeat(3 - bar.length) + bar + ":" + beat;
+  window.Time.keypress = function(e) {
+    switch(e.key) {
+    case "S":
+      if(Status.mode != Mode.view) { break; }
+
+      Web.put(0, { type: Time.run ? "stop" : "start" });
+      return true;
+
+    case "G":
+      if(Time.run || (Status.mode != Mode.num)) { break; }
+
+      Web.put(0, { type: "seek", bar: Status.num  });
+      Status.update(Mode.view, "Seeked to " + Status.num);
+      return true;
+    }
+
+    return false;
   };
+
 
   /**
    * Create the time popup.
@@ -209,5 +200,17 @@
     if(idx == null) { Time.dialog.display = display; }
 
     return el;
+  };
+
+
+  /**
+   * Create a string time using a location.
+   *   @loc: The location.
+   *   &returns: The string.
+   */
+  window.Time.string = function(loc) {
+    var bar = Math.floor(loc.bar).toString();
+    var beat = loc.beat.toFixed(1);
+    return "0".repeat(Math.max(3 - bar.length, 0)) + bar + ":" + beat;
   };
 })();

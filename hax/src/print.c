@@ -302,6 +302,21 @@ noreturn void hax_vfatal(const char *restrict format, va_list args)
 }
 
 /**
+ * Fatally exit a program with an error message with line information. This
+ * function does not return.
+ *   @format: The printf-style format.
+ *   @args: The printf-style argument list.
+ */
+noreturn void hax_vfatal_dbg(const char *file, unsigned int line, const char *restrict format, va_list args)
+{
+	d_fprintf(stderr, "%s:%u: ", file, line);
+	vfprintf(stderr, format, args);
+	fputc('\n', stderr);
+
+	abort();
+}
+
+/**
  * Fatally exit a program with an error message. This function does not
  * return.
  *   @format: The printf-style format.
@@ -313,5 +328,20 @@ noreturn void hax_fatal(const char *restrict format, ...)
 
 	va_start(args, format);
 	hax_vfatal(format, args);
+	va_end(args);
+}
+
+/**
+ * Fatally exit a program with an error message with line information. This
+ * function does not return.
+ *   @format: The printf-style format.
+ *   @...: The printf-style argument list.
+ */
+noreturn void hax_fatal_dbg(const char *file, unsigned int line, const char *restrict format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	hax_vfatal_dbg(file, line, format, args);
 	va_end(args);
 }

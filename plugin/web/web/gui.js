@@ -121,8 +121,8 @@
   window.Gui.Toggle = function(text, def, func) {
     var toggle = window.Gui.tag("button", ["gui-toggle", def ? "gui-on" : "gui-off"]);
     if(Array.isArray(text)) {
-      toggle.appendChild(Gui.div(def ? null : "gui-hide", Gui.text(text[0])));
-      toggle.appendChild(Gui.div(def ? "gui-hide" : null, Gui.text(text[1])));
+      toggle.appendChild(Gui.div(def ? null : "gui-noshow", Gui.text(text[0])));
+      toggle.appendChild(Gui.div(def ? "gui-noshow" : null, Gui.text(text[1])));
     } else {
       toggle.appendChild(Gui.text(text));
     }
@@ -135,9 +135,8 @@
       toggle.classList.remove("gui-on", "gui-off");
       toggle.classList.add(toggle.guiState ? "gui-on" : "gui-off");
       if(Array.isArray(text)) {
-        toggle.firstChild.classList.toggle("gui-hide");
-        toggle.lastChild.classList.toggle("gui-hide");
-        //Gui.replace(toggle, Gui.text(toggle.guiState ? text[0] : text[1]));
+        toggle.firstChild.classList.toggle("gui-noshow");
+        toggle.lastChild.classList.toggle("gui-noshow");
       }
       if(func) { func(toggle.guiState); }
     });
@@ -153,7 +152,28 @@
    *   &returns: The button.
    */
   window.Gui.Button = function(text, opt, func) {
-    var button = Gui.tag("button", "gui-button", Gui.text(text));
+    if(typeof text == "string") {
+      text = Gui.text(text);
+    } else if(!(text instanceof Node) && !Array.isArray(text)) {
+      throw "First argument to Gui.Button must be a string, a node, or a list or nodes.";
+    }
+    
+    var button = Gui.tag("button", "gui-button", text);
+
+    if(opt && opt.cls) {
+      if(Array.isArray(opt.cls)) {
+        opt.cls.forEach(function (v) { button.classList.add(v); });
+      } else {
+        button.classList.add(opt.cls);
+      }
+    }
+
+    if(opt && opt.fit) {
+      if(!Array.isArray(opt.fit)) { throw "Option 'fit' must be an array of strings."; }
+      opt.fit.forEach(function(v) {
+        button.appendChild(Gui.div("gui-fit", Gui.text(v)));
+      });
+    }
 
     button.addEventListener("click", func);
 

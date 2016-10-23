@@ -1,0 +1,72 @@
+.player {
+}
+
+  .player > .head {
+    font-size: 24px;
+    margin-bottom: 10px;
+    display: flex;
+  }
+
+    .player > .head > .action {
+    }
+
+    .player > .head > *:not(:last-child) {
+      margin-right: 20px;
+    }
+
+  .player > .roll {
+    width: 100%;
+  }
+
+.player-keys {
+  font-size: 20px;
+  padding: 10px 20px;
+}
+
+  .player-keys > .grid {
+    margin-bottom: 12px;
+  }
+
+    .player-keys > .grid > .row {
+      display: flex;
+      height: 30px;
+      text-align: center;
+      line-height: 30px;
+    }
+    .player-keys > .grid > .row.head {
+      height: 30px;
+    }
+
+      .player-keys > .grid > .row > * {
+        width: 30px;
+        height: 100%;
+      }
+
+      .player-keys > .grid > .row > * {
+        border-left: 1px solid black;
+        border-top: 1px solid black;
+      }
+      .player-keys > .grid > .row:last-child > * {
+        border-bottom: 1px solid black;
+      }
+      .player-keys > .grid > .row > *:last-child {
+        border-right: 1px solid black;
+      }
+
+      .player-keys > .grid > .row > .box {
+        cursor: pointer;
+      }
+        .player-keys > .grid > .row > .box.sel {
+          background-color: #666;
+        }
+      .player-keys > .grid > .row > .box.pedal {
+        flex-grow: 1;
+      }
+
+  .player-keys > .action {
+    text-align: center;
+  }
+
+  .player-keys > .action > button:not(:last-child) {
+    margin-right: 16px;
+  }

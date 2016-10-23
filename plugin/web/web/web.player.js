@@ -7,17 +7,22 @@
   window.Player = new Object();
 
   /**
-   * Initialize a player.
-   *   @work: The workspace.
-   *   @data: The player data.
+   * Create the element associated with the player.
+   *   @player: The player.
+   *   @idx: The element index.
+   *   &returns: The DOM element.
    */
-  window.Player.init = function(work, player) {
-    work.classList.add("player");
+  window.Player.elem = function(player, idx) {
+    var elem = Gui.div("player");
+
+    player.idx = idx;
     player.active = null;
     player.sel = new Array();
+    player.area = null;
     player.x = 0;
     player.conf.rows = Player.sort(player.conf.keys);
     player.vel = 32768;
+    player.orig = {};
 
     player.layout = {
       scroll: 20,
@@ -64,25 +69,74 @@
     head.appendChild(Gui.Button("Keys", {}, function(e) {
       Player.keys(player);
     }));
-    work.appendChild(head);
+    Player.elemActions(player).forEach(function(el) { head.appendChild(el) });
+    elem.appendChild(head);
 
     player.roll = Gui.tag("canvas", "roll");
     player.roll.addEventListener("mousemove", Player.mouseMove(player));
-    player.roll.addEventListener("mousedown", Player.mouseDown(player));
+    player.roll.addEventListener("mousedown", Player.mouse(player));
     player.roll.addEventListener("contextmenu", Player.context(player));
     player.roll.addEventListener("wheel", Player.wheel(player));
     player.roll.style.height = (layout.height() + layout.scroll + layout.head + 4) + 4 + "px";
     player.roll.style.border = "2px solid black";
-    work.appendChild(player.roll);
+    elem.appendChild(player.roll);
 
-    work.appendChild(player.debug = Gui.div());
+    elem.appendChild(player.debug = Gui.div());
     player.debug.id = "debug";
 
     Player.draw(player);
     window.addEventListener("resize", function() { Player.draw(player); });
 
     player.init = true;
-    return player;
+    return elem;
+  };
+  /**
+   * Create the action buttons for the player.
+   *   @player: The player.
+   *   &returns: The button element.
+   */
+  window.Player.elemActions = function(player) {
+    player.insert = Gui.Button("Insert", {}, function(e) {
+      Status.update((Status.mode == Mode.insert) ? Mode.view : Mode.insert);
+      Player.update(player);
+    });
+    player.remove = Gui.Button("Delete", {cls:"gui-red"}, function(e) {
+      Player.remove(player);
+    });
+    player.copy = Gui.Button("Copy", {}, function(e) {
+      player.copy.classList.add("gui-blue");
+      Status.update(Mode.copy);
+
+      player.orig.row = Player.mapKey(player, player.sel).reduce(function(p, v) { return Math.min(p, v); });
+      player.orig.bar = Player.mapBegin(player, player.sel).reduce(function(p, v) { return Math.min(p, v); });
+      debugger;
+    });
+
+    return [ player.insert, player.remove, player.copy ];
+  };
+
+  /**
+   * Update the player.
+   *   @player: The player.
+   */
+  window.Player.update = function(player) {
+    Player.updateActions(player);
+    Player.draw(player);
+  };
+  /**
+   * Update the action buttons of the player.
+   *   @player: The player.
+   */
+  window.Player.updateActions = function(player) {
+    var flag = (Status.mode == Mode.insert);
+    player.insert.classList[flag ? "add" : "remove"]("gui-green");
+      
+    var flag = (player.sel.length > 0);
+    player.remove.classList[flag ? "remove" : "add"]("gui-hide");
+    player.copy.classList[flag ? "remove" : "add"]("gui-hide");
+
+    var flag = (Status.mode == Mode.copy);
+    player.copy.classList[flag ? "add" : "remove"]("gui-blue");
   };
 
 
@@ -107,7 +161,7 @@
    *   @player: The player.
    *   &returns: The handler function.
    */
-  window.Player.mouseDown = function(player) {
+  window.Player.mouse = function(player) {
     return function(e) {
       if(e.button != 0) { return; }
       e.preventDefault();
@@ -118,48 +172,74 @@
       Pack.vert(box, player.layout.head + 2);
       Pack.horiz(box, player.layout.label + 2);
 
-      if(box.inside(x, y)) {
-        Player.mouseRoll(player, e, x, y, box);
+      if(!box.inside(x, y)) { return; }
+
+      if(Status.mode == Mode.view) {
+        Player.mouseView(player, e);
+      } else if(Status.mode == Mode.copy ) {
+        Player.mouseCopy(player, e);
+      } else if(Status.mode == Mode.insert) {
+        Player.mouseInsert(player, e);
       }
     };
   };
-
   /**
-   * Handle a mouse down on the roll.
-   *   @payer: The player.
-   *   @e: The event.
-   *   @x: The x-coordinate.
-   *   @y: The y-coordinate.
-   *   @box: The bounding box.
+   * Handle a mouse down in view mode.
+   *   @player: The player.
+   *   @e: The Event.
    */
-  window.Player.mouseRoll = function(player, e, x, y, box) {
-    var dat = Player.getDat(player, x, y);
-    if(dat != null) {
-      if(player.sel.indexOf(dat) >= 0) {
-        if(e.shiftKey) {
-          player.sel.splice(player.sel.indexOf(dat), 1);
-        } else if(player.sel.length == 1) {
-          player.sel = new Array();
+  window.Player.mouseView = function(player, e) {
+    var x = e.offsetX, y = e.offsetY;
+    player.area = { begin: { x: x, y: y }, end: { x: x, y: y } };
+
+    Gui.dragNow(function(e, type) {
+      switch(type) {
+      case "move":
+        if(e.target != player.roll) { return; }
+
+        player.area.end = { x: e.offsetX, y: e.offsetY };
+        Player.draw(player);
+        break;
+
+      case "up":
+        var sel = Player.getDat(player, player.area.begin, player.area.end);
+        if((sel.length == 1) && (player.sel.length == 1) && (sel[0] == player.sel[0])) {
+          player.sel = [];
         } else {
-          player.sel = new Array(dat);
+          player.sel = sel;
         }
-      } else {
-        if(!e.shiftKey) { player.sel = new Array(); }
-        player.sel.push(dat);
-        player.slider.guiUpdate(dat.vel / 65535);
+        break;
+
+      case "done":
+        player.area = null;
+        Player.draw(player);
+        break;
       }
-      Player.draw(player);
-      return;
-    }
+    });
+  };
+  /**
+   * Handle a mouse down in copy mode.
+   *   @player: The player.
+   *   @e: The Event.
+   */
+  window.Player.mouseCopy = function(player, e) {
+    var row = Player.getRow(player, e.offsetY);
+    var loc = Player.getLoc(player, e.offsetX, true);
 
-    var xy = Player.getxy(player, x-box.x, y - box.y, true);
-    if(xy == null) { return; }
-
+    var x = Loc.bar(loc, player.conf.nbeats) - player.orig.bar;
+    debugger;
+  };
+  /**
+   * Handle a mouse down in insert mode.
+   *   @player: The player.
+   *   @e: The Event.
+   */
+  window.Player.mouseInsert = function(player, e) {
     player.sel = new Array();
     player.active = {
-      row: player.conf.rows[xy.row],
-      begin: Loc.make(xy.bar, xy.beat),
-      end: Loc.make(xy.bar, xy.beat)
+      row: Player.getRow(player, e.offsetY),
+      begin: Player.getLoc(player, e.offsetX, true),
+      end: Player.getLoc(player, e.offsetX, true)
     };
 
     Player.draw(player);
@@ -167,26 +247,16 @@
     Gui.dragNow(function(e, type) {
       switch(type) {
       case "move":
-        var xy = Player.getxy(player, e.offsetX - box.x, e.offsetY - box.y, true);
-        if(xy == null) { return; }
-        player.active.end = Loc.make(xy.bar, xy.beat)
+        player.active.end = Player.getLoc(player, e.offsetX, true);
         Player.draw(player);
-        break;
-
-      case "down":
         break;
 
       case "up":
-        var active = player.active;
-        var begin = active.begin.copy(), end = active.end.copy();
-        Loc.reorder(begin, end);
-        end.beat += 1 / player.conf.ndivs;
+        var dat = Player.getActive(player, false);
 
-        var dat = { key: active.row, begin: begin, end: end, vel: player.vel };
         player.data.push(dat);
         Player.draw(player);
-
-        Web.put(player.idx, { type: "add", data: dat });
+        Player.add(player, dat);
         break;
 
       case "done":
@@ -195,6 +265,112 @@
         break;
       }
     });
+  };
+
+  /**
+   * Handle a mouse down on the player.
+   *   @player: The player.
+   *   @e: The event.
+   */
+  window.Player.keypress = function(player, e) {
+    switch(e.key) {
+    case "d":
+      Player.remove(player);
+      break;
+    
+    case "ArrowUp":
+    case "k":
+      Player.move(player, "up");
+      break;
+    
+    case "ArrowDown":
+    case "j":
+      Player.move(player, "down");
+      break;
+    
+    case "ArrowLeft":
+    case "h":
+      Player.move(player, "left");
+      break;
+    
+    case "ArrowRight":
+    case "l":
+      Player.move(player, "right");
+      break;
+    }
+  };
+
+
+  /**
+   * Insert a data point.
+   *   @player: The player.
+   *   @dat: The data point.
+   */
+  window.Player.add = function(player, dat) {
+    Web.put(player.idx, { type: "edit", data: [ dat ] });
+
+    Player.draw(player);
+  };
+
+  /**
+   * Delete all selected data points.
+   *   @player: The player.
+   */
+  window.Player.remove = function(player) {
+    if(player.sel.length == 0) { return; }
+ 
+    player.sel.forEach(function(dat) { dat.vel = 0; });
+    Web.put(player.idx, { type: "edit", data: player.sel });
+    player.sel.forEach(function(dat) { player.data.splice(player.data.indexOf(dat), 1); });
+    player.sel = [];
+
+    Player.draw(player);
+  };
+
+  /**
+   * Move selected elements.
+   *   @player: The player.
+   *   @dir: The direction. Either "up", "down", "left", or "right".
+   *   @step: Optional. The step size, only applies to left or right shifts.
+   */
+  window.Player.move = function(player, dir, step) {
+    if(player.sel.length == 0) { return; }
+    if(!step) { step = 1 / player.conf.ndivs }
+
+    var dup = player.sel.map(function(dat) { return Player.copy(dat); });
+
+    switch(dir) {
+    case "up":
+      player.sel.forEach(function(dat) {
+        var idx = player.conf.rows.indexOf(dat.key);
+        if(idx > 0) { dat.key = player.conf.rows[idx-1]; }
+      });
+      break;
+
+    case "down":
+      player.sel.forEach(function(dat) {
+        var idx = player.conf.rows.indexOf(dat.key);
+        if((idx >= 0) && (idx < (player.conf.rows.length - 1))) { dat.key = player.conf.rows[idx+1]; }
+      });
+      break;
+
+    case "left":
+      player.sel.forEach(function(dat) { dat.begin.beat -= step; dat.end.beat -= step; });
+      break;
+
+    case "right":
+      player.sel.forEach(function(dat) { dat.begin.beat += step; dat.end.beat += step; });
+      break;
+
+    default:
+      throw "Invalid move direction.";
+    }
+
+    dup.forEach(function(dat) { dat.vel = 0; });
+    dup = dup.concat(player.sel);
+    Web.put(player.idx, { type: "edit", data: dup });
+
+    Player.draw(player);
   };
 
 
@@ -214,7 +390,8 @@
 
   /**
    * Retrieve the current location.
-   *   @player
+   *   @player: The player.
+   *   @x: The x-coordinate.
    */
   window.Player.getLoc = function(player, x, round) {
     var layout = player.layout, conf = player.conf;
@@ -231,28 +408,62 @@
   };
 
   /**
-   * Retrieve the current datum.
+   * Retrieve the data under an area.
    *   @player; The player.
-   *   @x: The x-coordinate.
-   *   @y: The y-coordinate.
-   *   &returns: The datum or null.
+   *   @begin: The begin coordinates.
+   *   @end: The end coordinates.
+   *   &returns: The data array.
    */
-  window.Player.getDat = function(player, x, y) {
-    var loc = Player.getLoc(player, x, false);
-    var row = Player.getRow(player, y);
+  window.Player.getDat = function(player, begin, end) {
+    var right = Player.getLoc(player, Math.max(begin.x, end.x), false);
+    var left = Player.getLoc(player, Math.min(begin.x, end.x), false);
 
-    if((loc == null) || (row < 0)) { return null; }
+    var first = Player.getRow(player, Math.min(begin.y, end.y))
+    var last = Player.getRow(player, Math.max(begin.y, end.y))
+
+    if((first < 0) || (last < 0) || (left == null) || (right == null)) { return []; };
+
+    var ret = new Array(), rows = new Array();
+    for(var i = first; i <= last; i++) {
+      rows.push(player.conf.rows[i]);
+    }
 
     for(var i = 0; i < player.data.length; i++) {
       var dat = player.data[i];
-      if(dat.key != player.conf.rows[row]) { continue; }
-      if(dat.begin.bar > loc.bar) { continue; }
-      if((dat.begin.bar == loc.bar) && (dat.begin.beat >= loc.beat)) { continue; }
-      if(dat.end.bar < loc.bar) { continue; }
-      if((dat.end.bar == loc.bar) && (dat.end.beat <= loc.beat)) { continue; }
-      return dat;
+
+      if(rows.indexOf(dat.key) < 0) { continue; }
+
+      if(dat.begin.bar > right.bar) { continue; }
+      if((dat.begin.bar == right.bar) && (dat.begin.beat >= right.beat)) { continue; }
+
+      if(dat.end.bar < left.bar) { continue; }
+      if((dat.end.bar == left.bar) && (dat.end.beat <= left.beat)) { continue; }
+
+      ret.push(dat);
     }
-    return null;
+
+    return ret;
+  };
+
+  /**
+   * Retrieve the active range with ordered begin and ending.
+   *   @player: The player.
+   *   &returns: The data or null.
+   */
+  window.Player.getActive = function(player, row) {
+    if(player.active == null) { return null; }
+
+    var dat = new Object();
+    dat.key = player.conf.rows[player.active.row];
+    dat.vel = player.vel;
+    dat.begin = player.active.begin.copy();
+    dat.end = player.active.end.copy();
+    Loc.reorder(dat.begin, dat.end);
+
+    dat.end.beat += 1 / player.conf.ndivs;
+    if(row) { dat.row = player.active.row; }
+
+    return dat;
   };
 
 
@@ -445,6 +656,7 @@
    *   &returns: The handler.
    */
   window.Player.context = function(player) {
+  /*
     return function(e) {
       e.preventDefault();
 
@@ -468,6 +680,7 @@
       player.data.splice(idx, 1);
       Player.draw(player);
     };
+    */
   };
 
   /**
@@ -506,32 +719,13 @@
     var label = Pack.horiz(box, layout.label);
     Pack.horiz(box, 2);
 
-    Player.drawBack(ctx, box, conf, layout);
+    Player.drawBack(player, ctx, box);
 
     // vertical lines and heading
     var blank = Pack.horiz(head, layout.label);
     Pack.horiz(head, 2);
-    var b = 0, x = -player.x, bar = layout.bar(), ndivs = layout.ndivs(), width = layout.width();
-    while(x < -bar) { x += bar; b++; }
-    while(x < width) {
-      Draw.text(head, ctx, (b++) + 1, {x: 4+x, y: 2, color: "#000", font: "16px sans-serif"});
-      for(var i = 1; i < ndivs; i++) {
-        x += layout.cell.width;
-        if((i % conf.ndivs) == 0) {
-          Draw.vert(box, x, ctx, 1, "#000");
-          Draw.vert(head, x, ctx, 1, "#000");
-          Draw.text(head, ctx, (i / conf.ndivs) + 1, {x: 4+x, y: 2, color: "#000", font: "12px sans-serif"});
-        } else {
-          Draw.vert(box, x, ctx, 1, "#bbb");
-        }
-        x++;
-      }
-      x += layout.cell.width;
-      Draw.vert(box, x, ctx, 2, "#000");
-      Draw.vert(head, x, ctx, 2, "#000");
-      x += 2;
-    }
-    Draw.fill(blank, ctx, "#fff");
+    Player.drawHead(player, ctx, head);
+    Player.drawBody(player, ctx, box);
     Draw.fill(label, ctx, "#fff");
     Draw.fill(line, ctx, "#000");
 
@@ -547,30 +741,6 @@
         x += loc.beat * (player.layout.cell.width + 1) * player.conf.ndivs;
         return Math.round(x);
       };
-
-    // active box
-    if(player.active) {
-      var begin = player.active.begin.copy(), end = player.active.end.copy();
-      Loc.reorder(begin, end);
-      end.beat += 1 / conf.ndivs;
-
-      var left = pwa(player, begin);
-      var right = pwa(player, end);
-      var width = Math.min(2, right - left - 1);
-      var row = player.conf.rows.indexOf(player.active.row);
-      if(row >= 0) {
-        var y = row * (layout.cell.height + 1)
-        ctx.fillStyle = Player.color(player.vel, true);
-        ctx.beginPath();
-        ctx.rect(box.x + left, box.y + y, right - left - 1, layout.cell.height);
-        ctx.fill();
-        ctx.fillStyle = "#000";
-        ctx.beginPath();
-        ctx.rect(box.x + left - 1, box.y + y, 1, layout.cell.height);
-        ctx.rect(box.x + right - 1, box.y + y, 1, layout.cell.height);
-        ctx.fill();
-      }
-    }
 
     // remaining boxes
     for(var i = 0; i < player.data.length; i++) {
@@ -592,6 +762,26 @@
       ctx.fill();
     }
 
+    // active box
+    if(player.active) {
+      var dat = Player.getActive(player, true);
+
+      var left = pwa(player, dat.begin);
+      var right = pwa(player, dat.end);
+      var width = Math.min(2, right - left - 1);
+      var row = dat.row;
+      var y = row * (layout.cell.height + 1)
+      ctx.fillStyle = Player.color(player.vel, true);
+      ctx.beginPath();
+      ctx.rect(box.x + left, box.y + y, right - left - 1, layout.cell.height);
+      ctx.fill();
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.rect(box.x + left - 1, box.y + y, 1, layout.cell.height);
+      ctx.rect(box.x + right - 1, box.y + y, 1, layout.cell.height);
+      ctx.fill();
+    }
+
     // labels
     for(var i = 0; i < conf.rows.length; i++) {
       var key = (player.conf.rows[i] == 128) ? "Pedal" : Key.str(player.conf.rows[i]);
@@ -600,6 +790,8 @@
       Draw.text(pack, ctx, key, {x: 2, y: 1, font: "16px sans-serif", align: "right", color: (key.length > 2) ? "#fff" : "#000"});
       Draw.fill(Pack.vert(label, 1), ctx, "#000");
     }
+
+    Player.drawArea(player, ctx);
   };
   /**
    * Draw the blank background.
@@ -613,19 +805,88 @@
   };
   /**
    * Draw the background stripes.
+   *   @player: The player.
    *   @ctx: The context.
    *   @box: The rener area box.
-   *   @conf: The configuration.
-   *   @layout: The layout.
    */
-  window.Player.drawBack = function(ctx, box, conf, layout) {
+  window.Player.drawBack = function(player, ctx, box) {
     var cur = box.copy();
-    for(var i = 0; i < conf.rows.length; i++) {
-      var row = Pack.vert(cur, layout.cell.height);
+    for(var i = 0; i < player.conf.rows.length; i++) {
+      var row = Pack.vert(cur, player.layout.cell.height);
       Pack.vert(cur, 1);
 
       if((i % 2) == 0) { Draw.fill(row, ctx, "#eee"); }
     }
+  };
+  /**
+   * Draw the text and lines in the header.
+   *   @player: The player.
+   *   @ctx: The noctext.
+   *   @head: The header box.
+   */
+  window.Player.drawHead = function(player, ctx, head) {
+    ctx.save();
+    Draw.clip(head, ctx);
+    var conf = player.conf, layout = player.layout;
+    var b = 0, x = -player.x, bar = layout.bar(), width = layout.width();
+    while(x < -bar) { x += bar; b++; }
+    while(x < width) {
+      Draw.text(head, ctx, (b++) + 1, {x: (4 + x), y: 2, color: "#000", font: "16px sans-serif"});
+      for(var i = 1; i < conf.nbeats; i++) {
+        x += (layout.cell.width + 1) * conf.ndivs;
+        Draw.vert(head, x-1, ctx, 1, "#000");
+        Draw.text(head, ctx, i + 1, {x: (4 + x), y: 2, color: "#000", font: "12px sans-serif"});
+      }
+      x += (layout.cell.width + 1) * conf.ndivs + 1;
+      Draw.vert(head, x - 2, ctx, 2, "#000");
+    }
+    ctx.restore();
+  };
+  /**
+   * Draw the text and lines in the header.
+   *   @player: The player.
+   *   @ctx: The noctext.
+   *   @body: The body box.
+   */
+  window.Player.drawBody = function(player, ctx, body) {
+    ctx.save();
+    Draw.clip(body, ctx);
+
+    var conf = player.conf, layout = player.layout;
+    var b = 0, x = -player.x, bar = layout.bar(), width = layout.width(), ndivs = layout.ndivs();
+    while(x < -bar) { x += bar; b++; }
+    while(x < width) {
+      for(var i = 1; i < ndivs; i++) {
+        x += layout.cell.width + 1;
+        Draw.vert(body, x - 1, ctx, 1, ((i % conf.ndivs) == 0) ? "#000" : "#bbb");
+      }
+      x += layout.cell.width + 2;
+      Draw.vert(body, x - 2, ctx, 2, "#000");
+    }
+
+    var line = player.layout.bar() * Loc.bar(Time.loc, player.conf.nbeats);
+    Draw.vert(body, Math.floor(line - player.x), ctx, 2, "#5a5");
+
+    ctx.restore();
+  };
+  /**
+   * Draw the selection area, if it is set.
+   *   @player: The player.
+   *   @ctx: The context.
+   */
+  window.Player.drawArea = function(player, ctx) {
+    if(player.area == null) { return; }
+
+    var begin = player.area.begin, end = player.area.end;
+    if((begin.x == end.x) && (begin.y == end.y)) { return; };
+
+    ctx.fillStyle = "rgba(0,0,255,0.2)";
+    ctx.strokeStyle = "rgba(0,0,255,0.6)";
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.rect(begin.x, begin.y, end.x - begin.x, end.y - begin.y);
+    ctx.fill();
+    ctx.stroke();
   };
 
 
@@ -636,5 +897,42 @@
    */
   window.Player.sort = function(keys) {
     return keys.sort(function(a,b) { return ((a < 128) && (b < 128)) ? (b - a) : (a - b); });
+  };
+
+  /**
+   * Copy a data point.
+   *   @dat: The data point.
+   *   &returns: The copied data point.
+   */
+  window.Player.copy = function(dat) {
+    return {
+      key: dat.key,
+      vel: dat.vel,
+      begin: { bar: dat.begin.bar, beat: dat.begin.beat },
+      end: { bar: dat.end.bar, beat: dat.end.beat }
+    };
+  };
+
+
+  /**
+   * Map a list of data to their keys, filtering invalid rows.
+   *   @player: The player.
+   *   @data: The data list.
+   *   &returns: The mapped list.
+   */
+  window.Player.mapKey = function(player, data) {
+    data = data.map(function(v) { return player.conf.rows.indexOf(v.key); });
+    data = data.filter(function(v) { return v >= 0; });
+    return data;
+  };
+
+  /**
+   * Map a list of data to their beginning time as a floating point bar.
+   *   @player: The player.
+   *   @data: The data list.
+   *   &returns: The mapped list.
+   */
+  window.Player.mapBegin = function(player, data) {
+    return data.map(function(dat) { return Loc.bar(dat.begin, player.conf.nbeats); });
   };
 })();

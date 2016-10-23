@@ -160,6 +160,17 @@
   };
 
   /**
+   * Draw the box-rect using the context.
+   *   @box: The box.
+   *   @ctx: The context.
+   */
+  window.Draw.clip = function(box, ctx) {
+    ctx.beginPath();
+    ctx.rect(box.x, box.y, box.width, box.height);
+    ctx.clip();
+  };
+
+  /**
    * Draw a vertical line in a box-rect.
    *   @box: The box.
    *   @x: The x-coordinate.

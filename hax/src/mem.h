@@ -8,6 +8,7 @@
 extern ssize_t hax_memcnt;
 
 void *hax_malloc(size_t nbytes);
+void *hax_realloc(void *ptr, size_t nbytes);
 void hax_free(void *ptr);
 char *hax_strdup(const char *str);
 
@@ -26,9 +27,11 @@ static inline void _free(void *ptr) { free(ptr); }
  */
 
 #undef malloc
+#undef realloc
 #undef free
 #undef strdup
 #define malloc hax_malloc
+#define realloc hax_realloc
 #define free hax_free
 #define strdup hax_strdup
 

@@ -21,13 +21,13 @@
  *   @val: The value to check.
  *   &action: Returns false from current function if value is false.
  */
-#define chk(val) do { if(!val) return false; } while(0)
+#define chk(val) do { if(!(val)) fatal("here"); } while(0)
 
 /**
  * Error check macro. Immediately return false if error is present.
  *   @err: The error to check.
  *   &actions: Returns false if error is non-null.
  */
-#define chkerr(err) do { if(err != NULL) { fprintf(stderr, "%s\n", err); return false; } } while(0)
+#define chkerr(err) do { if((err) != NULL) { fprintf(stderr, "%s\n", (err)); return false; } } while(0)
 
 #endif

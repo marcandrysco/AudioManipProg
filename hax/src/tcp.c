@@ -377,7 +377,6 @@ char *tcp_server_accept(struct tcp_server_t *server, sys_fd_t *fd)
 	socklen_t size;
 	struct sockaddr_in addr;
 
-	printf("accept\n");
 	size = sizeof(addr);
 	chkfail(sys_accept(server->fd, fd, (struct sockaddr *)&addr, &size));
 
