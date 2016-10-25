@@ -62,11 +62,12 @@ The `mouse` function directly handles mouse events on the player.
 The `keypress` function handles global keypress events that are centrally
 dispatched.
 
-### Actions -- `add` `remove` `move` `undo` `redo`
+### Actions -- `add` `remove` `move` `past` `undo` `redo`
 
     Player.add(player:Player, dat:Dat) : void
     Player.remove(player:Player) : void
-    Player.move(player.Player, dir:string, sm:float) : void
+    Player.move(player:Player, dir:string, sm:float) : void
+    Player.add(player:Player, add:List<Dat>) : void
 
 The `add` function adds a single data point `dat`. An undo will remove the
 data point.
@@ -78,6 +79,10 @@ The `move` function moves all selected data points in the specified direction.
 The direction `dir` must be set to `up`, `down`, `left`, or `right`. The `sm`
 parameter is optional and specifies the amount to move left or right as a
 multiple of divisions; if omitted, the default is `1`.
+
+The `paste` function pastes (or adds) as the set of data from the `add`
+parameter. All data will be removed or added simultaneous from an undo or a
+redo.
 
 ### Information Retrieval -- `getRow` `getLoc` `getDat` `getActive`
 

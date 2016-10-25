@@ -5,10 +5,12 @@
  * Instance type enumerator.
  *   @inst_mach_v: Machine.
  *   @inst_player_v: Player piano.
+ *   @inst_train_v: Trainer.
  */
 enum web_inst_e {
 	web_mach_v,
-	web_player_v
+	web_player_v,
+	web_train_v
 };
 
 /**
@@ -49,6 +51,7 @@ struct web_inst_t *web_inst_ref(struct web_inst_t *inst);
 void web_inst_unref(struct web_inst_t *inst);
 
 void web_inst_info(struct web_inst_t *inst, struct amp_info_t info);
+bool web_inst_effect(struct web_inst_t *inst, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 bool web_inst_seq(struct web_inst_t *inst, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 const char *web_inst_type(enum web_inst_e type);

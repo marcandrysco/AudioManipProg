@@ -5,10 +5,12 @@
  * Instance data union.
  *   @mach: Machine.
  *   @player: Player.
+ *   @train: Trainer.
  */
 union web_inst_u {
 	struct web_mach_t *mach;
 	struct web_player_t *player;
+	struct web_train_t *train;
 };
 
 /**
@@ -38,6 +40,12 @@ struct web_inst_t {
 const struct amp_seq_i web_iface_seq = {
 	(amp_info_f)web_inst_info,
 	(amp_seq_f)web_inst_seq,
+	(amp_copy_f)web_inst_ref,
+	(amp_delete_f)web_inst_unref
+};
+const struct amp_effect_i web_iface_effect = {
+	(amp_info_f)web_inst_info,
+	(amp_effect_f)web_inst_effect,
 	(amp_copy_f)web_inst_ref,
 	(amp_delete_f)web_inst_unref
 };
@@ -229,6 +237,7 @@ void web_inst_unref(struct web_inst_t *inst)
 	switch(inst->type) {
 	case web_mach_v: web_mach_delete(inst->data.mach); break;
 	case web_player_v: web_player_delete(inst->data.player); break;
+	case web_train_v: web_train_delete(inst->data.train); break;
 	}
 
 	avltree_root_remove(&inst->serv->inst, inst->id);
@@ -259,9 +268,38 @@ void web_inst_info(struct web_inst_t *inst, struct amp_info_t info)
 }
 
 /**
- * Process an instance as a sequencer.
+ * Process an instance as an effect.
  *   @inst: The instance.
  *   @buf: The buffer.
+ *   @time: The time.
+ *   @len: The length.
+ *   @queue: The action queue.
+ *   &returns: The continuation flag.
+ */
+bool web_inst_effect(struct web_inst_t *inst, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+{
+	bool cont;
+
+	if(!sys_mutex_trylock(&inst->serv->lock))
+		return false;
+
+	switch(inst->type) {
+	case web_train_v:
+		cont = web_train_proc(inst->data.train, buf, time, len, queue);
+		break;
+
+	default:
+		fatal("Invalid instance type.");
+	}
+
+	sys_mutex_unlock(&inst->serv->lock);
+
+	return cont;
+}
+
+/**
+ * Process an instance as a sequencer.
+ *   @inst: The instance.
  *   @time: The time.
  *   @len: The length.
  *   @queue: The action queue.
@@ -305,6 +343,7 @@ const char *web_inst_type(enum web_inst_e type)
 	switch(type) {
 	case web_mach_v: return "mach";
 	case web_player_v: return "player";
+	case web_train_v: return "train";
 	}
 
 	fatal("Invalid instance type.");
@@ -320,6 +359,7 @@ struct io_chunk_t web_inst_chunk(struct web_inst_t *inst)
 	switch(inst->type) {
 	case web_mach_v: return web_mach_chunk(inst->data.mach);
 	case web_player_v: return web_player_chunk(inst->data.player);
+	case web_train_v: return io_chunk_str("{}"); // TODO
 	}
 
 	fatal("Invalid instance type.");
@@ -456,6 +496,7 @@ static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct j
 	switch(inst->type) {
 	case web_mach_v: return false; //web_mach_req(inst->data.mach, path + n, args);
 	case web_player_v: return web_player_req(inst->data.player, args, json);
+	case web_train_v: return false;
 	}
 
 	return false;

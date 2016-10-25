@@ -61,6 +61,8 @@
    *   &returns: The node.
    */
   window.Gui.tag = function(tag, cls, child) {
+    if(typeof tag != "string") { throw "Parameter 'tag' must be string."; }
+
     var el = document.createElement(tag);
 
     if(Array.isArray(cls)) {

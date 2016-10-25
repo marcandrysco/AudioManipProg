@@ -109,7 +109,6 @@
 
       player.orig.row = Player.mapKey(player, player.sel).reduce(function(p, v) { return Math.min(p, v); });
       player.orig.bar = Player.mapBegin(player, player.sel).reduce(function(p, v) { return Math.min(p, v); });
-      debugger;
     });
 
     return [ player.insert, player.remove, player.copy ];
@@ -223,11 +222,31 @@
    *   @e: The Event.
    */
   window.Player.mouseCopy = function(player, e) {
+    var nbeats = player.conf.nbeats;
     var row = Player.getRow(player, e.offsetY);
     var loc = Player.getLoc(player, e.offsetX, true);
 
+    var add = new Array();
     var x = Loc.bar(loc, player.conf.nbeats) - player.orig.bar;
-    debugger;
+    var y = row - player.orig.row;
+
+    for(var i = 0; i < player.sel.length; i++) {
+      var dat = player.sel[i];
+      var idx = player.conf.rows.indexOf(dat.key);
+      if(idx < 0) { continue; }
+
+      idx += y;
+      if((idx < 0) || (idx >= player.conf.rows.length)) { continue; }
+
+      add.push({
+        key: player.conf.rows[idx],
+        vel: dat.vel,
+        begin: Loc.makef(Loc.bar(dat.begin, nbeats) + x, nbeats),
+        end: Loc.makef(Loc.bar(dat.end, nbeats) + x, nbeats)
+      });
+    }
+
+    Player.paste(player, add);
   };
   /**
    * Handle a mouse down in insert mode.
@@ -370,6 +389,18 @@
     dup = dup.concat(player.sel);
     Web.put(player.idx, { type: "edit", data: dup });
 
+    Player.draw(player);
+  };
+
+  /**
+   * Paste a set of data onto the player.
+   *   @player: The player.
+   *   @add: List of data to add.
+   */
+  window.Player.paste = function(player, add) {
+    Web.put(player.idx, { type: "edit", data: add });
+
+    Array.prototype.push.apply(player.data, add);
     Player.draw(player);
   };
 

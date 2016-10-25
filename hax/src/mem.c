@@ -85,6 +85,28 @@ char *hax_strdup(const char *str)
 	return dup;
 }
 
+/**
+ * Duplicate a string at most 'n' characters.
+ *   @str: The string.
+ *   @n: The maximum length.
+ *   &returns: The duplicated string.
+ */
+char *hax_strndup(const char *str, size_t n)
+{
+#undef strndup
+	char *dup;
+	size_t len = strlen(str);
+
+	if(n < len)
+		len = n;
+
+	dup = malloc(len);
+	memcpy(dup, str, n);
+	dup[n] = '\0';
+
+	return dup;
+}
+
 
 /**
  * Increment the resource usage.

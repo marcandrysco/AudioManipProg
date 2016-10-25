@@ -110,6 +110,7 @@
     return loc.bar + loc.beat / nbeats;
   };
 
+
   /**
    * Parse a location.
    *   @str: The string.

@@ -568,6 +568,153 @@ static int16_t skiphspace(const char **str)
 
 
 /**
+ * Creat a key-value pair.
+ *   @key: Consumed. The key.
+ *   @value: Consumed. The value.
+ *   &returns: The pair.
+ */
+struct http_pair_t *http_pair_new(char *key, char *value)
+{
+	struct http_pair_t *pair;
+
+	pair = malloc(sizeof(struct http_pair_t));
+	*pair = (struct http_pair_t){ key, value, NULL };
+
+	return pair;
+}
+
+/**
+ * Clear an entire list of pairs.
+ *   @pair: The pair list.
+ */
+void http_pair_clear(struct http_pair_t *pair)
+{
+	struct http_pair_t *cur;
+
+	while(pair != NULL) {
+		cur = pair;
+		pair = cur->next;
+
+		free(cur->key);
+		free(cur->value);
+		free(cur);
+	}
+}
+
+
+/**
+ * Find a pair reference by key.
+ *   @pair: The pair reference.
+ *   @key: The key.
+ *   &returns: The found pair reference or null.
+ */
+struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key)
+{
+	while(*pair != NULL) {
+		if(strcmp((*pair)->key, key) == 0)
+			return pair;
+
+		pair = &(*pair)->next;
+	}
+
+	return NULL;
+}
+
+/**
+ * Retrieve a value from a pair list.
+ *   @pair: The pair list.
+ *   @key: The key.
+ *   &returns: The value or null.
+ */
+const char *http_pair_get(struct http_pair_t **pair, const char *key)
+{
+	pair = http_pair_find(pair, key);
+
+	return pair ? (*pair)->value : NULL;
+}
+
+
+/**
+ * Create a cookie string from a list of pairs.
+ *   @pair: The list of pairs.
+ *   &returns: The allocated coookie string.
+ */
+char *http_cookies_string(struct http_pair_t *pair)
+{
+	struct strbuf_t buf;
+
+	buf = strbuf_init(64);
+
+	while(pair != NULL) {
+		strbuf_addstr(&buf, pair->key);
+		strbuf_addch(&buf, '=');
+		strbuf_addstr(&buf, pair->value);
+
+		if(pair->next == NULL)
+			break;
+
+		pair = pair->next;
+		strbuf_addch(&buf, ';');
+	}
+
+	return strbuf_done(&buf);
+}
+
+/**
+ * Parse cookies.
+ *   @str: The string.
+ *   &returns: The cookies list.
+ */
+struct http_pair_t *http_cookies_parse(const char *str)
+{
+	const char *key, *val;
+	unsigned int keylen;
+	struct http_pair_t *head = NULL, **cur = &head;
+
+	while(true) {
+		key = str;
+		while((*str != '=') && (*str != '\0'))
+			str++;
+
+		if(*str == '\0')
+			return head;
+
+		keylen = str - key;
+		val = ++str;
+		while((*str != ';') && (*str != '\0'))
+			str++;
+
+		*cur = http_pair_new(strndup(key, keylen), strndup(val, str - val));
+		http_cookie_sanitize((*cur)->key);
+		http_cookie_sanitize((*cur)->value);
+		cur = &(*cur)->next;
+
+		if(*str == '\0')
+			break;
+
+		str++;
+	}
+
+	return head;
+}
+
+/**
+ * Sanitize a key or value string for a cookie. All invalid characters are
+ * replaced with '~'.
+ *   @str: The string.
+ */
+void http_cookie_sanitize(char *str)
+{
+	unsigned int i;
+
+	for(i = 0; str[i] != '\0'; i++) {
+		if(!isalnum(str[i]) && (strchr("!#$%&'()*+-./:<=>?@[]^_`{|}~", str[i]) == NULL))
+			str[i] = '~';
+	}
+}
+
+
+/**
  * Process an asset list.
  *   @assets: The asset list.
  *   @path: The path.

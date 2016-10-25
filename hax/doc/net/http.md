@@ -55,6 +55,45 @@ All requests are processed by the handler function `func`.
     bool (*http_handler_f)(const char *path, struct http_args_t *args, void *arg)
 
 
+## Key-Value Pairs
+
+### Key-Value Pair Structure -- `struct http_pair_t`
+
+    struct http_pair_t {
+      char *key, *value;
+
+      struct http_pair_t *next;
+    };
+
+### Create and Delete -- `http_pair_new` `http_pair_clear`
+
+    struct http_pair_t *http_pair_new(char *key, char *value);
+    void http_pair_clear(struct http_pair_t *pair);
+
+The `http_pair_new` function creates a new pair with consuming the `key` and
+`value` strings. The `next` field is set to `null`, so that the returned pair
+is a single element in a list.
+
+### Searching -- `http_pair_find` `http_pair_get`
+
+    struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key);
+    const char *http_pair_get(struct http_pair_t **pair, const char *key);
+
+The `http_pair_find` function finds a reference to the pair corresponding to
+the given `key`. If no pair matches the key, the function returns `null`.
+
+The `http_pair_get` directly retrieves the value corresponding to the `key`.
+If no pair matches the key, the function returns `null`.
+
+
+## Cookie Helpers
+
+    char *http_cookies_string(struct http_pair_t *pair);
+    struct http_pair_t *http_cookies_parse(const char *str);
+
+    void http_cookie_sanitize(char *str);
+
+
 ## Asset Helpers
 
 The asset helper function `http_asset_proc` and associated data structure

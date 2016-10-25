@@ -54,7 +54,7 @@ struct http_server_t;
 struct http_client_t;
 
 /*
- * http server function declarations
+ * http server declarations
  */
 char *http_server_open(struct http_server_t **server, uint16_t port);
 void http_server_close(struct http_server_t *server);
@@ -65,7 +65,7 @@ char *http_server_proc(struct http_server_t *server, struct sys_poll_t *fds, htt
 unsigned int http_server_poll(struct http_server_t *server, struct sys_poll_t *poll);
 
 /*
- * http client function declarations
+ * http client declarations
  */
 struct http_client_t *http_client_new(struct tcp_client_t *tcp);
 void http_client_delete(struct http_client_t *client);
@@ -73,7 +73,7 @@ void http_client_delete(struct http_client_t *client);
 bool http_client_proc(struct http_client_t *client, http_handler_f func, void *arg);
 
 /*
- * http header function declarations
+ * http header declarations
  */
 struct http_head_t http_head_init(void);
 void http_head_destroy(struct http_head_t *head);
@@ -82,6 +82,23 @@ const char *http_head_lookup(struct http_head_t *head, const char *key);
 void http_head_add(struct http_head_t *head, const char *key, const char *value);
 
 char *http_head_parse(struct http_head_t *head, const char *str);
+
+/*
+ * http pair declarations
+ */
+struct http_pair_t *http_pair_new(char *key, char *value);
+void http_pair_clear(struct http_pair_t *pair);
+
+struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key);
+const char *http_pair_get(struct http_pair_t **pair, const char *key);
+
+/*
+ * http cookie declarations
+ */
+char *http_cookies_string(struct http_pair_t *pair);
+struct http_pair_t *http_cookies_parse(const char *str);
+
+void http_cookie_sanitize(char *str);
 
 
 /**

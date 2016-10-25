@@ -51,12 +51,13 @@ void web_train_info(struct web_train_t *train, struct amp_info_t info)
 /**
  * Process data on a trainer.
  *   @train: The trainer.
+ *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
  *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool web_train_proc(struct web_train_t *train, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+bool web_train_proc(struct web_train_t *train, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 
 	return false;
