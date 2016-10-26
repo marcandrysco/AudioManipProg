@@ -9,15 +9,17 @@
   /**
    * Create the element associated with the player.
    *   @player: The player.
-   *   @idx: The element index.
+   *   @idx: The index for requests.
    *   &returns: The DOM element.
    */
   window.Player.elem = function(player, idx) {
     var elem = Gui.div("player");
 
-    player.idx = idx;
     player.active = null;
+    player.idx = idx;
     player.sel = new Array();
+    player.undo = new Array();
+    player.redo = new Array();
     player.area = null;
     player.x = 0;
     player.conf.rows = Player.sort(player.conf.keys);
@@ -75,7 +77,6 @@
     player.roll = Gui.tag("canvas", "roll");
     player.roll.addEventListener("mousemove", Player.mouseMove(player));
     player.roll.addEventListener("mousedown", Player.mouse(player));
-    player.roll.addEventListener("contextmenu", Player.context(player));
     player.roll.addEventListener("wheel", Player.wheel(player));
     player.roll.style.height = (layout.height() + layout.scroll + layout.head + 4) + 4 + "px";
     player.roll.style.border = "2px solid black";
@@ -246,7 +247,7 @@
       });
     }
 
-    Player.paste(player, add);
+    Player.add(player, add);
   };
   /**
    * Handle a mouse down in insert mode.
@@ -273,9 +274,7 @@
       case "up":
         var dat = Player.getActive(player, false);
 
-        player.data.push(dat);
-        Player.draw(player);
-        Player.add(player, dat);
+        Player.add(player, [dat]);
         break;
 
       case "done":
@@ -316,6 +315,14 @@
     case "l":
       Player.move(player, "right");
       break;
+
+    case "u":
+      Player.undo(player, false);
+      break;
+
+    case "U":
+      Player.undo(player, true);
+      break;
     }
   };
 
@@ -323,12 +330,16 @@
   /**
    * Insert a data point.
    *   @player: The player.
-   *   @dat: The data point.
+   *   @add: The list data points.
    */
-  window.Player.add = function(player, dat) {
-    Web.put(player.idx, { type: "edit", data: [ dat ] });
+  window.Player.add = function(player, add) {
+    Web.put(player.idx, { type: "edit", data: add });
 
+    Array.prototype.push.apply(player.data, add);
     Player.draw(player);
+
+    player.undo.push({type: "remove", data: add});
+    player.redo = new Array();
   };
 
   /**
@@ -337,13 +348,17 @@
    */
   window.Player.remove = function(player) {
     if(player.sel.length == 0) { return; }
- 
-    player.sel.forEach(function(dat) { dat.vel = 0; });
-    Web.put(player.idx, { type: "edit", data: player.sel });
-    player.sel.forEach(function(dat) { player.data.splice(player.data.indexOf(dat), 1); });
-    player.sel = [];
 
+    var rem = player.sel.map(function(dat) { return Player.copy(dat, true) });
+    Web.put(player.idx, { type: "edit", data: rem });
+
+    Array.prototype.remove.apply(player.data, player.sel);
     Player.draw(player);
+
+    player.undo.push({type: "add", data: player.sel});
+    player.redo = new Array();
+
+    player.sel = new Array();
   };
 
   /**
@@ -393,17 +408,32 @@
   };
 
   /**
-   * Paste a set of data onto the player.
+   * Undo an action if available.
    *   @player: The player.
-   *   @add: List of data to add.
+   *   @rev: The reverse flag.
    */
-  window.Player.paste = function(player, add) {
-    Web.put(player.idx, { type: "edit", data: add });
+  window.Player.undo = function(player, rev) {
+    var list = rev ? player.redo : player.undo;
+    var back = rev ? player.undo : player.redo
 
-    Array.prototype.push.apply(player.data, add);
-    Player.draw(player);
+    if(list.length == 0) { return; }
+
+    var act = list.pop();
+    if(act.type == "remove") {
+      act.data.forEach(function(dat) { player.data.remove(dat); });
+
+      var dup = act.data.map(function(dat) { return Player.copy(dat, true); });
+      Web.put(player.idx, { type: "edit", data: dup });
+
+      back.push({ type: "add", data: act.data });
+    }
+    else if(act.type == "add") {
+      act.data.forEach(function(dat) { player.data.push(dat); });
+      Web.put(player.idx, { type: "edit", data: act.data });
+
+      back.push({ type: "remove", data: act.data });
+    }
   };
-
 
   /**
    * Retrieve the current row.
@@ -682,39 +712,6 @@
   };
 
   /**
-   * Handle a context window event.
-   *   @player: The player.
-   *   &returns: The handler.
-   */
-  window.Player.context = function(player) {
-  /*
-    return function(e) {
-      e.preventDefault();
-
-      var layout = player.layout;
-      var box = Pack.canvas(player.roll);
-      Pack.vert(box, layout.scroll + 2, true);
-      Pack.vert(box, layout.head + 2);
-      Pack.horiz(box, layout.label + 2);
-
-      if(!box.inside(e.offsetX, e.offsetY)) { return; }
-
-      var idx = Player.getidx(player, e.offsetX - box.x, e.offsetY - box.y);
-      if(idx < 0) { return; }
-
-      var dat = player.data[idx];
-      Web.put(player.idx, { type: "remove", data: dat });
-
-      var sel = player.sel.indexOf(dat);
-      if(sel >= 0) { player.sel.splice(sel, 1); }
-
-      player.data.splice(idx, 1);
-      Player.draw(player);
-    };
-    */
-  };
-
-  /**
    * Handle a wheel on the player.
    *   @player: The player.
    *   &returns: The handler function.
@@ -933,12 +930,13 @@
   /**
    * Copy a data point.
    *   @dat: The data point.
+   *   @zero: The zero flag for removing velocity.
    *   &returns: The copied data point.
    */
-  window.Player.copy = function(dat) {
+  window.Player.copy = function(dat, zero) {
     return {
       key: dat.key,
-      vel: dat.vel,
+      vel: zero ? 0 : dat.vel,
       begin: { bar: dat.begin.bar, beat: dat.begin.beat },
       end: { bar: dat.end.bar, beat: dat.end.beat }
     };

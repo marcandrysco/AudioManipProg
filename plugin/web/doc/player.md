@@ -111,12 +111,13 @@ performing a web request.
 
 ### Miscellaneous -- `sort` `copy`
 
-    Player.sort(keys:Array<Int>) : Array<Int>
-    Player.copy(dat:Dat) : Dat
+    Player.sort(keys:Array<int>) : Array<Int>
+    Player.copy(dat:Dat, zero:bool) : Dat
 
 The `sort` method takes an array of keys and returns the sorted array.
 
-The `copy` method performs a deep copy of data point.
+The `copy` method performs a deep copy of data point. The optional `zero` flag
+indicates that the velocity should be set to zero.
 
 ### Data Mapping -- `mapKey` `mapBegin`
 

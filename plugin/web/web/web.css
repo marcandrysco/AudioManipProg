@@ -25,11 +25,21 @@ html, body {
 
     #page > .head > .sel {
       flex-grow: 1;
-      padding: 2px 4px;
+      display: flex;
+      height: 100%;
     }
     #page > .head > .sel:not(:first-child) {
       border-left: 1px solid black;
     }
+
+      #page > .head > .sel > .item {
+        cursor: pointer;
+        padding: 2px 8px;
+        height: 100%;
+      }
+      #page > .head > .sel > .item.cur {
+        font-weight: bold;
+      }
 
     #page > .head > .time {
       display: flex;

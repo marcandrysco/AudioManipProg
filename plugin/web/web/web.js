@@ -1,6 +1,13 @@
 (function() {
   "use strict";
 
+  Array.prototype.remove = function() {
+    for(var i = 0; i < arguments.length; i++) {
+      var idx = this.indexOf(arguments[i]);
+      if(idx >= 0) { this.splice(idx, 1); }
+    }
+  }
+
   /*
    * Web namespace
    */
@@ -29,17 +36,15 @@
       head.appendChild(sel);
 
       for(var i = 1; i < Web.data.length; i++) {
-        var div = Gui.div("item", Gui.text(Web.data[i].id));
-        sel.appendChild(div);
+        if(i > 1) { sel.appendChild(Gui.div("sep", Gui.text("|"))); }
+
+        var item = Gui.div("item", Gui.text(Web.data[i].id));
+        sel.appendChild(item);
 
         var work = Gui.div("work");
-        work.id = "work" + i;
         page.appendChild(work);
 
-        switch(Web.data[i].type) {
-        //case "mach": Mach.init(work, Web.data[i].data).idx = i; break;
-        case "player": work.appendChild(Player.elem(Web.data[i].data, i)); break;
-        }
+        Web.elemInst(item, work, i);
       }
 
       head.appendChild(Time.elem(Web.data[0].data));
@@ -50,6 +55,36 @@
     });
 
   };
+
+
+  /**
+   * Create the elements for a single instance.
+   *   @item: The item.
+   *   @work: The workspace.
+   *   @idx: The index.
+   */
+  window.Web.elemInst = function(item, work, idx) {
+    if(Web.cur != idx) { work.classList.add("gui-hide"); }
+    if(Web.cur == idx) { item.classList.add("cur"); }
+
+    switch(Web.data[idx].type) {
+    //case "mach": Mach.init(work, Web.data[i].data).idx = i; break;
+    case "player": work.appendChild(Player.elem(Web.data[idx].data, idx)); break;
+    }
+
+    item.addEventListener("click", function(e) {
+      Array.prototype.forEach.call(item.parentNode.childNodes, function(el) {
+        el.classList.remove("cur");
+      });
+      Array.prototype.forEach.call(work.parentNode.childNodes, function(el) {
+        el.classList.add("gui-hide");
+      });
+
+      item.classList.add("cur");
+      work.classList.remove("gui-hide");
+    });
+  };
+
 
   /**
    * Handle hot keys from a keypress.

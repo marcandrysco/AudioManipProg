@@ -1,6 +1,6 @@
 #!/bin/sh
 
-FILES="ctrl filt key math osc root synth efx/gain efx/gen efx/reverb mod/piano"
+FILES="ctrl key math osc root synth efx/filt efx/gain efx/gen efx/reverb mod/piano"
 EXTRA=".htaccess style.css"
 
 dir="bld"

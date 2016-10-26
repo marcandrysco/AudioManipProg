@@ -23,6 +23,6 @@ debug: install
 	$(MAKE) debug -C ..
 
 doc:
-	$(MAKE) run -C doc
+	$(MAKE) doc -C doc
 
 .PHONY: doc
