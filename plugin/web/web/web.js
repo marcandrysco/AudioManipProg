@@ -1,13 +1,6 @@
 (function() {
   "use strict";
 
-  Array.prototype.remove = function() {
-    for(var i = 0; i < arguments.length; i++) {
-      var idx = this.indexOf(arguments[i]);
-      if(idx >= 0) { this.splice(idx, 1); }
-    }
-  }
-
   /*
    * Web namespace
    */

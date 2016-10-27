@@ -6,4 +6,6 @@
  */
 char *strprefix(const char *str, const char *pre);
 
+int ch_hex2int(char ch);
+
 #endif

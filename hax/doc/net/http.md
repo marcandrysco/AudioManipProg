@@ -74,6 +74,13 @@ The `http_pair_new` function creates a new pair with consuming the `key` and
 `value` strings. The `next` field is set to `null`, so that the returned pair
 is a single element in a list.
 
+### List Information -- `http_pair_len`
+
+    unsigned int http_pair_len(struct http_pair_t *pair);
+
+The `http_pair_len` function computes the length of the pair list by
+traversal.
+
 ### Searching -- `http_pair_find` `http_pair_get`
 
     struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key);
@@ -85,6 +92,19 @@ the given `key`. If no pair matches the key, the function returns `null`.
 The `http_pair_get` directly retrieves the value corresponding to the `key`.
 If no pair matches the key, the function returns `null`.
 
+### Formatted Get -- `http_pair_getf`
+
+    char *http_pair_getf(struct http_pair_t *pair, const char *restrict fmt, ...)
+
+The `http_pair_getf` retrieves values from the pair list `pair` according to
+the format string `fmt`. The function returns the string error on failure.
+
+The format string `fmt` consists of a list of specifications separated by
+whitespace or commas. The specifier takes the form `key:type` where `key` is
+the string key and `type` is the one letter type.
+
+    http_pair_get(pair, "user:s level:d $");
+
 
 ## Cookie Helpers
 
@@ -92,6 +112,19 @@ If no pair matches the key, the function returns `null`.
     struct http_pair_t *http_cookies_parse(const char *str);
 
     void http_cookie_sanitize(char *str);
+
+
+## Form Helpers
+
+The form helper functions simplify working with url encoded form data.
+
+### Parsing -- `http_form_parse`
+
+    char *http_form_parse(struct http_pair_t **pair, const char *str);
+
+The `http_form_parse` function takes a form as input `str` encoded with type
+`application/x-www-form-urlencoded` and converts it to a list of key value
+pairs stored in `pair`.
 
 
 ## Asset Helpers

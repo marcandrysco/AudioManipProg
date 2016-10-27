@@ -89,8 +89,12 @@ char *http_head_parse(struct http_head_t *head, const char *str);
 struct http_pair_t *http_pair_new(char *key, char *value);
 void http_pair_clear(struct http_pair_t *pair);
 
+unsigned int http_pair_len(struct http_pair_t *pair);
+
 struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key);
 const char *http_pair_get(struct http_pair_t **pair, const char *key);
+
+char *http_pair_getf(struct http_pair_t *pair, const char *restrict fmt, ...);
 
 /*
  * http cookie declarations
@@ -99,6 +103,11 @@ char *http_cookies_string(struct http_pair_t *pair);
 struct http_pair_t *http_cookies_parse(const char *str);
 
 void http_cookie_sanitize(char *str);
+
+/*
+ * http form declarations
+ */
+char *http_form_parse(struct http_pair_t **pair, const char *str);
 
 
 /**

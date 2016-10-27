@@ -59,6 +59,7 @@ static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct j
 
 static struct http_asset_t serv_assets[] = {
 	{  "/",               "index.xhtml",    "application/xhtml+xml"   },
+	{  "/extend.js",      "extend.js",      "application/javascript"  },
 	{  "/draw.js",        "draw.js",        "application/javascript"  },
 	{  "/gui.js",         "gui.js",         "application/javascript"  },
 	{  "/gui.css",        "gui.css",        "text/css"                },
@@ -359,7 +360,7 @@ struct io_chunk_t web_inst_chunk(struct web_inst_t *inst)
 	switch(inst->type) {
 	case web_mach_v: return web_mach_chunk(inst->data.mach);
 	case web_player_v: return web_player_chunk(inst->data.player);
-	case web_train_v: return io_chunk_str("{}"); // TODO
+	case web_train_v: return web_train_chunk(inst->data.train);
 	}
 
 	fatal("Invalid instance type.");
@@ -537,78 +538,3 @@ static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct j
 
 	return true;
 }
-
-
-/**
- * Handle a request on the server.
- *   @serv: The server.
- *   @path: The path.
- *   @args: The arguments.
- *   &returns: True if handled.
-static bool req_handle(struct web_serv_t *serv, const char *path, struct http_args_t *args)
-{
-	char type[16];
-	unsigned int n, idx;
-
-	if(strcmp(path, "/all") == 0) {
-		struct web_inst_t *inst;
-
-		hprintf(args->file, "[");
-		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst))
-			hprintf(args->file, "{\"id\":\"%s\",\"type\":\"%s\",\"data\":%C}", inst->id, web_inst_type(inst->type), web_inst_chunk(inst));
-		hprintf(args->file, "]");
-
-		http_head_add(&args->resp, "Content-Type", "application/json");
-
-		return true;
-	}
-	else if(strcmp(path, "/time") == 0) {
-		if(strcasecmp(args->req.verb, "GET") == 0) {
-			struct amp_loc_t loc;
-
-			amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
-
-			hprintf(args->file, "{ \"bar\": %d, \"beat\": %.8f }", loc.bar, loc.beat);
-			http_head_add(&args->resp, "Content-Type", "application/json");
-
-			return true;
-		}
-		else if(strcasecmp(args->req.verb, "POST") == 0) {
-			if(strcasecmp(args->body, "start") == 0)
-				amp_rt_start(serv->rt);
-			else if(strcasecmp(args->body, "stop") == 0)
-				amp_rt_stop(serv->rt);
-			else
-				return false;
-
-			hprintf(args->file, "ok");
-			return true;
-		}
-		else
-			return false;
-	}
-	else if(sscanf(path, "/%u/%15[a-z]%n", &idx, type, &n) >= 2) {
-		struct web_inst_t *inst;
-
-		for(inst = web_inst_first(serv); inst != NULL; inst = web_inst_next(inst)) {
-			if(idx-- == 0)
-				break;
-		}
-
-		if(inst == NULL)
-			return false;
-
-		if(strcmp(type, web_inst_type(inst->type)) != 0)
-			return false;
-
-		switch(inst->type) {
-		case web_mach_v: return web_mach_req(inst->data.mach, path + n, args);
-		case web_player_v: return web_player_req(inst->data.player, path + n, args);
-		}
-
-		return false;
-	}
-	else
-		return false;
-}
- */

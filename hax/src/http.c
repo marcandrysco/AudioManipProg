@@ -603,6 +603,22 @@ void http_pair_clear(struct http_pair_t *pair)
 
 
 /**
+ * Obtain the length of the pair list.
+ *   @pair: The pair list.
+ *   &returns: The length.
+ */
+unsigned int http_pair_len(struct http_pair_t *pair)
+{
+	unsigned int n;
+
+	for(n = 0; pair != NULL; n++)
+		pair = pair->next;
+
+	return n;
+}
+
+
+/**
  * Find a pair reference by key.
  *   @pair: The pair reference.
  *   @key: The key.
@@ -631,6 +647,72 @@ const char *http_pair_get(struct http_pair_t **pair, const char *key)
 	pair = http_pair_find(pair, key);
 
 	return pair ? (*pair)->value : NULL;
+}
+
+
+/**
+ * Retrieve values from the pair list using a format string.
+ *   @pair: The pair list.
+ *   @fmt: The format string.
+ *   @...: Format arguments.
+ *   &returns: Error.
+ */
+char *http_pair_getf(struct http_pair_t *pair, const char *restrict fmt, ...)
+{
+	char *find;
+	va_list args;
+	unsigned int n = 0;
+
+	va_start(args, fmt);
+
+	while(true) {
+		while(isspace(*fmt))
+			fmt++;
+
+		if(*fmt == '\0')
+			break;
+		else if(*fmt == '$') {
+			if(fmt[1] != '\0')
+				fatal("Invalid format string. Text after '$'.");
+			else if(http_pair_len(pair) != n)
+				return mprintf("Extra pairs in list.");
+
+			break;
+		}
+
+		find = strchr(fmt, ':');
+		if(find == NULL)
+			fatal("Invalid format string.");
+
+		{
+			unsigned int len = find - fmt;
+			char id[len+1];
+			const char *value;
+
+			memcpy(id, fmt, len);
+			id[len] = '\0';
+
+			value = http_pair_get(&pair, id);
+			if(value == NULL)
+				return mprintf("Cannot find key '%s'.", id);
+
+			fmt = find + 1;
+			switch(*fmt) {
+			case 's':
+				*va_arg(args, const char **) = value;
+				break;
+
+			default:
+				fatal("Invalid format string type '%c'.", *fmt);
+			}
+
+			n++, fmt++;
+		}
+	}
+
+	va_end(args);
+
+	return NULL;
 }
 
 
@@ -711,6 +793,81 @@ void http_cookie_sanitize(char *str)
 		if(!isalnum(str[i]) && (strchr("!#$%&'()*+-./:<=>?@[]^_`{|}~", str[i]) == NULL))
 			str[i] = '~';
 	}
+}
+
+
+/**
+ * Parse form data.
+ *   @pair: Ref. The reference to the returned pair list.
+ *   @str: The input string.
+ *   &returns: The error.
+ */
+char *http_form_parse(struct http_pair_t **pair, const char *str)
+{
+#define onexit strbuf_destroy(&key); strbuf_destroy(&value); http_pair_clear(*orig); *orig = NULL;
+	struct strbuf_t key, value;
+	struct http_pair_t **orig = pair;
+
+	while(true) {
+		key = strbuf_init(16);
+		value = strbuf_init(16);
+
+		while((*str != '=') && (*str != '\0')) {
+			if(isalnum(*str))
+				strbuf_addch(&key, *str);
+			else if(*str == '+')
+				strbuf_addch(&key, ' ');
+			else if(*str == '%') {
+				int hi, lo;
+
+				str++;
+				if((hi = ch_hex2int(*str++)) < 0)
+					fail("Invalid form data.");
+				else if((lo = ch_hex2int(*str++)) < 0)
+					fail("Invalid form data.");
+
+				strbuf_addch(&key, (char)(hi * 0x10 + lo));
+			}
+
+			str++;
+		}
+
+		if(*str == '\0')
+			fail("Invalid form data.");
+
+		str++;
+
+		while((*str != '&') && (*str != '\0')) {
+			if(isalnum(*str))
+				strbuf_addch(&value, *str), str++;
+			else if(*str == '+')
+				strbuf_addch(&value, ' '), str++;
+			else if(*str == '%') {
+				int hi, lo;
+
+				str++;
+				if((hi = ch_hex2int(*str++)) < 0)
+					fail("Invalid form data.");
+				else if((lo = ch_hex2int(*str++)) < 0)
+					fail("Invalid form data.");
+
+				strbuf_addch(&value, (char)(hi * 0x10 + lo));
+			}
+		}
+
+		*pair = http_pair_new(strbuf_done(&key), strbuf_done(&value));
+		pair = &(*pair)->next;
+
+		if(*str == '\0')
+			break;
+
+		str++;
+	}
+
+	*pair = NULL;
+
+	return NULL;
+#undef onexit
 }
 
 

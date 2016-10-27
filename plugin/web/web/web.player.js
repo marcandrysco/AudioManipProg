@@ -306,9 +306,24 @@
       Player.move(player, "down");
       break;
     
-    case "ArrowLeft":
     case "h":
-      Player.move(player, "left");
+    case "H":
+    case "ArrowLeft":
+      var step = 0;
+      if(false) { }
+      else if(e.key == "ArrowLeft") { step = player.conf.nbeats; }
+      else if(e.key == "H") { step = 1 / (player.conf.ndivs * 16); }
+      Player.move(player, "left", step);
+      break;
+    
+    case "l":
+    case "L":
+    case "ArrowRight":
+      var step = 0;
+      if(false) { }
+      else if(e.key == "ArrowRight") { step = player.conf.nbeats; }
+      else if(e.key == "L") { step = 1 / (player.conf.ndivs * 16); }
+      Player.move(player, "right", step);
       break;
     
     case "ArrowRight":
@@ -365,11 +380,11 @@
    * Move selected elements.
    *   @player: The player.
    *   @dir: The direction. Either "up", "down", "left", or "right".
-   *   @step: Optional. The step size, only applies to left or right shifts.
+   *   @step: Optional. The step size.
    */
   window.Player.move = function(player, dir, step) {
     if(player.sel.length == 0) { return; }
-    if(!step) { step = 1 / player.conf.ndivs }
+    if(!step) { step = 1 / player.conf.ndivs; }
 
     var dup = player.sel.map(function(dat) { return Player.copy(dat); });
 
@@ -400,11 +415,13 @@
       throw "Invalid move direction.";
     }
 
-    dup.forEach(function(dat) { dat.vel = 0; });
-    dup = dup.concat(player.sel);
-    Web.put(player.idx, { type: "edit", data: dup });
+    var move = dup.map(function(dat) { return Player.copy(dat, true); }).concat(player.sel);
+    Web.put(player.idx, { type: "edit", data: move });
 
     Player.draw(player);
+
+    player.undo.push({type: "swap", src: dup, dest: player.sel.map(Player.copy)});
+    player.redo = new Array();
   };
 
   /**
@@ -414,7 +431,7 @@
    */
   window.Player.undo = function(player, rev) {
     var list = rev ? player.redo : player.undo;
-    var back = rev ? player.undo : player.redo
+    var back = rev ? player.undo : player.redo;
 
     if(list.length == 0) { return; }
 
@@ -432,6 +449,15 @@
       Web.put(player.idx, { type: "edit", data: act.data });
 
       back.push({ type: "remove", data: act.data });
+    }
+    else if(act.type == "swap") {
+      act.dest.forEach(function(dat) { player.data.remove(dat); });
+      act.src.forEach(function(dat) { player.data.push(dat); });
+
+      var dup = act.dest.map(function(dat) { return Player.copy(dat, true); }).concat(act.src);
+      Web.put(player.idx, { type: "edit", data: dup });
+
+      back.push({ type: "swap", src: act.dest, dest:act.src });
     }
   };
 

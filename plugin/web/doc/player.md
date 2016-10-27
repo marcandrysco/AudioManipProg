@@ -37,14 +37,16 @@ either `select`, `insert`, or `delete`.
 
 ## Javascript Methods
 
+This section covers the primary player Javascript methods.
+
 ### Initialization and Update -- `init` `elem` `update`
 
-    Player.init() : void
-    Player.elem(player:Player) : DOMElement
+    Player.elem(player:Player, idx:int) : DOMElement
     Player.update(player:Player) : void
 
-The `init` function initializes the data provided by the `player` parameter.
-The 
+The `elem` function initializes the player data `player` and creates the
+interactive HTML element. The `idx` parameter is the index used to make
+requests to update the server-side player.
 
 ### Draw -- `draw`
 

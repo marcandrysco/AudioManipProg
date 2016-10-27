@@ -1,4 +1,5 @@
 ASSETS = web/index.xhtml \
+         web/extend.js \
          web/draw.js \
          web/gui.js \
          web/gui.css \

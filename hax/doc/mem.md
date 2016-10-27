@@ -47,12 +47,16 @@ memory counter.
 The `hax_free` function frees the memory pointed to by `ptr` and decrements
 the memory counter.
 
-### Extra Functions `hax_strdup`
+### String Functions -- `hax_strdup` `hax_strndup`
 
-    void *hax_strdup(const char *str);
+    char *hax_strdup(const char *str);
+    char *hax_strndup(const char *str, size_t len);
 
 The `hax_strdup` function duplicates the string `str` and increments the
 memory counter.
+
+The `hax_strndup` function duplicates the string `str` but copies at most
+`len` non-null bytes. The resulting allocation has at most `len+1` bytes.
 
 ### Macro Renaming
 
@@ -74,3 +78,8 @@ few small additions.
 
     void free(size_t nbytes);
     void erase(size_t nbytes);
+
+### String Functions -- `strdup` `strndup`
+
+    char *hax_strdup(const char *str);
+    char *hax_strndup(const char *str, size_t n);
