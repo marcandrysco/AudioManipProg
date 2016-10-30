@@ -13,4 +13,6 @@
 typedef int sys_fd_t;
 typedef int sys_sock_t;
 
+typedef pthread_once_t sys_once_t;
+
 #endif

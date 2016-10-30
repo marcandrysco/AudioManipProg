@@ -33,13 +33,15 @@ terminates.
 ## Mutex
 
     sys_mutex_t;
-    sys_mutex_t sys_mutex_init(unsigned int flags);
-    void sys_mutex_destroy(sys_mutex_t *mutex);
-    #define PTHREAD_MUTEX_INIT
 
 Mutex provide locking between threads, yielding to the scheduler as necessary.
 The mutex is defined using the opaque type `sys_mutex_t` which may be
 implemented as either a pointer or a structure.
+
+### Initialize and Destroy -- `sys_mutex_init` `sys_mutex_destroy`
+
+    sys_mutex_t sys_mutex_init(unsigned int flags);
+    void sys_mutex_destroy(sys_mutex_t *mutex);
 
 The `sys_mutex_init` function initalizes the mutex. The `flags` value should
 be set to zero -- future changes may use the flags variables.
@@ -47,6 +49,8 @@ be set to zero -- future changes may use the flags variables.
 The `sys_mutex_destroy` function destroys the mutex. All calls to
 `sys_mutex_init` must be matched with a call to `sys_mutex_destroy` to prevent
 leaking resources.
+
+### Locking -- `sys_mutex_lock` `sys_mutex_trylock` `sys_mutex_unlock`
 
     void sys_mutex_lock(sys_mutex_t *mutex);
     bool sys_mutex_trylock(sys_mutex_t *mutex);
@@ -66,12 +70,15 @@ The `sys_mutex_unlock` function unlocks the mutex that was acquired by
 ## Condition Variable
 
     sys_cond_t;
-    sys_cond_t sys_cond_init(unsigned int flags);
-    void sys_cond_destroy(sys_cond_t *cond);
 
 The condition variable APIs provide an interface for using condition variables
 as a primitive for multithreading. The `sys_cond_t` type is defined as an
 opaque type that may be implemented as a native type of a strcture.
+
+### Initialize and Destroy -- `sys_cond_init` `sys_cond_destroy`
+
+    sys_cond_t sys_cond_init(unsigned int flags);
+    void sys_cond_destroy(sys_cond_t *cond);
 
 The `sys_cond_init` function initializes the condition variable.  The `flags`
 value should be set to zero -- future changes may use the flags variables.
@@ -79,6 +86,8 @@ value should be set to zero -- future changes may use the flags variables.
 The `sys_cond_destroy` function destroys the conditoin variable. All calls to
 `sys_cond_init` must be matched with a call to `sys_cond_destroy` to prevent
 leaking resources.
+
+### Synchronization -- `sys_cond_wait` `sys_cond_signal` `sys_cond_broadcast`
 
     void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex);
     void sys_cond_signal(sys_cond_t *cond);

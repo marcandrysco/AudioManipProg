@@ -19,7 +19,6 @@ typedef bool (*amp_effect_f)(void *ref, double *buf, struct amp_time_t *time, un
  *   @copy: Copy.
  *   @deelte: Delete.
  */
-
 struct amp_effect_i {
 	amp_info_f info;
 	amp_effect_f proc;
@@ -32,11 +31,14 @@ struct amp_effect_i {
  *   @ref: The reference.
  *   @iface: The interface.
  */
-
 struct amp_effect_t {
 	void *ref;
 	const struct amp_effect_i *iface;
 };
+static inline struct amp_effect_t amp_effect(void *ref, const struct amp_effect_i *iface)
+{
+	return (struct amp_effect_t){ ref, iface };
+}
 
 
 /**

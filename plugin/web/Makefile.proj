@@ -5,6 +5,8 @@ ASSETS = web/index.xhtml \
          web/gui.css \
 	 web/web.js \
 	 web/web.css \
+	 web/web.audit.js \
+	 web/web.audit.css \
 	 web/web.base.js \
 	 web/web.player.js \
 	 web/web.player.css \
@@ -12,8 +14,6 @@ ASSETS = web/index.xhtml \
 	 web/web.status.css \
 	 web/web.time.js \
 	 web/web.time.css \
-	 web/web.train.js \
-	 web/web.train.css \
 
 install: install-assets
 

@@ -66,6 +66,13 @@ void sys_cond_wait(sys_cond_t *cond, sys_mutex_t *mutex);
 void sys_cond_signal(sys_cond_t *cond);
 void sys_cond_broadcast(sys_cond_t *cond);
 
+/*
+ * one-time initialization
+ */
+void sys_once(sys_once_t *once, void (*func)(void));
+
+#define SYS_ONCE_INIT PTHREAD_ONCE_INIT
+
 
 /**
  * Task function.

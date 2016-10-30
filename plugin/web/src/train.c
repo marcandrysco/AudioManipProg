@@ -2,7 +2,7 @@
 
 
 /**
- * Train structure.
+ * Trainer structure.
  *   @serv: The server.
  *   @id: The identifier.
  */

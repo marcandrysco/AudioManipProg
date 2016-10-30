@@ -103,7 +103,7 @@ The format string `fmt` consists of a list of specifications separated by
 whitespace or commas. The specifier takes the form `key:type` where `key` is
 the string key and `type` is the one letter type.
 
-    http_pair_get(pair, "user:s level:d $");
+### Modification -- `http_pair_set` `http_pair_unset`
 
 
 ## Cookie Helpers

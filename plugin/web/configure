@@ -10,7 +10,10 @@ setconf()
   lib_dep "hax"
   lib_dep "ampcore"
 
+  c_src "src/audit.c"
   c_src "src/clock.c"
+  c_src "src/ctrl.c"
+  c_src "src/loop.c"
   c_src "src/mach.c"
   c_src "src/mulrec.c"
   c_src "src/player.c"

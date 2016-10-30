@@ -58,13 +58,7 @@ struct web_mach_t *web_mach_new(const char *id)
 	for(i = 0; i < len; i++)
 		mach->inst[i] = NULL;
 
-	{
-		char path[strlen(mach->id) + 9];
-
-		sprintf(path, "web.dat/%s", id);
-		fs_trymkdir("web.dat", 0777);
-		web_mach_load(mach, path);
-	}
+	chkbool(web_mach_load(mach));
 
 	return mach;
 }
@@ -236,64 +230,6 @@ static void mach_proc(struct io_file_t file, void *arg)
 
 
 /**
- * Save a machine.
- *   @mach: The machine.
- *   @path: The path.
- */
-void web_mach_save(struct web_mach_t *mach, const char *path)
-{
-	FILE *file;
-	unsigned int i, len;
-
-	file = fopen(path, "w");
-	if(file == NULL)
-		fatal("Failed to save to path '%s'", path);
-
-	fprintf(file, "%u,%u,%u\n", mach->ndivs, mach->nbeats, mach->nbars);
-
-	len = web_mach_len(mach);
-	for(i = 0; i < len; i++) {
-		struct inst_t *inst;
-
-		for(inst = mach->inst[i]; inst != NULL; inst = inst->next)
-			fprintf(file, "%u:%u,%u\n", i, inst->key, inst->vel);
-	}
-
-	fclose(file);
-}
-
-char *web_mach_load(struct web_mach_t *mach, const char *path)
-{
-#define onexit fclose(file);
-	FILE *file;
-
-	file = fopen(path, "r");
-	if(file == NULL)
-		return mprintf("Failed to open machine at '%s'.", path);
-
-	if(fscanf(file, "%u,%u,%u\n", &mach->ndivs, &mach->nbeats, &mach->nbars) < 3)
-		fail("Invalid machine file.");
-
-	while(true) {
-		unsigned int idx, key, vel;
-
-		if(fscanf(file, "%u:%u,%u\n", &idx, &key, &vel) < 3)
-			break;
-
-		if((idx >= web_mach_len(mach)) || (key > UINT16_MAX) || (vel > UINT16_MAX))
-			continue;
-
-		web_mach_set(mach, idx, key, vel);
-	}
-
-	fclose(file);
-
-	return NULL;
-#undef onexit
-}
-
-
-/**
  * Handle a machine requeust.
  *   @mach: The machine.
  *   @path: The path.
@@ -330,16 +266,79 @@ bool web_mach_req(struct web_mach_t *mach, const char *path, struct http_args_t 
 		http_head_add(&args->resp, "Content-Type", "application/json");
 		hprintf(args->file, "\"ok\"");
 
-		{
-			char path[strlen(mach->id) + 9];
-
-			sprintf(path, "web.dat/%s", mach->id);
-			fs_trymkdir("web.dat", 0777);
-			web_mach_save(mach, path);
-		}
+		web_mach_save(mach);
 
 		return true;
 	}
 	else
 		return false;
+}
+
+
+/**
+ * Save a drum machine.
+ *   @mach: The machine.
+ */
+void web_mach_save(struct web_mach_t *mach)
+{
+	FILE *file;
+	unsigned int i, len;
+	char path[strlen(mach->id) + 9];
+
+	fs_trymkdir("web.dat", 0775);
+	sprintf(path, "web.dat/%s", mach->id);
+
+	file = fopen(path, "w");
+	if(file == NULL)
+		fatal("Failed to save to path '%s'.", path);
+
+	fprintf(file, "%u,%u,%u\n", mach->ndivs, mach->nbeats, mach->nbars);
+
+	len = web_mach_len(mach);
+	for(i = 0; i < len; i++) {
+		struct inst_t *inst;
+
+		for(inst = mach->inst[i]; inst != NULL; inst = inst->next)
+			fprintf(file, "%u:%u,%u\n", i, inst->key, inst->vel);
+	}
+
+	fclose(file);
+}
+
+/**
+ * Load a drum machine.
+ *   @mach: The machine.
+ *   &returns: Error.
+ */
+char *web_mach_load(struct web_mach_t *mach)
+{
+#define onexit fclose(file);
+	FILE *file;
+	char path[strlen(mach->id) + 9];
+
+	sprintf(path, "web.dat/%s", mach->id);
+
+	file = fopen(path, "r");
+	if(file == NULL)
+		return mprintf("Failed to open machine at '%s'.", path);
+
+	if(fscanf(file, "%u,%u,%u\n", &mach->ndivs, &mach->nbeats, &mach->nbars) < 3)
+		fail("Invalid machine file.");
+
+	while(true) {
+		unsigned int idx, key, vel;
+
+		if(fscanf(file, "%u:%u,%u\n", &idx, &key, &vel) < 3)
+			break;
+
+		if((idx >= web_mach_len(mach)) || (key > UINT16_MAX) || (vel > UINT16_MAX))
+			continue;
+
+		web_mach_set(mach, idx, key, vel);
+	}
+
+	fclose(file);
+
+	return NULL;
+#undef onexit
 }

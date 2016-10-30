@@ -5,12 +5,12 @@
  * Instance type enumerator.
  *   @inst_mach_v: Machine.
  *   @inst_player_v: Player piano.
- *   @inst_train_v: Trainer.
+ *   @inst_audit_: Audit.
  */
 enum web_inst_e {
 	web_mach_v,
 	web_player_v,
-	web_train_v
+	web_audit_v
 };
 
 /**
@@ -41,11 +41,13 @@ struct web_inst_t *web_serv_lookup(struct web_serv_t *serv, const char *id);
 
 struct web_inst_t *web_serv_mach(struct web_serv_t *serv, const char *id);
 struct web_inst_t *web_serv_player(struct web_serv_t *serv, const char *id);
+struct web_inst_t *web_serv_audit(struct web_serv_t *serv, const char *id);
 
 /*
  * instance declarations
  */
 extern const struct amp_seq_i web_iface_seq;
+extern const struct amp_effect_i web_iface_effect;
 
 struct web_inst_t *web_inst_ref(struct web_inst_t *inst);
 void web_inst_unref(struct web_inst_t *inst);

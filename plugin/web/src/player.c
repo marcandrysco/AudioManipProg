@@ -508,7 +508,7 @@ void web_player_save(struct web_player_t *player)
 
 	file = fopen(path, "w");
 	if(file == NULL)
-		fatal("Failed to save to path '%s'", path);
+		fatal("Failed to save to path '%s'.", path);
 
 	cfg_writef(file, "Keys", "u16*", player->conf.keys, player->conf.nkeys);
 

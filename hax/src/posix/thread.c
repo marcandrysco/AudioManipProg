@@ -186,6 +186,21 @@ void sys_cond_broadcast(sys_cond_t *cond)
 
 
 /**
+ * One-time initialization.
+ *   @once: The once variable.
+ *   @func: The initialization function.
+ */
+void sys_once(sys_once_t *once, void (*func)(void))
+{
+	int err;
+
+	err = pthread_once(once, func);
+	if(err != 0)
+		fatal("Failed to to run one-time initialization (%d). %s.", err, strerror(errno));
+}
+
+
+/**
  * Task structure.
  *   @pipe: The sychronization pipe.
  *   @thread: The thread.

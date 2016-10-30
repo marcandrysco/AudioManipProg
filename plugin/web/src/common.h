@@ -12,8 +12,8 @@
 #include <amplib.h>
 #include <amprt.h>
 
-#include "inc.h"
 #include "defs.h"
+#include "inc.h"
 
 
 /**

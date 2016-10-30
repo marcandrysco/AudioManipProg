@@ -5,12 +5,12 @@
  * Instance data union.
  *   @mach: Machine.
  *   @player: Player.
- *   @train: Trainer.
+ *   @audit: Audit.
  */
 union web_inst_u {
 	struct web_mach_t *mach;
 	struct web_player_t *player;
-	struct web_train_t *train;
+	struct web_audit_t *audit;
 };
 
 /**
@@ -37,15 +37,15 @@ struct web_inst_t {
 /*
  * global variables
  */
-const struct amp_seq_i web_iface_seq = {
-	(amp_info_f)web_inst_info,
-	(amp_seq_f)web_inst_seq,
-	(amp_copy_f)web_inst_ref,
-	(amp_delete_f)web_inst_unref
-};
 const struct amp_effect_i web_iface_effect = {
 	(amp_info_f)web_inst_info,
 	(amp_effect_f)web_inst_effect,
+	(amp_copy_f)web_inst_ref,
+	(amp_delete_f)web_inst_unref
+};
+const struct amp_seq_i web_iface_seq = {
+	(amp_info_f)web_inst_info,
+	(amp_seq_f)web_inst_seq,
 	(amp_copy_f)web_inst_ref,
 	(amp_delete_f)web_inst_unref
 };
@@ -72,8 +72,8 @@ static struct http_asset_t serv_assets[] = {
 	{  "/web.status.css", "web.status.css", "text/css"                },
 	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
 	{  "/web.time.css",   "web.time.css",   "text/css"                },
-	{  "/web.train.js",   "web.train.js",   "application/javascript"  },
-	{  "/web.train.css",  "web.train.css",  "text/css"                },
+	{  "/web.audit.js",   "web.audit.js",   "application/javascript"  },
+	{  "/web.audit.css",  "web.audit.css",  "text/css"                },
 	{  NULL,              NULL,             NULL                      }
 };
 
@@ -213,6 +213,29 @@ struct web_inst_t *web_serv_player(struct web_serv_t *serv, const char *id)
 	return inst;
 }
 
+/**
+ * Create or reference an audit instance.
+ *   @serv: The server.
+ *   @id: The identifier.
+ *   &returns: The instance.
+ */
+struct web_inst_t *web_serv_audit(struct web_serv_t *serv, const char *id)
+{
+	struct web_inst_t *inst;
+
+	inst = web_serv_lookup(serv, id);
+	if(inst == NULL) {
+		char *name = strdup(id);
+
+		inst = inst_new(serv, name, web_audit_v, (union web_inst_u){ .audit = web_audit_new(serv, name) });
+		avltree_root_insert(&serv->inst, &inst->node);
+	}
+	else
+		inst->refcnt++;
+
+	return inst;
+}
+
 
 /**
  * Add a reference to the instance.
@@ -238,7 +261,7 @@ void web_inst_unref(struct web_inst_t *inst)
 	switch(inst->type) {
 	case web_mach_v: web_mach_delete(inst->data.mach); break;
 	case web_player_v: web_player_delete(inst->data.player); break;
-	case web_train_v: web_train_delete(inst->data.train); break;
+	case web_audit_v: web_audit_delete(inst->data.audit); break;
 	}
 
 	avltree_root_remove(&inst->serv->inst, inst->id);
@@ -263,6 +286,10 @@ void web_inst_info(struct web_inst_t *inst, struct amp_info_t info)
 		web_player_info(inst->data.player, info);
 		break;
 
+	case web_audit_v:
+		web_audit_info(inst->data.audit, info);
+		break;
+
 	default:
 		fatal("Invalid instance type.");
 	}
@@ -285,8 +312,8 @@ bool web_inst_effect(struct web_inst_t *inst, double *buf, struct amp_time_t *ti
 		return false;
 
 	switch(inst->type) {
-	case web_train_v:
-		cont = web_train_proc(inst->data.train, buf, time, len, queue);
+	case web_audit_v:
+		cont = web_audit_proc(inst->data.audit, buf, time, len, queue);
 		break;
 
 	default:
@@ -344,7 +371,7 @@ const char *web_inst_type(enum web_inst_e type)
 	switch(type) {
 	case web_mach_v: return "mach";
 	case web_player_v: return "player";
-	case web_train_v: return "train";
+	case web_audit_v: return "audit";
 	}
 
 	fatal("Invalid instance type.");
@@ -360,7 +387,7 @@ struct io_chunk_t web_inst_chunk(struct web_inst_t *inst)
 	switch(inst->type) {
 	case web_mach_v: return web_mach_chunk(inst->data.mach);
 	case web_player_v: return web_player_chunk(inst->data.player);
-	case web_train_v: return web_train_chunk(inst->data.train);
+	case web_audit_v: return web_audit_chunk(inst->data.audit);
 	}
 
 	fatal("Invalid instance type.");
@@ -497,7 +524,7 @@ static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct j
 	switch(inst->type) {
 	case web_mach_v: return false; //web_mach_req(inst->data.mach, path + n, args);
 	case web_player_v: return web_player_req(inst->data.player, args, json);
-	case web_train_v: return false;
+	case web_audit_v: return false;
 	}
 
 	return false;

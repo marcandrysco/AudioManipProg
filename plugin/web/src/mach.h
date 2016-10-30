@@ -17,9 +17,9 @@ void web_mach_set(struct web_mach_t *mach, unsigned int idx, uint16_t key, uint1
 void web_mach_print(struct web_mach_t *mach, struct io_file_t file);
 struct io_chunk_t web_mach_chunk(struct web_mach_t *mach);
 
-void web_mach_save(struct web_mach_t *mach, const char *path);
-char *web_mach_load(struct web_mach_t *mach, const char *path);
-
 bool web_mach_req(struct web_mach_t *mach, const char *path, struct http_args_t *args);
+
+void web_mach_save(struct web_mach_t *mach);
+char *web_mach_load(struct web_mach_t *mach);
 
 #endif
