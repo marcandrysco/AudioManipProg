@@ -14,4 +14,7 @@ bool web_audit_proc(struct web_audit_t *audit, double *buf, struct amp_time_t *t
 void web_audit_print(struct web_audit_t *audit, struct io_file_t file);
 struct io_chunk_t web_audit_chunk(struct web_audit_t *audit);
 
+char *web_audit_load(struct web_audit_t *audit);
+char *web_audit_save(struct web_audit_t *audit);
+
 #endif

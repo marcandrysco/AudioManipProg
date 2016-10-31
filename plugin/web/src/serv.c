@@ -66,14 +66,16 @@ static struct http_asset_t serv_assets[] = {
 	{  "/web.js",         "web.js",         "application/javascript"  },
 	{  "/web.css",        "web.css",        "text/css"                },
 	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
+	{  "/web.audit.js",   "web.audit.js",   "application/javascript"  },
+	{  "/web.audit.css",  "web.audit.css",  "text/css"                },
+	{  "/web.ctrl.js",    "web.ctrl.js",    "application/javascript"  },
+	{  "/web.ctrl.css",   "web.ctrl.css",   "text/css"                },
 	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
 	{  "/web.player.css", "web.player.css", "text/css"                },
 	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
 	{  "/web.status.css", "web.status.css", "text/css"                },
 	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
 	{  "/web.time.css",   "web.time.css",   "text/css"                },
-	{  "/web.audit.js",   "web.audit.js",   "application/javascript"  },
-	{  "/web.audit.css",  "web.audit.css",  "text/css"                },
 	{  NULL,              NULL,             NULL                      }
 };
 

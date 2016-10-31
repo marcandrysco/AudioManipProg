@@ -19,11 +19,24 @@ static void audit_proc(struct io_file_t file, void *arg);
 
 
 char b64_tab[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+ * Compute the encoded length of an encoded string, not including the
+ * terminating '\0'.
+ *   @nbytes: The number of input bytes.
+ *   &returns: The number of character necessary.
+ */
 size_t b64_enclen(size_t nbytes)
 {
 	return 4 * ((nbytes + 2) / 3);
 }
 
+/**
+ * Base64 encode a buffer.
+ *   @out: The output string.
+ *   @in: The input buffer.
+ *   @nbytes: The number of bytes.
+ */
 void b64_enc(char *out, const void *in, size_t nbytes)
 {
 	uint32_t num;
@@ -65,13 +78,6 @@ void b64_enc(char *out, const void *in, size_t nbytes)
  */
 struct web_audit_t *web_audit_new(struct web_serv_t *serv, const char *id)
 {
-	for(int i = 0; i < 10; i++)
-		printf("%d -> %d\n", i, b64_enclen(i));
-	char buf[20];
-	b64_enc(buf, "M", 1); printf("%s\n", buf);
-	b64_enc(buf, "Ma", 2); printf("%s\n", buf);
-	b64_enc(buf, "Man", 3); printf("%s\n", buf);
-	exit(0);
 	struct web_audit_t *audit;
 
 	audit = malloc(sizeof(struct web_audit_t));
@@ -154,4 +160,25 @@ struct io_chunk_t web_audit_chunk(struct web_audit_t *audit)
 static void audit_proc(struct io_file_t file, void *arg)
 {
 	web_audit_print(arg, file);
+}
+
+
+/**
+ * Load an audit from disk.
+ *   @audit: The audit.
+ *   &returns: Error.
+ */
+char *web_audit_load(struct web_audit_t *audit)
+{
+	return NULL;
+}
+
+/**
+ * Save an audit to disk.
+ *   @audit: The audit.
+ *   &returns: Error.
+ */
+char *web_audit_save(struct web_audit_t *audit)
+{
+	return NULL;
 }

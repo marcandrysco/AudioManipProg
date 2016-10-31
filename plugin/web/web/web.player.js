@@ -614,8 +614,8 @@
       player.layout.resize();
       popup.guiDismiss();
       Player.draw(player);
-      Req.post("/" + player.idx + "/player/keys", JSON.stringify(rows), function(v) {
-      });
+
+      Web.put(player.idx, { type: "keys", data: rows });
     }));
     action.appendChild(Gui.Button("Cancel", {}, function(e) {
       popup.guiDismiss();

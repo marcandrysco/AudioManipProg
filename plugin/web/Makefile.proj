@@ -8,6 +8,8 @@ ASSETS = web/index.xhtml \
 	 web/web.audit.js \
 	 web/web.audit.css \
 	 web/web.base.js \
+	 web/web.ctrl.js \
+	 web/web.ctrl.css \
 	 web/web.player.js \
 	 web/web.player.css \
 	 web/web.status.js \

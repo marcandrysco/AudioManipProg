@@ -395,6 +395,20 @@ bool web_player_req(struct web_player_t *player, struct http_args_t *args, struc
 			sys_mutex_unlock(&player->serv->lock);
 		}
 	}
+	else if(strcmp(type, "keys") == 0) {
+		unsigned int i;
+
+		chk(json->type == json_arr_v);
+
+		for(i = 0; i < json->data.arr->len; i++)
+			chk(json_get_uint16(json->data.arr->vec[i], NULL));
+
+		player->conf.nkeys = json->data.arr->len;
+		player->conf.keys = realloc(player->conf.keys, json->data.arr->len * sizeof(uint16_t));
+
+		for(i = 0; i < json->data.arr->len; i++)
+			chk(json_get_uint16(json->data.arr->vec[i], &player->conf.keys[i]));
+	}
 	else
 		return false;
 
@@ -402,44 +416,6 @@ bool web_player_req(struct web_player_t *player, struct http_args_t *args, struc
 
 	return true;
 }
-
-/**
- * Handle a request to modify the keys.
- *   @player: The player.
- *   @body: The document body.
- *   &returns: Error.
-static char *req_keys(struct web_player_t *player, const char *body)
-{
-#define onexit json_erase(json);
-	int val;
-	unsigned int i;
-	struct json_t *json = NULL;
-	struct json_arr_t *arr;
-
-	chkfail(json_parse_str(&json, body));
-
-	if(json->type != json_arr_v)
-			fail("Invalid keys request. Expected array of keys.");
-
-	arr = json->data.arr;
-	for(i = 0; i < arr->len; i++) {
-		if(!json_int_range(arr->vec[i], 0, UINT16_MAX, NULL))
-			fail("Invalid keys request. Expected array of keys.");
-	}
-
-	player->conf.keys = realloc(player->conf.keys, arr->len * sizeof(uint16_t));
-	for(i = 0; i < arr->len; i++) {
-		json_int_get(arr->vec[i], &val);
-		player->conf.keys[i] = val;
-	}
-
-	web_player_save(player);
-
-	json_delete(json);
-	return NULL;
-#undef onexit
-}
- */
 
 /**
  * Load a player.

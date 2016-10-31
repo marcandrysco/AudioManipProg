@@ -13,4 +13,7 @@ bool web_ctrl_proc(struct web_ctrl_t *ctrl, double *buf, struct amp_time_t *time
 void web_ctrl_print(struct web_ctrl_t *ctrl, struct io_file_t file);
 struct io_chunk_t web_ctrl_chunk(struct web_ctrl_t *ctrl);
 
+char *web_ctrl_load(struct web_ctrl_t *ctrl);
+char *web_ctrl_save(struct web_ctrl_t *ctrl);
+
 #endif
