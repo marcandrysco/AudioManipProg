@@ -3,14 +3,16 @@
 
 /**
  * Instance data union.
+ *   @audit: Audit.
+ *   @ctrl: Controller.
  *   @mach: Machine.
  *   @player: Player.
- *   @audit: Audit.
  */
 union web_inst_u {
+	struct web_audit_t *audit;
+	struct web_ctrl_t *ctrl;
 	struct web_mach_t *mach;
 	struct web_player_t *player;
-	struct web_audit_t *audit;
 };
 
 /**
@@ -238,6 +240,29 @@ struct web_inst_t *web_serv_audit(struct web_serv_t *serv, const char *id)
 	return inst;
 }
 
+/**
+ * Create or reference an controller instance.
+ *   @serv: The server.
+ *   @id: The identifier.
+ *   &returns: The instance.
+ */
+struct web_inst_t *web_serv_ctrl(struct web_serv_t *serv, const char *id)
+{
+	struct web_inst_t *inst;
+
+	inst = web_serv_lookup(serv, id);
+	if(inst == NULL) {
+		char *name = strdup(id);
+
+		inst = inst_new(serv, name, web_ctrl_v, (union web_inst_u){ .ctrl = web_ctrl_new(serv, name) });
+		avltree_root_insert(&serv->inst, &inst->node);
+	}
+	else
+		inst->refcnt++;
+
+	return inst;
+}
+
 
 /**
  * Add a reference to the instance.
@@ -264,6 +289,7 @@ void web_inst_unref(struct web_inst_t *inst)
 	case web_mach_v: web_mach_delete(inst->data.mach); break;
 	case web_player_v: web_player_delete(inst->data.player); break;
 	case web_audit_v: web_audit_delete(inst->data.audit); break;
+	case web_ctrl_v: web_ctrl_delete(inst->data.ctrl); break;
 	}
 
 	avltree_root_remove(&inst->serv->inst, inst->id);
@@ -280,16 +306,20 @@ void web_inst_unref(struct web_inst_t *inst)
 void web_inst_info(struct web_inst_t *inst, struct amp_info_t info)
 {
 	switch(inst->type) {
+	case web_audit_v:
+		web_audit_info(inst->data.audit, info);
+		break;
+
+	case web_ctrl_v:
+		web_ctrl_info(inst->data.ctrl, info);
+		break;
+
 	case web_mach_v:
 		web_mach_info(inst->data.mach, info);
 		break;
 
 	case web_player_v:
 		web_player_info(inst->data.player, info);
-		break;
-
-	case web_audit_v:
-		web_audit_info(inst->data.audit, info);
 		break;
 
 	default:
@@ -345,6 +375,10 @@ bool web_inst_seq(struct web_inst_t *inst, struct amp_time_t *time, unsigned int
 	}
 
 	switch(inst->type) {
+	case web_ctrl_v:
+		ret = web_ctrl_proc(inst->data.ctrl, time, len, queue);
+		break;
+
 	case web_mach_v:
 		ret = web_mach_proc(inst->data.mach, time, len, queue);
 		break;
@@ -371,9 +405,10 @@ bool web_inst_seq(struct web_inst_t *inst, struct amp_time_t *time, unsigned int
 const char *web_inst_type(enum web_inst_e type)
 {
 	switch(type) {
+	case web_audit_v: return "audit";
+	case web_ctrl_v: return "ctrl";
 	case web_mach_v: return "mach";
 	case web_player_v: return "player";
-	case web_audit_v: return "audit";
 	}
 
 	fatal("Invalid instance type.");
@@ -387,9 +422,10 @@ const char *web_inst_type(enum web_inst_e type)
 struct io_chunk_t web_inst_chunk(struct web_inst_t *inst)
 {
 	switch(inst->type) {
+	case web_audit_v: return web_audit_chunk(inst->data.audit);
+	case web_ctrl_v: return web_ctrl_chunk(inst->data.ctrl);
 	case web_mach_v: return web_mach_chunk(inst->data.mach);
 	case web_player_v: return web_player_chunk(inst->data.player);
-	case web_audit_v: return web_audit_chunk(inst->data.audit);
 	}
 
 	fatal("Invalid instance type.");
@@ -527,6 +563,7 @@ static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct j
 	case web_mach_v: return false; //web_mach_req(inst->data.mach, path + n, args);
 	case web_player_v: return web_player_req(inst->data.player, args, json);
 	case web_audit_v: return false;
+	case web_ctrl_v: return false;
 	}
 
 	return false;

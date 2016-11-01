@@ -325,11 +325,6 @@
       else if(e.key == "L") { step = 1 / (player.conf.ndivs * 16); }
       Player.move(player, "right", step);
       break;
-    
-    case "ArrowRight":
-    case "l":
-      Player.move(player, "right");
-      break;
 
     case "u":
       Player.undo(player, false);
@@ -404,11 +399,17 @@
       break;
 
     case "left":
-      player.sel.forEach(function(dat) { dat.begin.beat -= step; dat.end.beat -= step; });
+      player.sel.forEach(function(dat) {
+        dat.begin = Loc.add(dat.begin, -step, player.conf.nbeats);
+        dat.end = Loc.add(dat.end, -step, player.conf.nbeats);
+      });
       break;
 
     case "right":
-      player.sel.forEach(function(dat) { dat.begin.beat += step; dat.end.beat += step; });
+      player.sel.forEach(function(dat) {
+        dat.begin = Loc.add(dat.begin, step, player.conf.nbeats);
+        dat.end = Loc.add(dat.end, step, player.conf.nbeats);
+      });
       break;
 
     default:
@@ -485,8 +486,9 @@
 
     x -= layout.label + 2;
     if(x < 0) { return null; }
+    x += player.x;
 
-    var bar = Math.floor((x + player.x) / layout.bar());
+    var bar = Math.floor(x / layout.bar());
     var div = (x - bar * layout.bar()) / (layout.cell.width + 1);
     var beat = (round ? Math.floor(div) : div) / conf.ndivs;
     if(beat >= conf.nbeats) { bar++; beat = 0; }

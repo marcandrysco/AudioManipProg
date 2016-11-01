@@ -243,6 +243,7 @@ void web_player_info(struct web_player_t *player, struct amp_info_t info)
 		}
 
 		player->right = inst;
+		player->last = loc;
 	}
 }
 
@@ -492,6 +493,30 @@ void web_player_save(struct web_player_t *player)
 		cfg_writef(file, "Event", "df df u16 u16", inst->begin.bar, inst->begin.beat, inst->end.bar, inst->end.beat, inst->key, inst->vel);
 
 	fclose(file);
+}
+
+
+/**
+ * Validate that events in the player are correctly orderd.
+ *   @player: The player.
+ *   &returns: True if valid.
+ */
+bool web_player_validate(struct web_player_t *player)
+{
+	bool suc = true;
+	struct web_player_inst_t *iter;
+
+	for(iter = player->begin; iter != NULL; iter = iter->left) {
+		if(iter->left != NULL)
+			suc &= (amp_loc_cmp(iter->begin, iter->left->begin) <= 0);
+	}
+
+	for(iter = player->end; iter != NULL; iter = iter->right) {
+		if(iter->right != NULL)
+			suc &= (amp_loc_cmp(iter->end, iter->right->end) <= 0);
+	}
+
+	return suc;
 }
 
 

@@ -3,14 +3,16 @@
 
 /**
  * Instance type enumerator.
+ *   @inst_audit_v: Audit.
+ *   @inst_ctrl_v: Controller.
  *   @inst_mach_v: Machine.
  *   @inst_player_v: Player piano.
- *   @inst_audit_: Audit.
  */
 enum web_inst_e {
+	web_audit_v,
+	web_ctrl_v,
 	web_mach_v,
 	web_player_v,
-	web_audit_v
 };
 
 /**
@@ -42,6 +44,7 @@ struct web_inst_t *web_serv_lookup(struct web_serv_t *serv, const char *id);
 struct web_inst_t *web_serv_mach(struct web_serv_t *serv, const char *id);
 struct web_inst_t *web_serv_player(struct web_serv_t *serv, const char *id);
 struct web_inst_t *web_serv_audit(struct web_serv_t *serv, const char *id);
+struct web_inst_t *web_serv_ctrl(struct web_serv_t *serv, const char *id);
 
 /*
  * instance declarations

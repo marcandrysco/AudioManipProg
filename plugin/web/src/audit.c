@@ -18,58 +18,6 @@ struct web_audit_t {
 static void audit_proc(struct io_file_t file, void *arg);
 
 
-char b64_tab[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-/**
- * Compute the encoded length of an encoded string, not including the
- * terminating '\0'.
- *   @nbytes: The number of input bytes.
- *   &returns: The number of character necessary.
- */
-size_t b64_enclen(size_t nbytes)
-{
-	return 4 * ((nbytes + 2) / 3);
-}
-
-/**
- * Base64 encode a buffer.
- *   @out: The output string.
- *   @in: The input buffer.
- *   @nbytes: The number of bytes.
- */
-void b64_enc(char *out, const void *in, size_t nbytes)
-{
-	uint32_t num;
-	const uint8_t *ptr = in;
-
-	while(nbytes >= 3) {
-		num = (ptr[0] << 16) | (ptr[1] << 8) | ptr[2];
-		ptr += 3, nbytes -= 3;
-
-		*out++ = b64_tab[(num >> 18)];
-		*out++ = b64_tab[(num >> 12) & 0x3F];
-		*out++ = b64_tab[(num >> 6) & 0x3F];
-		*out++ = b64_tab[num & 0x3F];
-	}
-
-	if(nbytes == 1) {
-		num = ptr[0];
-		*out++ = b64_tab[(num >> 2)];
-		*out++ = b64_tab[(num << 4) & 0x3F];
-		*out++ = '=';
-		*out++ = '=';
-	}
-	else if(nbytes == 2) {
-		num = (ptr[0] << 8) | ptr[1];
-		*out++ = b64_tab[(num >> 10)];
-		*out++ = b64_tab[(num >> 4) & 0x3F];
-		*out++ = b64_tab[(num << 2) & 0x3F];
-		*out++ = '=';
-	}
-
-	*out++ = '\0';
-}
-
 /**
  * Create a new audit.
  *   @serv: The server.
@@ -145,7 +93,11 @@ bool web_audit_proc(struct web_audit_t *audit, double *buf, struct amp_time_t *t
  */
 void web_audit_print(struct web_audit_t *audit, struct io_file_t file)
 {
-	hprintf(file, "{}");
+	static const float arr[] = { 1.2, 3.4, -0.9, 1e7 };
+	char tmp[b64_enclen(sizeof(arr)) + 1];
+
+	b64_enc(tmp, arr, sizeof(arr));
+	hprintf(file, "{\"data\":\"%s\"}", tmp);
 }
 
 /**
@@ -181,4 +133,125 @@ char *web_audit_load(struct web_audit_t *audit)
 char *web_audit_save(struct web_audit_t *audit)
 {
 	return NULL;
+}
+
+
+
+/**
+ * Tone structure.
+ *   @t, q, f, g, s: The time, quality, frequency, gain, and filter state.
+ */
+struct amp_tone_t {
+	double t, q, f, g, s[2];
+};
+
+/**
+ * Tuner structure.
+ *   @vol: The volume.
+ *   @last: The last value.
+ *   @tm, rate: Time since previous crossing and smaple rate.
+ *   @len: The tone array length.
+ *   @tone: The tone array.
+ */
+struct amp_tuner_t {
+	struct dsp_vol_t vol;
+	double last;
+	unsigned int tm, rate;
+
+	unsigned int len;
+	struct amp_tone_t tone[];
+};
+
+/**
+ * Create a tuner.
+ *   @lpf: The low-pass frequency.
+ *   @rate: The sample rate.
+ *   &returns: The tuner.
+ */
+struct amp_tuner_t *amp_tuner_new(double lpf, unsigned int rate)
+{
+	unsigned int i;
+	struct amp_tuner_t *tuner;
+
+	unsigned int n = 2;
+
+	tuner = malloc(n * sizeof(struct amp_tone_t) + sizeof(struct amp_tuner_t));
+	tuner->vol = dsp_vol_init(lpf, rate);
+	tuner->tm = 1;
+	tuner->last = 0.0;
+	tuner->len = n;
+	tuner->rate = rate;
+
+	for(i = 0; i < n; i++)
+		tuner->tone[i] = (struct amp_tone_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
+
+	return tuner;
+}
+
+/**
+ * Delete a tuner.
+ *   @tuner: The tuner.
+ */
+void amp_tuner_delete(struct amp_tuner_t *tuner)
+{
+	free(tuner);
+}
+
+static inline void amp_tuner_proc(struct amp_tuner_t *tuner, double v)
+{
+	unsigned int i;
+
+	for(i = 0; i < tuner->len; i++) {
+		double w, m, t, s;
+		struct amp_tone_t *tone = &tuner->tone[i];
+
+		if(tone->g < 0.0001)
+			continue;
+
+		s = dsp_res_proc(v, dsp_res_init(tone->f, 1.0, tuner->rate), tone->s);
+		w = tone->g * dsp_osc_sine_f(tone->t);
+
+		if(fabs(s - w) > (tone->g)) {
+			*tone = (struct amp_tone_t){ 0.0, 0.0, 0.0, 0.0, { 0.0, 0.0 } };
+			continue;
+		}
+
+		/* adjust gain */
+		m = dsp_osc_tri(tone->t);
+		t = s - w;
+		t = 0.005 * t * m;
+		tone->g += t;
+
+		/* adjust freq */
+		m = dsp_osc_tri(tone->t + 0.25);
+		t = (s - w) * m;
+		tone->f += t * 0.03;
+		tone->t = dsp_osc_inc(tone->t, t * 0.03);
+
+		tone->t = dsp_osc_inc(tone->t, dsp_osc_step(tone->f, tuner->rate));
+
+		v -= w;
+	}
+
+	if((tuner->last <= 0.0) && (v > 0.0)) {
+		double freq = (double)tuner->rate / (double)tuner->tm;
+
+		if(freq < 8000.0) {
+			for(i = 0; i < tuner->len; i++) {
+				if(tuner->tone[i].g < (tuner->vol.v * 0.25))
+					break;
+			}
+
+			if(i < tuner->len) {
+				tuner->tone[i] = (struct amp_tone_t){ 0.0, 1.0, freq, tuner->vol.v, { 0.0, 0.0 } };
+			}
+		}
+
+		tuner->tm = 1;
+	}
+	else
+		tuner->tm++;
+
+	tuner->last = v;
+	dsp_vol_proc(&tuner->vol, v);
 }

@@ -61,8 +61,10 @@
     if(Web.cur == idx) { item.classList.add("cur"); }
 
     switch(Web.data[idx].type) {
-    //case "mach": Mach.init(work, Web.data[i].data).idx = i; break;
+    case "audit": work.appendChild(Audit.elem(Web.data[idx].data, idx)); break;
+    case "ctrl": work.appendChild(Ctrl.elem(Web.data[idx].data, idx)); break;
     case "player": work.appendChild(Player.elem(Web.data[idx].data, idx)); break;
+    default: throw "Invalid type " + Web.data[idx].type;
     }
 
     item.addEventListener("click", function(e) {
@@ -75,6 +77,7 @@
 
       item.classList.add("cur");
       work.classList.remove("gui-hide");
+      Web.cur = idx;
     });
   };
 

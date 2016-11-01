@@ -111,6 +111,11 @@
   };
 
 
+  window.Loc.add = function(loc, beats, nbeats) {
+    return Loc.makef(Loc.bar(loc, nbeats) + beats / nbeats, nbeats)
+  };
+
+
   /**
    * Parse a location.
    *   @str: The string.

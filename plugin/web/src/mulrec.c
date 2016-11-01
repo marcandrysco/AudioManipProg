@@ -67,3 +67,24 @@ bool web_mulrec_proc(struct web_mulrec_t *rec, double **buf, struct amp_time_t *
 {
 	return false;
 }
+
+
+/**
+ * Load a multitrack recorder from disk.
+ *   @rec: The recorder.
+ *   &returns: Error.
+ */
+char *web_mulrec_load(struct web_mulrec_t *rec)
+{
+	return NULL;
+}
+
+/**
+ * Save a multitrack recorder to disk.
+ *   @rec: The recorder.
+ *   &returns: Error.
+ */
+char *web_mulrec_save(struct web_mulrec_t *rec)
+{
+	return NULL;
+}

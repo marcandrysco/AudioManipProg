@@ -56,6 +56,9 @@ struct web_ctrl_event_t {
  */
 static void ctrl_proc(struct io_file_t file, void *arg);
 
+static struct web_ctrl_inst_t *inst_new(char *id, uint16_t dev, uint16_t key);
+static void inst_delete(struct web_ctrl_inst_t *inst);
+
 
 /**
  * Create a new ctrler.
@@ -76,10 +79,31 @@ struct web_ctrl_t *web_ctrl_new(struct web_serv_t *serv, const char *id)
 	ctrl->event = NULL;
 	ctrl->cur = NULL;
 
+	erase(web_ctrl_load(ctrl));
+	if(ctrl->inst == NULL)
+		ctrl->inst = inst_new(strdup("Control 1"), 1, 1),
+			ctrl->inst->next = inst_new(strdup("Control 1"), 1, 1);
+
 	if(ctrl->enable)
 		sys_mutex_lock(&ctrl->lock);
 
 	return ctrl;
+}
+
+/**
+ * Create an controller from a value.
+ *   @ret: Ref. The returned value.
+ *   @value: The value.
+ *   @env: The environment.
+ *   &returns: Error.
+ */
+char *web_ctrl_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml_env_t *env)
+{
+	if(value->type != ml_value_str_v)
+		return mprintf("WebCtrl takes a string as input.");
+
+	*ret = amp_pack_seq(amp_seq(web_serv_ctrl(web_serv, value->data.str), &web_iface_seq));
+	return NULL;
 }
 
 /**
@@ -88,8 +112,19 @@ struct web_ctrl_t *web_ctrl_new(struct web_serv_t *serv, const char *id)
  */
 void web_ctrl_delete(struct web_ctrl_t *ctrl)
 {
+	struct web_ctrl_inst_t *inst;
+
 	if(ctrl->enable)
 		sys_mutex_unlock(&ctrl->lock);
+
+	erase(web_ctrl_save(ctrl));
+
+	while(ctrl->inst != NULL) {
+		inst = ctrl->inst;
+		ctrl->inst = inst->next;
+
+		inst_delete(inst);
+	}
 
 	sys_mutex_destroy(&ctrl->lock);
 	free(ctrl);
@@ -108,13 +143,12 @@ void web_ctrl_info(struct web_ctrl_t *ctrl, struct amp_info_t info)
 /**
  * Process data on a controller.
  *   @ctrl: The controller.
- *   @buf: The buffer.
  *   @time: The time.
  *   @len: The length.
  *   @queue: The action queue.
  *   &returns: The continuation flag.
  */
-bool web_ctrl_proc(struct web_ctrl_t *ctrl, double *buf, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
+bool web_ctrl_proc(struct web_ctrl_t *ctrl, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
 
 	return false;
@@ -128,7 +162,15 @@ bool web_ctrl_proc(struct web_ctrl_t *ctrl, double *buf, struct amp_time_t *time
  */
 void web_ctrl_print(struct web_ctrl_t *ctrl, struct io_file_t file)
 {
-	hprintf(file, "{}");
+	struct web_ctrl_inst_t *inst;
+
+	hprintf(file, "{\"inst\":[");
+
+	for(inst = ctrl->inst; inst != NULL; inst = inst->next)
+		hprintf(file, "{\"id\":\"%s\",\"dev\":%u,\"key\":%u}%s", inst->id, inst->dev, inst->key, inst->next ? "," : "");
+
+	hprintf(file, "],\"event\":[");
+	hprintf(file, "]}");
 }
 
 /**
@@ -164,4 +206,32 @@ char *web_ctrl_load(struct web_ctrl_t *ctrl)
 char *web_ctrl_save(struct web_ctrl_t *ctrl)
 {
 	return NULL;
+}
+
+
+/**
+ * Create a controller instance.
+ *   @id: The identifier.
+ *   @dev: The device.
+ *   @key: The key.
+ *   &returns: The instance.
+ */
+static struct web_ctrl_inst_t *inst_new(char *id, uint16_t dev, uint16_t key)
+{
+	struct web_ctrl_inst_t *inst;
+
+	inst = malloc(sizeof(struct web_ctrl_inst_t));
+	*inst = (struct web_ctrl_inst_t){ id, dev, key, NULL };
+
+	return inst;
+}
+
+/**
+ * Delete a controller instance.
+ *   @inst: The instance.
+ */
+static void inst_delete(struct web_ctrl_inst_t *inst)
+{
+	free(inst->id);
+	free(inst);
 }

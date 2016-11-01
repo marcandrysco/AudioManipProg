@@ -2,6 +2,63 @@
 
 
 /*
+ * local declarations
+ */
+static const char b64_enctab[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+
+/**
+ * Base64 encode a buffer.
+ *   @out: The output string.
+ *   @in: The input buffer.
+ *   @nbytes: The number of bytes.
+ */
+void b64_enc(char *out, const void *in, size_t nbytes)
+{
+	uint32_t num;
+	const uint8_t *ptr = in;
+
+	while(nbytes >= 3) {
+		num = (ptr[0] << 16) | (ptr[1] << 8) | ptr[2];
+		ptr += 3, nbytes -= 3;
+
+		*out++ = b64_enctab[(num >> 18)];
+		*out++ = b64_enctab[(num >> 12) & 0x3F];
+		*out++ = b64_enctab[(num >> 6) & 0x3F];
+		*out++ = b64_enctab[num & 0x3F];
+	}
+
+	if(nbytes == 1) {
+		num = ptr[0];
+		*out++ = b64_enctab[(num >> 2)];
+		*out++ = b64_enctab[(num << 4) & 0x3F];
+		*out++ = '=';
+		*out++ = '=';
+	}
+	else if(nbytes == 2) {
+		num = (ptr[0] << 8) | ptr[1];
+		*out++ = b64_enctab[(num >> 10)];
+		*out++ = b64_enctab[(num >> 4) & 0x3F];
+		*out++ = b64_enctab[(num << 2) & 0x3F];
+		*out++ = '=';
+	}
+
+	*out++ = '\0';
+}
+
+/**
+ * Compute the encoded length of an encoded string, not including the
+ * terminating '\0'.
+ *   @nbytes: The number of input bytes.
+ *   &returns: The number of character necessary.
+ */
+size_t b64_enclen(size_t nbytes)
+{
+	return 4 * ((nbytes + 2) / 3);
+}
+
+
+/*
  * crc32 table
  */
 uint32_t crc32_table[] = {

@@ -26,6 +26,8 @@ bool web_player_req(struct web_player_t *player, struct http_args_t *args, struc
 char *web_player_load(struct web_player_t *player);
 void web_player_save(struct web_player_t *player);
 
+bool web_player_validate(struct web_player_t *player);
+
 /*
  * player configuration declarations
  */

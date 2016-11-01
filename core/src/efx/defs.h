@@ -46,7 +46,6 @@ static inline struct amp_effect_t amp_effect(void *ref, const struct amp_effect_
  *   @effect: The effect.
  *   @info: The infoormation.
  */
-
 static inline void amp_effect_info(struct amp_effect_t effect, struct amp_info_t info)
 {
 	effect.iface->info(effect.ref, info);

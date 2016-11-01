@@ -1,0 +1,6 @@
+.ctrl {
+}
+
+  .ctrl > canvas {
+    width: 100%;
+  }
