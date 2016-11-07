@@ -17,6 +17,8 @@
 
     var div = Gui.div();
 
+
+/*
     var str = atob(audit.data);
     var buf = new ArrayBuffer(str.length);
     var raw = new Uint8Array(buf);
@@ -26,8 +28,16 @@
     }
 
     div.appendChild(Gui.text(arr.length + " : " + arr[0] + " : " + arr[1] + " : " + arr[2] + " : " + arr[3]));
-    debugger;
+    */
 
     return div;
+  };
+
+  /**
+   * Update the audit.
+   *   @audit: The audit.
+   *   @data: The data.
+   */
+  window.Audit.update = function(audit, data) {
   };
 })();

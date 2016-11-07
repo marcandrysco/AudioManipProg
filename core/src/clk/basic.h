@@ -164,4 +164,21 @@ static inline bool amp_time_isequal(struct amp_time_t left, struct amp_time_t ri
 {
 	return (left.bar == right.bar) && (left.beat == right.beat);
 }
+
+
+/**
+ * Check if a bar falls between two other bars.
+ *   @bar: The reference bar.
+ *   @left: The left bar.
+ *   @right: The right bar.
+ *   &returns: True if between.
+ */
+static inline bool amp_bar_between(double bar, double left, double right)
+{
+	if(left < right)
+		return (left <= bar) && (bar < right);
+	else
+		return (left <= bar) || (bar < right);
+}
+
 #endif

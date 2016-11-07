@@ -30,3 +30,9 @@ conveience.
 The box-rect object carries two functions with it. The `copy` function
 produces an identical copy of the box-rect. The `inside` function takes a pair
 of coordinates and determines if they fall inside the box-rect.
+
+
+## Drawing
+
+    Draw.fill(box:BoxRect, ctx:Context, color:string)
+    Draw.vert(box:BoxRect, x:int, ctx:Context, width:int, color:string)

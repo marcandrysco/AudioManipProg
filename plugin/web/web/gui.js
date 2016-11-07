@@ -10,7 +10,9 @@
 (function() {
   "use strict";
 
-  /* GUI namespace */
+  /*
+   * GUI namespace
+   */
   window.Gui = new Object();
 
 
@@ -36,11 +38,18 @@
   /**
    * Replace all of the elements children with a new child.
    *   @el: The element.
-   *   @child: The new child.
+   *   @child: The new child or array of children.
    */
   window.Gui.replace = function(el, child) {
     Gui.clear(el);
-    el.appendChild(child);
+
+    if(Array.isArray(child)) {
+      for(var i = 0; i < child.length; i++) {
+        el.appendChild(child[i]);
+      }
+    } else if(child) {
+      el.appendChild(child);
+    }
   };
 
 
@@ -111,6 +120,48 @@
     var button = window.Gui.tag("button", cls, Gui.text(text));
     button.addEventListener("click", func);
     return button;
+  };
+
+  /**
+   * Create an input.
+   *   @type: The type.
+   *   @value: The value.
+   *   @cls: Optional. The class.
+   *   @func: The change function.
+   *   &returns: The DOM input element.
+   */
+  window.Gui.input = function(type, value, cls, func) {
+    var input = Gui.tag("input");
+    input.type = type;
+    if((type == "checkbox") || (type == "radio")) {
+      input.checked = value;
+      if(func) { input.addEventListener("change", func); }
+    } else {
+      input.value = value;
+      if(func) { input.addEventListener("input", func); }
+    }
+    if(cls) { input.classList.add(cls); }
+    return input;
+  };
+
+  /**
+   * Create a select with options.
+   *   @opt: The options list.
+   *   @cls: The class.
+   *   @change: The change notifier.
+   *   &returns: The DOM select element.
+   */
+  window.Gui.select = function(opt, cls, change) {
+    var select = Gui.tag("select", cls);
+    for(var i = 0; i < opt.length; i++) {
+      if(opt[i] instanceof Node) {
+        select.appendChild(Gui.tag("option", null, opt[i]));
+      } else {
+        select.appendChild(Gui.tag("option", null, Gui.text(opt[i])));
+      }
+    }
+    if(cls) { select.classList.add(cls); }
+    return select;
   };
 
 
@@ -190,6 +241,9 @@
   window.Gui.Slider = function(opt, func) {
     var slider = Gui.div("gui-slider");
 
+    if(opt.vert) { slider.classList.add("gui-vert"); }
+    if(opt.cls) { slider.classList.add(opt.cls); }
+
     var left = Gui.div("gui-left gui-noselect");
     slider.appendChild(left);
 
@@ -207,7 +261,7 @@
     slider.guiUpdate = function(x) {
       if(x < 0) { x = 0; } else if(x > 1) { x = 1; }
 
-      slider.guiCur.style.left = (100 * x) + "%";
+      slider.guiCur.style[opt.vert ? "top" : "left"] = (100 * x) + "%";
       if(opt. input) { slider.guiInput.value = Math.round(slider.guiMax * x); }
       if(func) { func(slider, x); }
     };
@@ -217,7 +271,12 @@
       e.preventDefault();
 
       var move = function(e) {
-        var x = (e.clientX - left.offsetLeft) / left.clientWidth;
+        var x;
+        if(opt.vert) {
+          x = (e.clientY - left.offsetTop) / left.clientHeight;
+        } else {
+          x = (e.clientX - left.offsetLeft) / left.clientWidth;
+        }
         slider.guiUpdate(x);
       };
       var out = function(e) {
@@ -243,7 +302,7 @@
       slider.appendChild(slider.guiInput);
     }
 
-    slider.guiUpdate(0.5);
+    slider.guiUpdate(opt.def ? opt.def : 0.5);
 
     return slider;
   };
@@ -313,6 +372,88 @@
     });
 
     return popup;
+  };
+
+
+  /**
+   * Create a select button.
+   *   @elem: The displayed element on popup.
+   *   @opt: The options.
+   *   &returns: The select element.
+   */
+  window.Gui.Select = function(elem, opt) {
+    var select = Gui.div("gui-select-wrap");
+
+    if(opt.cls) { select.classList.add(opt.cls); }
+
+    select.guiPopup = null;
+    select.guiElem = elem;
+    select.guiButton = Gui.tag("button", "gui-select-button", Gui.text(opt.text ? opt.text : "Select"));
+    select.guiButton.addEventListener("mousedown", Gui.SelectShow(select, select.guiButton));
+    select.appendChild(select.guiButton);
+
+    return select;
+  };
+  /**
+   * Handler to show the select.
+   *   @select: The select element.
+   *   @button: The button element.
+   *   &returns: The handler.
+   */
+  window.Gui.SelectShow = function(select, button) {
+    return function(e) {
+      if(e.button != 0) { return; }
+      if(select.guiPopup != null) { return; }
+
+      select.guiPopup = Gui.div("gui-select-popup");
+      select.appendChild(select.guiPopup);
+
+      if(typeof select.guiElem == "function") {
+        select.guiPopup.appendChild(select.guiElem(select));
+      }
+ 
+      var dismiss = function(e) {
+        select.removeChild(select.guiPopup);
+        select.guiPopup = null;
+        window.removeEventListener("click", dismiss);
+      };
+
+      var click = function(e) {
+        window.removeEventListener("click", click);
+        window.removeEventListener("mouseup", mouseup);
+        window.addEventListener("click", dismiss);
+        e.stopPropagation();
+      };
+
+      var mouseup = function(e) {
+        if(e.target == button) { return; }
+
+        select.removeChild(select.guiPopup);
+        select.guiPopup = null;
+        window.removeEventListener("click", click);
+        window.removeEventListener("mouseup", mouseup);
+        e.stopPropagation();
+      };
+
+      window.addEventListener("click", click);
+      window.addEventListener("mouseup", mouseup);
+    };
+  };
+
+
+  /**
+   * Create an entry widget.
+   *   @opt: The options.
+   *   @func: The change callback.
+   *   &returns: The entry DOM element.
+   */
+  window.Gui.Entry = function(opt, func) {
+    var entry = Gui.tag("input", "gui-entry");
+
+    if(opt.cls) { entry.classList.add(opt.cls); }
+    if(opt.def) { entry.value = opt.def; }
+
+    return entry;
   };
 
 

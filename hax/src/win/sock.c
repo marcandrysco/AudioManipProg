@@ -28,7 +28,7 @@ char *sys_socket(sys_fd_t *fd, int af, int type, int prot)
 		return mprintf("Failed to create socket. %C.", sys_sockerr());
 
 	fd->handle = WSACreateEvent();
-	WSAEventSelect(fd->sock, fd->handle, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
+	WSAEventSelect(fd->sock, fd->handle, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CLOSE);
 
 	return NULL;
 }
@@ -80,7 +80,7 @@ char *sys_connect(sys_fd_t *fd, int type, const char *host, uint16_t port)
 		return mprintf("Failed to connect to %s:%u.", host, port);
 
 	fd->handle = WSACreateEvent();
-	WSAEventSelect(fd->sock, fd->handle, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
+	WSAEventSelect(fd->sock, fd->handle, FD_CLOSE | FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
 
 	return NULL;
 }
@@ -201,7 +201,7 @@ char *sys_accept(sys_fd_t fd, sys_fd_t *client, struct sockaddr *addr, int *len)
 
 	WSAResetEvent(fd.handle);
 	client->handle = WSACreateEvent();
-	WSAEventSelect(client->sock, client->handle, FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
+	WSAEventSelect(client->sock, client->handle, FD_CLOSE | FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
 
 	return NULL;
 }

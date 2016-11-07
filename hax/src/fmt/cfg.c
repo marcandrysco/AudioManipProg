@@ -199,7 +199,25 @@ char *cfg_read_uint16vec(char **value, unsigned int n, uint16_t **vec, unsigned 
 }
 
 /**
- * Read an double from a value.
+ * Read a boolean from a value.
+ *   @value: The value.
+ *   @ptr: The pointer.
+ *   &returns: Error.
+ */
+char *cfg_read_bool(const char *value, bool *ptr)
+{
+	if((strcasecmp(value, "true") == 0) || (strcasecmp(value, "t") == 0) || (strcmp(value, "1") == 0))
+		*ptr = true;
+	else if((strcasecmp(value, "false") == 0) || (strcasecmp(value, "f") == 0) || (strcmp(value, "0") == 0))
+		*ptr = false;
+	else
+		return mprintf("Invalid boolean '%s'.", value);
+
+	return NULL;
+}
+
+/**
+ * Read a double from a value.
  *   @value: The value.
  *   @ptr: The pointer.
  *   &returns: Error.
@@ -251,12 +269,12 @@ char *cfg_readf(struct cfg_line_t *line, const char *restrict fmt, ...)
 		switch(*fmt) {
 		case 's':
 			*va_arg(args, const char **) = *val;
-			val++, n--; fmt++;
+			val++, n--, fmt++;
 			break;
 
 		case 'd':
 			chkfail(cfg_read_int(*val, va_arg(args, int *)));
-			val++, n--; fmt++;
+			val++, n--, fmt++;
 			break;
 
 		case 'u':
@@ -287,6 +305,11 @@ char *cfg_readf(struct cfg_line_t *line, const char *restrict fmt, ...)
 				chkfail(cfg_read_int(*val, va_arg(args, int *)));
 				val++, n--;
 			}
+			break;
+
+		case 'b':
+			chkfail(cfg_read_bool(*val, va_arg(args, bool *)));
+			val++, n--; fmt++;
 			break;
 
 		case 'f':
@@ -348,6 +371,16 @@ void cfg_write_uint16vec(FILE *file, uint16_t *vec, unsigned int len)
 
 	for(i = 0; i < len; i++)
 		cfg_write_uint16(file, vec[i]);
+}
+
+/**
+ * Write boolean.
+ *   @file: The file.
+ *   @val: The value.
+ */
+void cfg_write_bool(FILE *file, bool val)
+{
+	fprintf(file, " \"%s\"", val ? "true" : "false");
 }
 
 /**
@@ -413,6 +446,8 @@ void cfg_writef(FILE *file, const char *restrict key, const char *restrict fmt, 
 			cfg_write_uint16(file, va_arg(args, int));
 		else if((endptr = strprefix(fmt, "u")) != NULL)
 			cfg_write_uint(file, va_arg(args, unsigned int));
+		else if((endptr = strprefix(fmt, "b")) != NULL)
+			cfg_write_bool(file, va_arg(args, int));
 		else if((endptr = strprefix(fmt, "f")) != NULL)
 			cfg_write_double(file, va_arg(args, double));
 		else if((endptr = strprefix(fmt, "s")) != NULL)

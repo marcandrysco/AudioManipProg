@@ -940,3 +940,148 @@ struct json_obj_t *json_chk_obj(struct json_t *json, ...)
 
 	return ((id == NULL) && (obj->root.count == cnt)) ? obj : NULL;
 }
+
+
+char *json_getf(struct json_t *json, const char *restrict fmt, ...)
+{
+	char *err;
+	va_list args;
+
+	va_start(args, fmt);
+	err = json_vgetf(json, fmt, args);
+	va_end(args);
+
+	return err;
+}
+
+char *json_vgetf(struct json_t *json, const char *restrict fmt, va_list args)
+{
+	char *err;
+	struct arglist_t arglist;
+
+	va_copy(arglist.args, args);
+	err = json_vgetfptr(json, &fmt, &arglist);
+	va_end(arglist.args);
+
+	return err;
+}
+
+char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, struct arglist_t *arglist)
+{
+	//const char *orig = *fmt;
+
+	while(isspace(**fmt))
+		(*fmt)++;
+
+	switch(**fmt) {
+	case '{':
+		{
+			size_t len;
+			char *endptr;
+			struct json_obj_t *obj;
+			unsigned int cnt = 0;
+
+			if(json->type != json_obj_v)
+				return mprintf("Expected object.");
+
+			(*fmt)++;
+			obj = json->data.obj;
+
+			while(true) {
+				while(isspace(**fmt))
+					(*fmt)++;
+
+				if(**fmt == '\0')
+					fatal("Invalid format string.");
+				else if(**fmt == '}')
+					break;
+
+				endptr = strchr(*fmt, ':');
+				if(endptr == NULL)
+					fatal("Invalid format string.");
+
+				len = endptr - *fmt;
+
+				{
+					char name[len + 1];
+
+					memcpy(name, *fmt, len);
+					name[len] = '\0';
+
+					json = json_obj_getval(obj, name);
+					if(json == NULL)
+						return mprintf("Missing field '%s'.", name);
+
+					cnt++;
+					*fmt = endptr + 1;
+					chkret(json_vgetfptr(json, fmt, arglist));
+				}
+
+				while(isspace(**fmt))
+					(*fmt)++;
+
+				if(**fmt == '}')
+					break;
+				else if(**fmt == '$') {
+					if(obj->root.count != cnt)
+						return mprintf("Too many fields.");
+
+					(*fmt)++;
+					while(isspace(**fmt))
+						(*fmt)++;
+
+					if(**fmt != '}')
+						fatal("Invalid format string.");
+
+					break;
+				}
+				else if(**fmt != ',')
+					fatal("Invalid format string.");
+
+				(*fmt)++;
+			}
+
+			(*fmt)++;
+		}
+		break;
+
+	case 's':
+		if(json->type != json_str_v)
+			return mprintf("Expected string.");
+
+		(*fmt)++;
+		*va_arg(arglist->args, const char **) = json->data.str;
+		break;
+
+	case 'u':
+		{
+			double flt;
+			unsigned int val;
+
+			if(json->type != json_num_v)
+				return mprintf("Expected integer.");
+
+			val = flt = json->data.num;
+			if(val != flt)
+				return mprintf("Expected integer.");
+
+			(*fmt)++;
+			if(((*fmt)[0] == '1')  && ((*fmt)[1] == '6')) {
+				if(val > UINT16_MAX)
+					return mprintf("Integer too large.");
+
+				*fmt += 2;
+				*va_arg(arglist->args, uint16_t *) = val;
+			}
+			else
+				*va_arg(arglist->args, unsigned int *) = val;
+
+			break;
+		}
+
+	default:
+		fatal("Invalid format character '%c'.", **fmt);
+	}
+
+	return NULL;
+}

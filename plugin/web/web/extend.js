@@ -49,4 +49,31 @@
       if(idx >= 0) { this.splice(idx, 1); }
     }
   };
+
+
+  Array.range = function() {
+    if(arguments.length == 0) {
+      throw "Array.range requires at least one argument";
+    } else if(arguments.length == 1) {
+      var arr = new Array();
+      for(var i = 0; i < arguments[0]; i++) {
+        arr.push(i);
+      }
+      return arr;
+    } else if(arguments.length == 2) {
+      var arr = new Array();
+      for(var i = arguments[0]; i <= arguments[1]; i++) {
+        arr.push(i);
+      }
+      return arr;
+    } else if(arguments.length == 3) {
+      var arr = new Array();
+      for(var i = arguments[0]; i <= arguments[1]; i += arguments[2]) {
+        arr.push(i);
+      }
+      return arr;
+    } else {
+      throw "Array.range take at most 3 arguments";
+    }
+  };
 })();

@@ -7,6 +7,7 @@ setconf()
 
   lib_dep "hax"
   lib_dep "pthread"
+  lib_dep "dl"
 
   c_src "src/main.c"
 
@@ -16,6 +17,7 @@ setconf()
   c_src "src/types/strtrie.c"
 
   c_src "src/fmt/cfg.c"
+  c_src "src/fmt/json.c"
 
   c_src "src/sys/notify.c"
   c_src "src/sys/thread.c"

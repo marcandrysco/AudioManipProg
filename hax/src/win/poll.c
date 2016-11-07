@@ -22,7 +22,24 @@ bool sys_poll(struct sys_poll_t *list, unsigned int n, int timeout)
 	if(ret >= 0x80)
 		return false;
 
-	list[ret].revents = (sys_poll_in_e | sys_poll_out_e) & list[ret].events;
+	if(list[ret].fd.sock != INVALID_SOCKET) {
+		WSANETWORKEVENTS info;
+		enum sys_poll_e events = 0;
+		WSAEnumNetworkEvents(list[ret].fd.sock, list[ret].fd.handle, &info);
+
+		if(info.lNetworkEvents & FD_CLOSE)
+			events |= sys_poll_err_e;
+
+		if(info.lNetworkEvents & (FD_READ | FD_ACCEPT))
+			events |= sys_poll_in_e;
+
+		if(info.lNetworkEvents & FD_WRITE)
+			events |= sys_poll_out_e;
+
+		list[ret].revents = events & list[ret].events;
+	}
+	else
+		list[ret].revents = (sys_poll_in_e | sys_poll_out_e) & list[ret].events;
 
 	return true;
 }

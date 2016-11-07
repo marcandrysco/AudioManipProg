@@ -63,6 +63,7 @@
     switch(Web.data[idx].type) {
     case "audit": work.appendChild(Audit.elem(Web.data[idx].data, idx)); break;
     case "ctrl": work.appendChild(Ctrl.elem(Web.data[idx].data, idx)); break;
+    case "mach": work.appendChild(Mach.elem(Web.data[idx].data, idx)); break;
     case "player": work.appendChild(Player.elem(Web.data[idx].data, idx)); break;
     default: throw "Invalid type " + Web.data[idx].type;
     }
@@ -72,12 +73,19 @@
         el.classList.remove("cur");
       });
       Array.prototype.forEach.call(work.parentNode.childNodes, function(el) {
-        el.classList.add("gui-hide");
+        if(el.classList.contains("work")) { el.classList.add("gui-hide"); }
       });
 
       item.classList.add("cur");
       work.classList.remove("gui-hide");
       Web.cur = idx;
+
+      switch(Web.data[idx].type) {
+      case "audit": break;
+      case "ctrl": Ctrl.draw(Web.data[idx].data); break;
+      case "mach": break;
+      case "player": Player.draw(Web.data[idx].data); break;
+      }
     });
   };
 
@@ -107,16 +115,17 @@
     Req.get("/get", function(resp) {
       var json = JSON.parse(resp);
 
-      Time.update(json.time);
+      Time.update(json[0]);
 
       for(var i = 1; i < Web.data.length; i++) {
         switch(Web.data[i].type) {
+        case "audit": Audit.update(Web.data[i].data, json[i]); break;
         case "mach":  break;
         case "player": Player.update(Web.data[i].data); break;
         }
       }
 
-      Gui.wait(50, function() {
+      Gui.wait(200, function() {
         requestAnimationFrame(function() { Web.refresh(); });
       });
     });
@@ -185,14 +194,13 @@
 
   /*
    * Machine namespace
-   */
   window.Mach = new Object();
+   */
 
   /**
    * Initialize a machine.
    *   @work: The workspace.
    *   @data: The machine data.
-   */
   window.Mach.init = function(work, mach) {
     mach.vel = 1;
     work.classList.add("mach");
@@ -240,6 +248,7 @@
     }
     return mach;
   };
+   */
 
   /**
    * Machine click handler.
@@ -247,7 +256,6 @@
    *   @bar: The bar.
    *   @div: The division.
    *   @cell: The cell.
-   */
   window.Mach.click = function(mach, key, idx, cell) {
     return function(e) {
       if(e.which == 1) {
@@ -273,6 +281,7 @@
       e.preventDefault();
     };
   };
+   */
 
   /*
    * initialize on load

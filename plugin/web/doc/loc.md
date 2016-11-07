@@ -11,7 +11,7 @@ measure) and beat 1.5 (or 1 and 1/2).
 
     bar  : int
     beat : float
-    copy : function
+    copy : function(void) : Loc
 
 The location structure consists of two fields, `bar` and `beat`, of which the
 beat must be nonnegative.
@@ -23,8 +23,8 @@ The `copy` mothod creates a deep copy of the location.
 
 ### Creation -- `make` `makef`
 
-    Loc.make(bar:int, beat:float)
-    Loc.makef(bar:float, nbeats:float)
+    Loc.make(bar:int, beat:float) : Loc
+    Loc.makef(bar:float, nbeats:float) : Loc
 
 The `make` method directly create a location using a bar and beat. The
 parameter `bar` must be a signed integer, and `beat` must be a nonnegative
@@ -34,9 +34,18 @@ strictly less than the number of beats in a measure.
 The `makef` method directly creates a location using a floating-point bar and
 number of beats per measure.
 
+### Arithmetic -- `add`
+
+    Loc.add(loc:Loc, beat:float, nbeats:float)
+
+The `add` method adds `beat` number of beats to the location `loc`, returning
+the new location. The `nbeats` parameter is used to correctly compute the bar
+and adjust the returning location so that the beat is at least `0` but no
+more than `nbeats`.
+
 ### Conversion -- `bar`
 
-    Loc.bar = function(loc, nbeats)
+    Loc.bar(loc:Loc, nbeats:float) : float
 
 The `bar` method converts a location to a floating point bar. The floating
 point format is ideal for performing arithmetic.

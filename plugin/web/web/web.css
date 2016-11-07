@@ -7,6 +7,7 @@ html, body {
   width: 100%;
   height: 100%;
   margin: 0;
+  min-width: 800px;
 }
 
 #page {
@@ -78,29 +79,6 @@ html, body {
 
 /* machine */
 
-.mach {
-}
-
-  .mach > .head {
-    font-size: 24px;
-    height: 40px;
-    line-height: 40px;
-    display: flex;
-  }
-
-    .mach > .head > .title {
-    }
-
-    .mach > .head > * {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .mach > .head > :not(:first-child) {
-      margin-left: 16px;
-    }
-
-
   .mach > .instr {
   }
   .mach > .instr:not(:first-child) {
@@ -136,3 +114,28 @@ html, body {
       .mach > .instr > .row > .cell:not(:first-child) {
         margin-left: 5px;
       }
+
+/*
+ * select widget
+ */
+.gui-select-wrap {
+  position: relative;
+  font-size: 16px;
+}
+
+  .gui-select-wrap > .gui-select-button {
+    display: block;
+    font-size: 16px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .gui-select-wrap > .gui-select-popup {
+    font-size: 16px;
+    position: absolute;
+    padding: 4px;
+    top: 100%;
+    border: 1px solid black;
+    border-radius: 2px;
+    background-color: #fff;
+  }

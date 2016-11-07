@@ -15,3 +15,9 @@ octave.
 
 The `parse` method takes a string and parses the key from it. If the string is
 not a valid key, the method returns null.
+
+### Selector -- `select`
+
+    Key.select(opt: Object, func:function)
+
+The `select` method creates a key selector.

@@ -198,6 +198,7 @@ void http_client_delete(struct http_client_t *client)
 bool http_client_proc(struct http_client_t *client, http_handler_f func, void *arg)
 {
 	char ch;
+	bool cont = false;
 
 	while(true) {
 		if((client->state == done_v) && (tcp_client_queue(client->tcp) == 0))
@@ -206,6 +207,7 @@ bool http_client_proc(struct http_client_t *client, http_handler_f func, void *a
 		if(!tcp_client_read(client->tcp, &ch, 1))
 			break;
 
+		cont = true;
 		if(client->state == head_v) {
 			if(ch == '\r')
 				continue;
@@ -222,8 +224,10 @@ bool http_client_proc(struct http_client_t *client, http_handler_f func, void *a
 					client->len = 0;
 
 				if(client->len == 0) {
-					client->state = done_v;
+					client->state = head_v;
 					client_resp(client, func, arg);
+					strbuf_reset(&client->buf);
+					http_head_destroy(&client->head);
 				}
 				else
 					client->state = body_v;
@@ -235,13 +239,15 @@ bool http_client_proc(struct http_client_t *client, http_handler_f func, void *a
 		else if(client->state == body_v) {
 			strbuf_addch(&client->buf, ch);
 			if(client->buf.idx == client->len) {
-				client->state = done_v;
+				client->state = head_v;
 				client_resp(client, func, arg);
+				strbuf_reset(&client->buf);
+				http_head_destroy(&client->head);
 			}
 		}
 	}
 
-	return true;
+	return cont;
 }
 
 /**
@@ -278,7 +284,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 
 		snprintf(len, sizeof(len), "%u", (unsigned int)nbytes);
 		http_head_add(&args.resp, "Content-Length", len);
-		http_head_add(&args.resp, "Connection", "close");
+		http_head_add(&args.resp, "Connection", "keep-alive");
 
 		for(pair = args.resp.pair; pair != NULL; pair = pair->next)
 			hprintf(file, "%s: %s\n", pair->key, pair->value);
@@ -287,7 +293,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 		io_file_write(file, buf, nbytes);
 	}
 	else
-		hprintf(file, "HTTP/1.1 404 Not Found\nContent-Length: 9\nConnection: close\n\nNot Found");
+		hprintf(file, "HTTP/1.1 404 Not Found\nContent-Length: 9\nConnection: keep-alive\n\nNot Found");
 
 	free(buf);
 	io_file_close(file);
@@ -316,9 +322,12 @@ char *http_server_proc(struct http_server_t *server, struct sys_poll_t *fds, htt
 		cont[i] = true;
 		if(fds[i+1].revents == 0)
 			continue;
-
-		tcp_client_proc(client->tcp, fds[i+1].revents);
-		cont[i] = http_client_proc(client, func, arg);
+		else if(fds[i+1].revents == sys_poll_err_e)
+			cont[i] = false;
+		else {
+			tcp_client_proc(client->tcp, fds[i+1].revents);
+			cont[i] = http_client_proc(client, func, arg);
+		}
 	}
 
 	for(i = 0, cur = &server->client; *cur != NULL; i++) {

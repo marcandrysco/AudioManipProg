@@ -72,6 +72,9 @@ static struct http_asset_t serv_assets[] = {
 	{  "/web.audit.css",  "web.audit.css",  "text/css"                },
 	{  "/web.ctrl.js",    "web.ctrl.js",    "application/javascript"  },
 	{  "/web.ctrl.css",   "web.ctrl.css",   "text/css"                },
+	{  "/web.key.css",    "web.key.css",    "text/css"                },
+	{  "/web.mach.js",    "web.mach.js",    "application/javascript"  },
+	{  "/web.mach.css",   "web.mach.css",   "text/css"                },
 	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
 	{  "/web.player.css", "web.player.css", "text/css"                },
 	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
@@ -496,16 +499,21 @@ static bool req_handler(const char *path, struct http_args_t *args, void *arg)
 	else if(strcmp(path, "/get") == 0) {
 		const char *run;
 		struct amp_loc_t loc;
+		struct web_inst_t *inst;
 
 		run = amp_rt_status(serv->rt) ? "true" : "false";
 		amp_clock_info(serv->rt->engine->clock, amp_info_loc(&loc));
 
 		http_head_add(&args->resp, "Content-Type", "application/json");
-		hprintf(args->file, "{");
+		hprintf(args->file, "[");
 
-		hprintf(args->file, "\"time\": { \"run\": %s, \"loc\": { \"bar\": %d, \"beat\": %.8f } }", run, loc.bar, loc.beat);
+		hprintf(args->file, "{ \"run\": %s, \"loc\": { \"bar\": %d, \"beat\": %.8f } }", run, loc.bar, loc.beat);
 
-		hprintf(args->file, "}");
+		for(inst = web_inst_first(web_serv); inst != NULL; inst = web_inst_next(inst)) {
+			hprintf(args->file, ",{}");
+		}
+
+		hprintf(args->file, "]");
 
 		return true;
 	}
@@ -560,7 +568,7 @@ static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct j
 		return false;
 
 	switch(inst->type) {
-	case web_mach_v: return false; //web_mach_req(inst->data.mach, path + n, args);
+	case web_mach_v: return web_mach_req(inst->data.mach, args, json);
 	case web_player_v: return web_player_req(inst->data.player, args, json);
 	case web_audit_v: return false;
 	case web_ctrl_v: return false;

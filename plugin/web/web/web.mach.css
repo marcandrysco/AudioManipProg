@@ -1,0 +1,111 @@
+.mach {
+}
+
+  .mach > .head {
+    font-size: 24px;
+    display: flex;
+    margin-bottom: 20px;
+  }
+
+    .mach > .head > *:not(:first-child) {
+      margin-left: 16px;
+    }
+
+    .mach > .head > .title {
+    }
+
+    .mach > .head > .vel {
+      align-self: center;
+    }
+
+  .mach > .inst {
+    display: inline-flex;
+    padding: 8px 16px;
+    border-top: 2px solid #888;
+  }
+  .mach > .inst:last-child {
+    border-bottom: 2px solid #888;
+  }
+
+    .mach > .inst > .label {
+      width: 150px;
+      text-align: right;
+      padding: 4px 10px;
+      align-self: stretch;
+    }
+
+      .mach > .inst > .label > .name {
+        font-size: 24px;
+      }
+
+      .mach > .inst > .label > .action {
+        margin-top: 6px;
+      }
+
+        .mach > .inst > .label > .action > button:not(:last-child) {
+          margin-right: 6px;
+        }
+
+      .mach > .inst > .label > .dev {
+        font-size: 16px;
+        margin-top: 6px;
+      }
+
+    .mach > .inst > .grid {
+      padding: 4px 0;
+    }
+
+      .mach > .inst > .grid > .bar {
+        display: flex;
+      }
+      .mach > .inst > .grid > .bar:not(:first-child) {
+        margin-top: 8px;
+      }
+
+        .mach > .inst > .grid > .bar > .beat {
+          display: flex;
+        }
+        .mach > .inst > .grid > .bar > .beat:not(:first-child) {
+            margin-left: 12px;
+        }
+
+          .mach > .inst > .grid > .bar > .beat > .pad {
+            width: 45px;
+            height: 65px;
+            border: 3px solid black;
+            border-radius: 5px;
+          }
+          .mach > .inst > .grid > .bar > .beat > .pad:not(:first-child) {
+            margin-left: 5px;
+          }
+
+/*
+ * configuration popup
+ */
+.mach-conf {
+  width: 200px;
+  padding: 6px;
+}
+
+  .mach-conf > .line {
+  }
+  .mach-conf > .line:not(:first-child) {
+    margin-top: 12px;
+  }
+
+    .mach-conf > .line > .label {
+    }
+
+    .mach-conf > .line > input {
+      margin-top: 4px;
+      display: block;
+      width: 100%;
+    }
+
+  .mach-conf > .actions {
+    display: flex;
+    justify-content: space-between;
+  }
+
+    .mach-conf > .actions > button {
+    }

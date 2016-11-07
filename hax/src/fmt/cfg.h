@@ -42,6 +42,7 @@ char *cfg_read_int(const char *value, int *ptr);
 char *cfg_read_uint(const char *value, unsigned int *ptr);
 char *cfg_read_uint16(const char *value, uint16_t *ptr);
 char *cfg_read_uint16vec(char **value, unsigned int n, uint16_t **vec, unsigned int *len);
+char *cfg_read_bool(const char *value, bool *ptr);
 char *cfg_read_double(const char *value, double *ptr);
 char *cfg_readf(struct cfg_line_t *line, const char *restrict fmt, ...);
 
@@ -49,6 +50,7 @@ void cfg_write_int(FILE *file, int val);
 void cfg_write_uint(FILE *file, unsigned int val);
 void cfg_write_uint16(FILE *file, uint16_t val);
 void cfg_write_uint16vec(FILE *file, uint16_t *vec, unsigned int len);
+void cfg_write_bool(FILE *file, bool val);
 void cfg_write_double(FILE *file, double val);
 void cfg_write_string(FILE *file, const char *val);
 void cfg_writef(FILE *file, const char *restrict key, const char *restrict fmt, ...);

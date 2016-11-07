@@ -2,14 +2,6 @@
 #define FORMAT_H
 
 /**
- * Variable argument list wrapper structure.
- *   @args: The internal argument list.
- */
-struct arglist_t {
-	va_list args;
-};
-
-/**
  * Print enumerator.
  *   @io_print_long_v: Long.
  *   @io_print_size_v: SizeT.

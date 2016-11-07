@@ -4,7 +4,6 @@
 /*
  * test declarations
  */
-bool test_cfg(void);
 bool test_printf(void);
 
 bool test_avltree(void);
@@ -13,6 +12,9 @@ bool test_strtrie(void);
 bool test_sys_notify(void);
 bool test_sys_task(void);
 bool test_sys_thread(void);
+
+bool test_cfg(void);
+bool test_json(void);
 
 
 /**
@@ -29,7 +31,6 @@ int main(int argc, char **argv)
 	setbuf(stderr, NULL);
 	setlocale(LC_CTYPE, "");
 
-	suc &= test_cfg();
 	suc &= test_printf();
 
 	suc &= test_avltree();
@@ -38,6 +39,9 @@ int main(int argc, char **argv)
 	suc &= test_sys_thread();
 	suc &= test_sys_task();
 	//suc &= test_sys_notify();
+
+	suc &= test_cfg();
+	suc &= test_json();
 
 	if(hax_memcnt != 0)
 		suc &= false, fprintf(stderr, "Error. Missed %d allocations.\n", hax_memcnt);

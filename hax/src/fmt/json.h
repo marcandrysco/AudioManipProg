@@ -151,6 +151,10 @@ bool json_get_uint16(struct json_t *json, uint16_t *out);
 struct json_arr_t *json_get_arr(struct json_t *json, int len);
 struct json_obj_t *json_chk_obj(struct json_t *json, ...);
 
+char *json_getf(struct json_t *json, const char *restrict fmt, ...);
+char *json_vgetf(struct json_t *json, const char *restrict fmt, va_list args);
+char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, struct arglist_t *args);
+
 
 /**
  * Delete a JSON object if non-null.

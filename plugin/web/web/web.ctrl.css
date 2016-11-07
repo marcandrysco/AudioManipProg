@@ -4,3 +4,27 @@
   .ctrl > canvas {
     width: 100%;
   }
+
+  .ctrl > .panel {
+    display: flex;
+  }
+
+    .ctrl > .panel > .mod:not(:last-child) {
+      margin-right: 10px;
+    }
+
+    .ctrl > .panel > .mod {
+      width: 100px;
+      height: 200px;
+      border: 2px solid black;
+      flex-shrink: 0;
+      padding: 3px 5px;
+    }
+
+      .ctrl > .panel > .mod > .name {
+        text-align: center;
+      }
+
+      .ctrl > .panel > .mod > .slider {
+        margin: 0 auto;
+      }

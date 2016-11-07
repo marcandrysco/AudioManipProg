@@ -7,6 +7,7 @@ The entirety of the GUI toolkit is contained by the files `gui.js` and
 
 ## Base functions
 
+These functions provide basic tools for retrieving and modifying nodes.
 
 ### Gui.byid
 
@@ -34,22 +35,25 @@ Replace all children elements of the node `parent` with the single child
 
 ## Creation functions
 
+The creation functions are convenient methods for creating DOM elements. They
+are much shorter than the `document.createElement` and related function. These
+functions also provide extra parameters for initializing common parameters.
 
-### Gui.text
+### Create text node -- `Gui.text`
 
     Gui.text(str)  // = document.createTextNode(str)
 
 Create a text node consisting of the string `str`. This is an alias of
 `document.createElement` only provided as a shorter, more convenient form.
 
-### Gui.tag
+### Create tagged node -- `Gui.tag`
 
     Gui.tag(tag, cls, child)
 
 The `tag` function creates a DOM element with the given tag, class list, and
 children. The `cls` or `child` arguments can be omitted using a null value.
 Both the `cls` and `child` arguments may be an array indicating that the
-elements should use the list of classes of list of children.
+elements should use the list of classes or list of children.
 
 ### Convenince constructors -- `Gui.div`, `Gui.span`
 
@@ -59,22 +63,31 @@ elements should use the list of classes of list of children.
 The `div` and `span` methods are a wrapper for creating `div` and `span` DOM
 elements.
 
-### Gui.button
+### Gui.button -- `Gui.button`
 
 
 ## Widgets
 
 ### Gui.Toggle
 
-
 ### Gui.Button
+
+### Gui.Slider
+
+### Gui.Select
 
 
 ## Standard Styles
 
-### Interaction -- `gui-noselect`
+The following are common styles that are applied using the appropriate css
+class.
+
+### Interaction -- `gui-noselect` `gui-pointer`
 
 The `gui-noselect` style prevents the user from selecting the target element.
+
+The `gui-pointer` style changes the cursor to a pointer over the target
+element.
 
 ### Visibility -- `gui-hide` `gui-noshow`
 

@@ -89,6 +89,17 @@ void strbuf_addmem(struct strbuf_t *buf, const char *restrict data, size_t nbyte
 
 
 /**
+ * Reset the string buffer.
+ *   @buf: The buffer.
+ */
+void strbuf_reset(struct strbuf_t *buf)
+{
+	buf->idx = 0;
+	buf->arr[0] = '\0';
+}
+
+
+/**
  * Write a null byte to the end of the array, returning a pointer to the
  * allocated string. This is only compatible with 'strbuf_init'.
  *   @buf: The string buffer.

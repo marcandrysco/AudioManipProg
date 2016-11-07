@@ -10,6 +10,9 @@ ASSETS = web/index.xhtml \
 	 web/web.base.js \
 	 web/web.ctrl.js \
 	 web/web.ctrl.css \
+	 web/web.key.css \
+	 web/web.mach.js \
+	 web/web.mach.css \
 	 web/web.player.js \
 	 web/web.player.css \
 	 web/web.status.js \

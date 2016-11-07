@@ -38,6 +38,16 @@
 
 typedef void (*delete_f)(void *ref);
 
+
+/**
+ * Variable argument list wrapper structure.
+ *   @args: The internal argument list.
+ */
+struct arglist_t {
+	va_list args;
+};
+
+
 /*
  * structure prototypes
  */

@@ -9,6 +9,7 @@
  *   @lock: Run lock.
  *   @inst: The instance list.
  *   @event, cur: The event list and current event.
+ *   @nbars, nbeats, ndivs: THe number of bars, beats, and divisions.
  */
 struct web_ctrl_t {
 	struct web_serv_t *serv;
@@ -19,6 +20,8 @@ struct web_ctrl_t {
 
 	struct web_ctrl_inst_t *inst;
 	struct web_ctrl_event_t *event, *cur;
+
+	float nbars, nbeats, ndivs;
 };
 
 /**
@@ -78,11 +81,17 @@ struct web_ctrl_t *web_ctrl_new(struct web_serv_t *serv, const char *id)
 	ctrl->inst = NULL;
 	ctrl->event = NULL;
 	ctrl->cur = NULL;
+	ctrl->nbars = 100.0f;
+	ctrl->nbeats = 4.0f;
+	ctrl->ndivs = 4.0f;
 
 	erase(web_ctrl_load(ctrl));
-	if(ctrl->inst == NULL)
-		ctrl->inst = inst_new(strdup("Control 1"), 1, 1),
-			ctrl->inst->next = inst_new(strdup("Control 1"), 1, 1);
+	if(ctrl->inst == NULL) {
+		struct web_ctrl_inst_t **inst = &ctrl->inst;
+
+		for(char i = 'A'; i <= 'E'; i++)
+			*inst = inst_new(mprintf("Control %c", i), 1, 1), inst = &(*inst)->next;
+	}
 
 	if(ctrl->enable)
 		sys_mutex_lock(&ctrl->lock);
@@ -195,6 +204,32 @@ static void ctrl_proc(struct io_file_t file, void *arg)
  */
 char *web_ctrl_load(struct web_ctrl_t *ctrl)
 {
+#define onexit fclose(file); cfg_line_erase(line);
+	FILE *file;
+	struct cfg_line_t *line;
+	unsigned int lineno = 1;
+	char path[strlen(ctrl->id) + 9];
+
+	sprintf(path, "web.dat/%s", ctrl->id);
+
+	file = fopen(path, "r");
+	if(file == NULL)
+		return mprintf("Cannot read from '%s'.", path);
+
+	while(true) {
+		chkfail(cfg_line_parse(&line, file, &lineno));
+		if(line == NULL)
+			break;
+
+		if(strcmp(line->key, "Keys") == 0) {
+		}
+		else
+			fail("Unknown directive '%s'.", line->key);
+
+		cfg_line_delete(line);
+	}
+
+	fclose(file);
 	return NULL;
 }
 

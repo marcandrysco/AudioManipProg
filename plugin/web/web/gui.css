@@ -1,5 +1,6 @@
-/* generic styles */
-
+/*
+ * prevent the user from performing selection
+ */
 .noselect, .gui-noselect {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -9,14 +10,27 @@
   user-select: none;
 }
 
+/*
+ * set the cursor to a pointer
+ */
+.gui-pointer {
+  cursor: pointer;
+}
+
+
+/*
+ * completely hide an element
+ */
 .gui-hide {
   display: none;
 }
 
+/*
+ * hide an element, but flow around it
+ */
 .gui-noshow {
   visibility: hidden;
 }
-
 
 .gui-bottom {
   display: flex;
@@ -32,12 +46,16 @@
 .gui-button {
   cursor: pointer;
   font-size: 16px;
+  line-height: 16px;
   border-radius: 3px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border: 1px solid #ccc;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.15),0 1px 1px rgba(0,0,0,.075);
   background-image: linear-gradient(to bottom,#fff 0,#e0e0e0 100%);
 }
+  .gui-button.gui-sm {
+    padding: 3px 10px;
+  }
 
   .gui-button.gui-blue {
     color: #fff;
@@ -70,13 +88,17 @@
 
 .gui-toggle {
   font-size: 16px;
-  padding: 3px 10px;
+  line-height: 16px;
+  padding: 6px 10px;
   color: #fff;
   border: 1px solid #ccc;
   border-radius: 3px;
   cursor: pointer;
   position: relative;
 }
+  .gui-toggle.gui-sm {
+    padding: 3px 10px;
+  }
 
   .gui-toggle.gui-on {
     background-color: #5bb85b;
@@ -122,8 +144,13 @@
 /* slider widget */
 
 .gui-slider {
-  display: inline-flex;
+  display: flex;
   height: 24px;
+}
+.gui-slider.gui-vert {
+  flex-direction: column;
+  height: 150px;
+  width: 24px;
 }
 
   .gui-slider > .gui-left {
@@ -132,6 +159,12 @@
     cursor: pointer;
     padding: 0 3px;
   }
+  .gui-slider.gui-vert > .gui-left {
+    height: 150px;
+    width: auto;
+    padding: 3px 0;
+    display: flex;
+  }
 
     .gui-slider > .gui-left > .gui-track {
       width: 100%;
@@ -139,10 +172,18 @@
       background-color: #ccc;
       border: 1px solid #555;
     }
+    .gui-slider.gui-vert > .gui-left > .gui-track {
+      width: 12px;
+      height: 100%;
+    }
 
     .gui-slider > .gui-left > .gui-space {
       height: 6px;
       padding: 0;
+    }
+    .gui-slider.gui-vert > .gui-left > .gui-space {
+      width: 6px;
+      height: auto;
     }
 
     .gui-slider > .gui-left > .gui-rail {
@@ -152,6 +193,11 @@
       width: calc(100% - 8px);
       height: 100%;
     }
+    .gui-slider.gui-vert > .gui-left > .gui-rail {
+      width: 100%;
+      height: calc(100% - 8px);
+    }
+
       .gui-slider > .gui-left > .gui-rail > .gui-cur {
         position: absolute;
         top: 0;
@@ -161,8 +207,34 @@
         border: 1px solid #333;
         background-color: rgba(100,100,100,0.5);
       }
+      .gui-slider.gui-vert > .gui-left > .gui-rail > .gui-cur {
+        width: 100%;
+        height: 8px;
+      }
 
   .gui-slider > input {
     margin-left: 10px;
     width: 36px;
   }
+
+/*
+ * select widget
+ */
+.gui-select-wrap {
+  padding: 0;
+}
+
+  .gui-select-wrap > .gui-select-button {
+    padding: 0;
+    line-height: 100%;
+  }
+
+/*
+ * entry widget
+ */
+.gui-entry {
+  border: 1px solid #ddd;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+  font-size: 14px;
+  padding: 6px 8px;
+}

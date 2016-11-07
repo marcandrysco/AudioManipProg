@@ -71,6 +71,40 @@
   };
 
 
+  /**
+   * Create a selector for a key.
+   *   @opt: The options.
+   *   @func: The function.
+   */
+  window.Key.select = function(opt, func) {
+    var make = function(select) {
+      var elem = Gui.div("key-select-opt");
+
+      for(var n = 0; n < 8; n++) {
+        var row = Gui.div("row");
+        for(var k = 0; k < 12; k++) {
+          (function() {
+            var str = Key.str(n*12+k);
+            var key = Gui.div("key", Gui.text(str));
+            key.addEventListener("click", function(e) {
+              Gui.replace(select.guiButton, Gui.text(str + " ▾"));
+            });
+            key.addEventListener("mouseup", function(e) {
+              Gui.replace(select.guiButton, Gui.text(str + " ▾"));
+            });
+            row.appendChild(key);
+          })();
+        }
+        elem.appendChild(row);
+      }
+
+      return elem;
+    };
+
+    return Gui.Select(make, { text:"C4 ▾", cls:"key-select" });
+  };
+
+
   /*
    * Location namespace
    */
@@ -111,6 +145,13 @@
   };
 
 
+  /**
+   * Add a number of beats to the location.
+   *   @loc: The location.
+   *   @beats: The number of beats.
+   *   @nbeats: The number of bytes per bar.
+   *   &returns: The new loation.
+   */
   window.Loc.add = function(loc, beats, nbeats) {
     return Loc.makef(Loc.bar(loc, nbeats) + beats / nbeats, nbeats)
   };

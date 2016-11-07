@@ -2,31 +2,49 @@
 
 
 /**
- * Instance structure.
- *   @key, vel: The key and velocity.
- *   @delay: The delay.
- *   @next: The next instance.
- */
-struct inst_t {
-	uint16_t key, vel;
-	unsigned int delay;
-
-	struct inst_t *next;
-};
-
-/**
  * Machine structure.
  *   @id: The indetifier.
  *   @last: The last beat.
  *   @ndivs, nbeats, nbats: The number of divisions, beats and bars.
- *   @inst: The instance array.
+ *   @event: The event arrays.
+ *   @inst: The instance list.
  */
 struct web_mach_t {
 	const char *id;
 
 	double last;
 	unsigned int ndivs, nbeats, nbars;
-	struct inst_t **inst;
+	struct web_mach_event_t **event[10];
+
+	struct web_mach_inst_t *inst;
+};
+
+/**
+ * Instance structure.
+ *   @id: The identifier.
+ *   @on, multi, rel: Enable, multikey, and release flags.
+ *   @dev, key: The device
+ *   @next: The next instance.
+ */
+struct web_mach_inst_t {
+	char *id;
+	bool on, multi, rel;
+	uint16_t dev, key;
+
+	struct web_mach_inst_t *next;
+};
+
+/**
+ * Event structure.
+ *   @key, vel: The key and velocity.
+ *   @inst: The instace.
+ *   @event: The event.
+ */
+struct web_mach_event_t {
+	uint16_t key, vel;
+	struct web_mach_inst_t *inst;
+
+	struct web_mach_event_t *next;
 };
 
 
@@ -35,16 +53,20 @@ struct web_mach_t {
  */
 static void mach_proc(struct io_file_t file, void *arg);
 
+static struct web_mach_inst_t *inst_new(char *id, uint16_t dev, uint16_t key);
+static void inst_delete(struct web_mach_inst_t *inst);
+static unsigned int inst_idx(struct web_mach_t *mach, struct web_mach_inst_t *inst);
+static struct web_mach_inst_t *inst_get(struct web_mach_t *mach, unsigned int idx);
+
 
 /**
  * Create a machine.
  *   @id: The identifier.
  */
-	#include <sys/stat.h>
 struct web_mach_t *web_mach_new(const char *id)
 {
 	struct web_mach_t *mach;
-	unsigned int i, len;
+	unsigned int i, n, len;
 
 	len = 4 * 4 * 2;
 	mach = malloc(sizeof(struct web_mach_t));
@@ -53,12 +75,24 @@ struct web_mach_t *web_mach_new(const char *id)
 	mach->ndivs = 4;
 	mach->nbeats = 4;
 	mach->nbars = 2;
-	mach->inst = malloc(len * sizeof(void *));
+	mach->inst = NULL;
 
-	for(i = 0; i < len; i++)
-		mach->inst[i] = NULL;
+	for(n = 0; n < 10; n++) {
+		mach->event[n] = malloc(len * sizeof(struct web_mach_inst_t *));
+		for(i = 0; i < len; i++)
+			mach->event[n][i] = NULL;
+	}
 
-	chkbool(web_mach_load(mach));
+	chkwarn(web_mach_load(mach));
+
+	if(mach->inst == NULL) {
+		mach->inst = inst_new(strdup("Drum"), 1, 1);
+		mach->inst->next = inst_new(strdup("Kick"), 1, 1);
+		mach->inst->next->on = false;
+		mach->inst->next->next = inst_new(strdup("Low Tom"), 1, 1);
+	}
+
+	chkwarn(web_mach_save(mach));
 
 	return mach;
 }
@@ -85,18 +119,30 @@ char *web_mach_make(struct ml_value_t **ret, struct ml_value_t *value, struct ml
  */
 void web_mach_delete(struct web_mach_t *mach)
 {
-	struct inst_t *inst;
-	unsigned int i, len = web_mach_len(mach);
+	unsigned int i, n, len = web_mach_len(mach);
+	struct web_mach_inst_t *inst;
+	struct web_mach_event_t *event;
 
-	for(i = 0; i < len; i++) {
-		while(mach->inst[i] != NULL) {
-			inst = mach->inst[i];
-			mach->inst[i] = inst->next;
-			free(inst);
+	for(n = 0; n < 10; n++) {
+		for(i = 0; i < len; i++) {
+			while(mach->event[n][i] != NULL) {
+				event = mach->event[n][i];
+				mach->event[n][i] = event->next;
+				
+				free(event);
+			};
 		}
+
+		free(mach->event[n]);
 	}
 
-	free(mach->inst);
+	while(mach->inst != NULL) {
+		inst = mach->inst;
+		mach->inst = inst->next;
+
+		inst_delete(inst);
+	}
+
 	free(mach);
 }
 
@@ -127,24 +173,33 @@ bool web_mach_proc(struct web_mach_t *mach, struct amp_time_t *time, unsigned in
 		return false;
 
 	right = mach->last;
+
 	for(i = 1; i <= len; i++) {
 		left = right;
 		right = fmod(time[i].beat, 1.0 / mach->ndivs);
 
-		if((left != 0.0) && (left <= right))
+		if(!amp_bar_between(0.0, left, right))
 			continue;
 
-		struct inst_t *inst;
-		unsigned int bar, beat, div, idx;
+		struct web_mach_inst_t *inst;
+		struct web_mach_event_t *event;
+		unsigned int bar, beat, div, off;
 
 		bar = (unsigned int)time[i].bar % mach->nbars;
 		beat = (unsigned int)time[i].beat;
 		div = (time[i].beat - beat) * mach->ndivs;
-		idx = div + (beat + bar * mach->nbeats) * mach->ndivs;
+		off = div + (beat + bar * mach->nbeats) * mach->ndivs;
 
-		for(inst = mach->inst[idx]; inst != NULL; inst = inst->next)
-			amp_queue_add(queue, (struct amp_action_t){ i, { 0, inst->key+1, inst->vel }, queue });
+		for(event = mach->event[0/*TODO*/][off]; event != NULL; event = event->next) {
+			inst = event->inst;
+			if(!inst->on)
+				continue;
+
+			printf("event: %d\n", event->vel);
+		}
+			//amp_queue_add(queue, (struct amp_action_t){ i, { 0, inst->key+1, inst->vel }, queue });
 	}
+
 	mach->last = right;
 
 	return false;
@@ -164,28 +219,32 @@ unsigned int web_mach_len(struct web_mach_t *mach)
 /**
  * Set a key-velocity pair on the machine.
  *   @mach: The machine.
- *   @idx: The index.
+ *   @sel: The selected preset.
+ *   @inst: The instance.
+ *   @off: The offset.
  *   @key: The key.
  *   @vel: The velocity.
  */
-void web_mach_set(struct web_mach_t *mach, unsigned int idx, uint16_t key, uint16_t vel)
+void web_mach_set(struct web_mach_t *mach, unsigned int sel, struct web_mach_inst_t *inst, unsigned int off, uint16_t key, uint16_t vel)
 {
-	struct inst_t *tmp, **inst;
+	struct web_mach_event_t **event, *tmp;
 
-	inst = &mach->inst[idx];
-	while(*inst != NULL) {
-		if((*inst)->key == key) {
-			tmp = *inst;
-			*inst = tmp->next;
-			free(tmp);
-		}
-		else
-			inst = &(*inst)->next;
+	for(event = &mach->event[sel][off]; *event != NULL; event = &(*event)->next) {
+		if((*event)->inst == inst)
+			break;
+	}
+
+	if(*event != NULL) {
+		tmp = *event;
+		*event = tmp->next;
+
+		free(tmp);
 	}
 
 	if(vel > 0) {
-		*inst = malloc(sizeof(struct inst_t));
-		**inst = (struct inst_t){ key, vel, 0, NULL };;
+		tmp = malloc(sizeof(struct web_mach_event_t));
+		*tmp = (struct web_mach_event_t){ key, vel, inst, *event };
+		*event = tmp;
 	}
 }
 
@@ -197,18 +256,31 @@ void web_mach_set(struct web_mach_t *mach, unsigned int idx, uint16_t key, uint1
  */
 void web_mach_print(struct web_mach_t *mach, struct io_file_t file)
 {
-	unsigned int i, len;
-	struct inst_t *inst;
-	const char *comma = "";
+	struct web_mach_inst_t *inst;
+	struct web_mach_event_t *event;
+	unsigned int i, n, len;
 
-	hprintf(file, "{\"ndivs\":%u,\"nbeats\":%u,\"nbars\":%u,\"data\":[", mach->ndivs, mach->nbeats, mach->nbars);
+	hprintf(file, "{\"conf\":{\"ndivs\":%u,\"nbeats\":%u,\"nbars\":%u},\"inst\":[", mach->ndivs, mach->nbeats, mach->nbars);
+
+	for(inst = mach->inst; inst != NULL; inst = inst->next)
+		hprintf(file, "{\"id\":\"%s\",\"on\":%s,\"multi\":%s,\"rel\":%s,\"dev\":%u,\"key\":%u}%s", inst->id, inst->on ? "true" : "false", inst->multi ? "true" : "false", inst->rel ? "true" : "false", inst->dev, inst->key, inst->next ? "," : "");
+
+	hprintf(file, "],\"events\":[");
 
 	len = web_mach_len(mach);
-	for(i = 0; i < len; i++) {
-		for(inst = mach->inst[i]; inst != NULL; inst = inst->next) {
-			hprintf(file, "%s{\"idx\":%u,\"key\":%u,\"vel\":%u}", comma, i, inst->key, inst->vel);
-			comma = ",";
+	for(n = 0; n < 10; n++) {
+		hprintf(file, (n > 0) ? ",[" : "[");
+
+		for(i = 0; i < len; i++) {
+			hprintf(file, (i > 0) ? ",[" : "[");
+
+			for(event = mach->event[n][i]; event != NULL; event = event->next)
+				hprintf(file, "{\"key\":%u,\"vel\":%u,\"idx\":%u}%s", event->key, event->vel, inst_idx(mach, event->inst), event->next ? "," : "");
+
+			hprintf(file, "]");
 		}
+
+		hprintf(file, "]");
 	}
 
 	hprintf(file, "]}");
@@ -232,57 +304,49 @@ static void mach_proc(struct io_file_t file, void *arg)
 /**
  * Handle a machine requeust.
  *   @mach: The machine.
- *   @path: The path.
  *   @args: The arguments.
+ *   @json: The json object.
  *   &returns: True if handled.
  */
-bool web_mach_req(struct web_mach_t *mach, const char *path, struct http_args_t *args)
+bool web_mach_req(struct web_mach_t *mach, struct http_args_t *args, struct json_t *json)
 {
-	unsigned int len, idx, key, vel, n;
+	const char *type;
 
-	if(sscanf(path, "/set/%u/%u/%u%n", &idx, &key, &vel, &n) >= 3) {
-		len = web_mach_len(mach);
-		if((idx >= len) || (key > UINT16_MAX) || (vel > UINT16_MAX))
-			return false;
+	chk(json_chk_obj(json, "type", "data", NULL));
+	chk(json_str_objget(json->data.obj, "type", &type));
+	json = json_obj_getval(json->data.obj, "data");
 
-		struct inst_t *tmp, **inst;
+	if(strcmp(type, "edit") == 0) {
+		uint16_t key, vel;
+		unsigned int sel, idx, off;
+		struct web_mach_inst_t *inst;
 
-		inst = &mach->inst[idx];
-		while(*inst != NULL) {
-			if((*inst)->key == key) {
-				tmp = *inst;
-				*inst = tmp->next;
-				free(tmp);
-			}
-			else
-				inst = &(*inst)->next;
-		}
+		chk(chkwarn(json_getf(json, "{sel:u,idx:u,off:u,key:u16,vel:u16$}", &sel, &idx, &off, &key, &vel)));
+		chk((sel < 10) && (off < web_mach_len(mach)));
+		chk((inst = inst_get(mach, sel)) != NULL);
 
-		if(vel > 0) {
-			*inst = malloc(sizeof(struct inst_t));
-			**inst = (struct inst_t){ key, vel, 0, NULL };;
-		}
-
-		http_head_add(&args->resp, "Content-Type", "application/json");
-		hprintf(args->file, "\"ok\"");
-
-		web_mach_save(mach);
-
-		return true;
+		web_mach_set(mach, sel, inst, off, key, vel);
 	}
 	else
 		return false;
+
+	web_mach_save(mach);
+
+	return true;
 }
 
 
 /**
- * Save a drum machine.
+ * Save a machine.
  *   @mach: The machine.
+ *   &returns: Error.
  */
-void web_mach_save(struct web_mach_t *mach)
+char *web_mach_save(struct web_mach_t *mach)
 {
 	FILE *file;
-	unsigned int i, len;
+	unsigned int i, n, len;
+	struct web_mach_inst_t *inst;
+	struct web_mach_event_t *event;
 	char path[strlen(mach->id) + 9];
 
 	fs_trymkdir("web.dat", 0775);
@@ -292,17 +356,20 @@ void web_mach_save(struct web_mach_t *mach)
 	if(file == NULL)
 		fatal("Failed to save to path '%s'.", path);
 
-	fprintf(file, "%u,%u,%u\n", mach->ndivs, mach->nbeats, mach->nbars);
+	for(inst = mach->inst; inst != NULL; inst = inst->next)
+		cfg_writef(file, "Inst", "s b b b u16 u16", inst->id, inst->on, inst->multi, inst->rel, inst->dev, inst->key);
 
 	len = web_mach_len(mach);
-	for(i = 0; i < len; i++) {
-		struct inst_t *inst;
-
-		for(inst = mach->inst[i]; inst != NULL; inst = inst->next)
-			fprintf(file, "%u:%u,%u\n", i, inst->key, inst->vel);
+	for(n = 0; n < 10; n++) {
+		for(i = 0; i < len; i++) {
+			for(event = mach->event[n][i]; event != NULL; event = event->next)
+				cfg_writef(file, "Event", "u u u u16 u16", n, i, inst_idx(mach, event->inst), event->key, event->vel);
+		}
 	}
 
 	fclose(file);
+
+	return NULL;
 }
 
 /**
@@ -312,9 +379,12 @@ void web_mach_save(struct web_mach_t *mach)
  */
 char *web_mach_load(struct web_mach_t *mach)
 {
-#define onexit fclose(file);
+#define onexit fclose(file); cfg_line_delete(line);
 	FILE *file;
+	struct cfg_line_t *line;
+	unsigned int cnt = 0, lineno = 1;
 	char path[strlen(mach->id) + 9];
+	struct web_mach_inst_t **inst = &mach->inst;
 
 	sprintf(path, "web.dat/%s", mach->id);
 
@@ -322,23 +392,105 @@ char *web_mach_load(struct web_mach_t *mach)
 	if(file == NULL)
 		return mprintf("Failed to open machine at '%s'.", path);
 
-	if(fscanf(file, "%u,%u,%u\n", &mach->ndivs, &mach->nbeats, &mach->nbars) < 3)
-		fail("Invalid machine file.");
-
 	while(true) {
-		unsigned int idx, key, vel;
-
-		if(fscanf(file, "%u:%u,%u\n", &idx, &key, &vel) < 3)
+		chkfail(cfg_line_parse(&line, file, &lineno));
+		if(line == NULL)
 			break;
 
-		if((idx >= web_mach_len(mach)) || (key > UINT16_MAX) || (vel > UINT16_MAX))
-			continue;
+		if(strcmp(line->key, "Inst") == 0) {
+			const char *id;
+			bool on, multi, rel;
+			uint16_t dev, key;
 
-		web_mach_set(mach, idx, key, vel);
+			chkfail(cfg_readf(line, "s b b b u16 u16 $", &id, &on, &multi, &rel, &dev, &key));
+
+			cnt++;
+			*inst = inst_new(strdup(id), dev, key);
+			(*inst)->on = on;
+			(*inst)->multi = multi;
+			(*inst)->rel = rel;
+			inst = &(*inst)->next;
+		}
+		else if(strcmp(line->key, "Event") == 0) {
+			unsigned int n, i, idx;
+			uint16_t key, vel;
+
+			chkfail(cfg_readf(line, "u u u u16 u16", &n, &i, &idx, &key, &vel));
+			if(idx >= cnt)
+				return mprintf("Invalid instance ID.");
+
+			web_mach_set(mach, n, inst_get(mach, idx), i, key, vel);
+		}
+		else
+			fail("Unknown directive '%s'.", line->key);
+
+		cfg_line_delete(line);
 	}
 
+	*inst = NULL;
 	fclose(file);
 
 	return NULL;
 #undef onexit
+}
+
+
+/**
+ * Create a new instance.
+ *   @id: The identifier.
+ *   @dev: The device.
+ *   @key: The key.
+ *   &returns: The instance.
+ */
+static struct web_mach_inst_t *inst_new(char *id, uint16_t dev, uint16_t key)
+{
+	struct web_mach_inst_t *inst;
+
+	inst = malloc(sizeof(struct web_mach_inst_t));
+	*inst = (struct web_mach_inst_t){ id, true, false, false, dev, key, NULL };
+
+	return inst;
+}
+
+/**
+ * Delete an instance.
+ *   @inst: The instance.
+ */
+static void inst_delete(struct web_mach_inst_t *inst)
+{
+	free(inst->id);
+	free(inst);
+}
+
+/**
+ * Retrieve the index of the instance.
+ *   @head: The head instance.
+ *   @inst: The instance.
+ *   &returns: The index.
+ */
+static unsigned int inst_idx(struct web_mach_t *mach, struct web_mach_inst_t *inst)
+{
+	unsigned int idx = 0;
+	struct web_mach_inst_t *iter;
+
+	for(iter = mach->inst; iter != inst; iter = iter->next)
+		idx++;
+
+	return idx;
+}
+
+/**
+ * Retrieve the instance at a given index.
+ *   @mach: The machine.
+ *   @idx: The index.
+ *   &returns: The instance or null.
+ */
+static struct web_mach_inst_t *inst_get(struct web_mach_t *mach, unsigned int idx)
+{
+	struct web_mach_inst_t *inst = mach->inst;
+
+	while((idx-- > 0) && (inst != NULL))
+		inst = inst->next;
+
+	return inst;
 }
