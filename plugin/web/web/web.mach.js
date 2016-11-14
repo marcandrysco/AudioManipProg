@@ -29,7 +29,6 @@
 
     return elem;
   };
-
   /**
    * Create the header element.
    *   @mach: The machine.
@@ -67,15 +66,19 @@
 
     var action = Gui.div("action");
     action.appendChild(Gui.Button("⚙", {}, function(e) {
-      document.body.appendChild(Mach.conf(mach, idx));
+      document.body.appendChild(Mach.conf(mach, idx, function() {
+        var old = elem;
+        old.parentNode.replaceChild(elem = Mach.elemInst(mach, idx), old);
+      }));
     }));
-    action.appendChild(Gui.Toggle(["On", "Off"], inst.on, function() {
+    action.appendChild(Gui.Toggle(["On", "Off"], inst.on, function(v) {
+      Mach.toggle(mach, idx, v);
     }));
 
     var label = Gui.div("label");
     label.appendChild(Gui.div("name", Gui.text(inst.id)));
     label.appendChild(action);
-    label.appendChild(Gui.div("dev", Gui.text(inst.dev + ":" + inst.key)));
+    label.appendChild(Gui.div("dev", Gui.text(inst.dev + ":" + (inst.multi ? "M" : inst.key))));
     elem.appendChild(label);
 
     var pads = new Array();
@@ -159,42 +162,100 @@
     if(sel == mach.sel) { mach.pads[idx][off].style.backgroundColor = Mach.getColor(add.vel); }
   };
 
+  /**
+   * Toggle an instance.
+   *   @mach: The machine.
+   *   @idx: The index.
+   *   @on: The one flag.
+   */
+  window.Mach.toggle = function(mach, idx, on) {
+    var rem = { idx: idx, conf: mach.inst[idx].copy() };
+    var add = { idx: idx, conf: mach.inst[idx] };
+
+    mach.inst[idx].on = on;
+
+    Web.put(mach.idx, { type: "conf", data: add });
+
+    mach.undo.push({ type: "conf", data: rem });
+    mach.redo = new Array();
+  };
+
+  /**
+   * Toggle an instance.
+   *   @mach: The machine.
+   *   @idx: The index.
+   *   @multi: The multi-key flag.
+   *   @rel: The release flag.
+   *   @dev: The device number.
+   *   @key: The key number.
+   */
+  window.Mach.reconf = function(mach, idx, multi, rel, dev, key) {
+    var rem = { idx: idx, conf: mach.inst[idx].copy() };
+    var add = { idx: idx, conf: mach.inst[idx] };
+
+    mach.inst[idx].multi = multi;
+    mach.inst[idx].rel = rel;
+    mach.inst[idx].dev = dev;
+    mach.inst[idx].key = key;
+
+    Web.put(mach.idx, { type: "conf", data: add });
+
+    mach.undo.push({ type: "conf", data: rem });
+    mach.redo = new Array();
+  };
+
 
   /**
    * Create the configuration element for an instance.
    *   @mach: The machine.
    *   @idx: The instance index.
    */
-  window.Mach.conf = function(mach, idx) {
+  window.Mach.conf = function(mach, idx, func) {
+    var popup, id, dev, key;
     var elem = Gui.div("mach-conf");
     var inst = mach.inst[idx];
 
+    var err = Gui.div("line error");
+    elem.appendChild(err);
+
     var line = Gui.div("line");
     line.appendChild(Gui.div("label", Gui.text("Name")));
-    line.appendChild(Gui.Entry({def: inst.id}, function() {
+    line.appendChild(id = Gui.Entry({def: inst.id}, function() {
     }));
     elem.appendChild(line);
 
     var line = Gui.div("line");
     line.appendChild(Gui.div("label", Gui.text("Device")));
-    line.appendChild(Gui.Entry({def: inst.dev}, function() {
+    line.appendChild(dev = Gui.Entry({def: inst.dev}, function() {
     }));
     elem.appendChild(line);
 
     var line = Gui.div("line");
     line.appendChild(Gui.div("label", Gui.text("Key")));
-    line.appendChild(Gui.Entry({def: inst.key}, function() {
+    line.appendChild(key = Gui.Entry({def: inst.key}, function() {
     }));
     elem.appendChild(line);
     
     var line = Gui.div(["line","actions"]);
     line.appendChild(Gui.Button("Accept", {}, function() {
+      var conf = new Object();
+      conf.dev = Parse.getUInt16(dev.value);
+      conf.key = Parse.getUInt16(key.value);
+
+      if(isNaN(conf.dev) || isNaN(conf.key)) {
+        Gui.replace(err, Gui.text("Error"));
+      } else {
+        Mach.reconf(mach, idx, false, false, conf.dev, conf.key);
+        popup.guiDismiss();
+        func();
+      }
     }));
     line.appendChild(Gui.Button("Cancel", {}, function() {
+      popup.guiDismiss();
     }));
     elem.appendChild(line);
 
-    return Gui.Popup(elem, function(e) { });
+    return popup = Gui.Popup(elem, function(e) { });
   };
 
 

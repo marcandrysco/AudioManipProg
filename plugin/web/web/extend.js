@@ -1,8 +1,41 @@
 (function() {
   "use strict";
 
+  window.Parse = new Object();
+  Parse.getInt = function(str, radix) {
+    var num = parseInt(str, radix);
+    return (num.toString() == str) ? num : NaN;
+  };
+
+  Parse.getUInt16 = function(str, radix) {
+    var num = Parse.getInt(str, radix);
+    return (Number.isInteger(num) && (num >= 0) && (num <= 65535)) ? num : NaN;
+  };
+
+  /**
+   * Retrieve the keys for the object.
+   *   &returns: The object keys as an array of strings.
+   */
   Object.prototype.keys = function() {
     return Object.keys(this);
+  };
+
+  /**
+   * Deep copy an object.
+   *   &returns: The copy.
+   */
+  Object.prototype.copy = function() {
+    var keys = Object.keys(this);
+    var copy = new Object();
+    for(var i = 0; i < keys.length; i++) {
+      switch(typeof this[keys[i]]) {
+      case "object": copy[keys[i]] = this[keys[i]].copy(); break;
+      case "array": throw "stub";
+      case "function": break;
+      default: copy[keys[i]] = this[keys[i]]; break;
+      }
+    }
+    return copy;
   };
 
   window.isEqual = function(a, b) {

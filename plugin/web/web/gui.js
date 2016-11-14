@@ -233,7 +233,6 @@
     return button;
   };
 
-
   /**
    * Create a slider.
    *   &returns: The slider.
@@ -261,8 +260,13 @@
     slider.guiUpdate = function(x) {
       if(x < 0) { x = 0; } else if(x > 1) { x = 1; }
 
-      slider.guiCur.style[opt.vert ? "top" : "left"] = (100 * x) + "%";
-      if(opt. input) { slider.guiInput.value = Math.round(slider.guiMax * x); }
+      if(opt.vert) {
+        slider.guiCur.style["top"] = (100 * (1 - x)) + "%";
+      } else {
+        slider.guiCur.style["left"] = (100 * x) + "%";
+      }
+
+      if(opt.input) { slider.guiInput.value = Math.round(slider.guiMax * x); }
       if(func) { func(slider, x); }
     };
 
@@ -273,9 +277,9 @@
       var move = function(e) {
         var x;
         if(opt.vert) {
-          x = (e.clientY - left.offsetTop) / left.clientHeight;
+          x = 1 - (e.clientY - left.getBoundingClientRect().top) / left.clientHeight;
         } else {
-          x = (e.clientX - left.offsetLeft) / left.clientWidth;
+          x = (e.clientX - left.getBoundingClientRect().left) / left.clientWidth;
         }
         slider.guiUpdate(x);
       };
@@ -292,8 +296,6 @@
       window.addEventListener("mouseup", up);
       move(e);
     });
-
-    if(typeof opt != "object") { opt = new Object; }
 
     if(opt.input) {
       slider.guiMax = opt.input;

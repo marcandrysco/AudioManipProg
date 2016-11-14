@@ -21,12 +21,20 @@ requests to update the server-side machine.
 The `update` method updates the machine UI elements. The `data` object is
 unused by a machine. The machine updates the UI according to the new time.
 
-### Actions -- `set`
+### Actions -- `set` `toggle` `conf`
 
     Mach.set(mach:Mach, sel:int, idx:int, off:int, key:int, vel: int) : void
 
 The `set` method sets the key-velocity pair at the desired location. A
 velocity of `0` implicitly removes the event.
+
+    Mach.toggle = function(mach:Mach, idx:int, on:bool)
+
+The `toggle` method sets the `on` or enable flag of an instance.
+
+    Mach.reconf = function(mach:Mach, idx:int, multi:bool, rel:bool, dev:int, key:int)
+
+The `reconf` method reconfigures an instance with new parameters.
 
 ### Information Retrieval -- `getOff`
 

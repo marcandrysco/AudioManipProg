@@ -52,14 +52,6 @@ struct web_player_t {
 };
 
 
-/*
- * local declarations
- */
-//static char *req_keys(struct web_player_t *player, const char *body);
-
-static void player_proc(struct io_file_t file, void *arg);
-
-
 /**
  * Create a new player.
  *   @serv: The server.
@@ -260,11 +252,11 @@ bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsig
 	unsigned int i;
 	struct web_player_inst_t *left, *right;
 
-	left = player->left;
-	right = player->right;
-
 	if(amp_time_isequal(time[0], time[len]))
 		return false;
+
+	left = player->left;
+	right = player->right;
 
 	for(i = 0; i < len; i++) {
 		while(left != NULL) {
@@ -321,20 +313,6 @@ void web_player_print(struct web_player_t *player, struct io_file_t file)
 	}
 
 	hprintf(file, "]}");
-}
-
-/**
- * Create a chunk for the player.
- *   @player: The player.
- *   &returns: The chunk.
- */
-struct io_chunk_t web_player_chunk(struct web_player_t *player)
-{
-	return (struct io_chunk_t){ player_proc, player };
-}
-static void player_proc(struct io_file_t file, void *arg)
-{
-	web_player_print(arg, file);
 }
 
 

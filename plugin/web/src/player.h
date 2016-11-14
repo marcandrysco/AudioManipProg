@@ -19,7 +19,6 @@ void web_player_info(struct web_player_t *player, struct amp_info_t info);
 bool web_player_proc(struct web_player_t *player, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue);
 
 void web_player_print(struct web_player_t *player, struct io_file_t file);
-struct io_chunk_t web_player_chunk(struct web_player_t *player);
 
 bool web_player_req(struct web_player_t *player, struct http_args_t *args, struct json_t *json);
 

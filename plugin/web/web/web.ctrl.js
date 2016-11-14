@@ -19,6 +19,7 @@
     ctrl.conf = { nbars: 200, nbeats: 4, ndivs: 4 };
     
     var div = Gui.div("ctrl");
+    div.appendChild(Ctrl.elemHead(ctrl));
     div.appendChild(ctrl.canvas = Gui.tag("canvas", "ctrl"));
     div.appendChild(Ctrl.elemPanel(ctrl));
 
@@ -29,6 +30,24 @@
     return div;
   };
   /**
+   * Create the header element.
+   *   @ctrl: The controller.
+   *   &returns: The header element.
+   */
+  window.Ctrl.elemHead = function(ctrl) {
+    var head = Gui.div("head");
+
+    head.appendChild(Gui.div("title", Gui.text("Controller")));
+
+    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], true, function() {
+    }));
+
+    head.appendChild(Gui.Toggle(["Play", "Record"], true, function() {
+    }));
+
+    return head;
+  };
+  /**
    * Create the panel subelement.
    *   @ctrl: The controller.
    *   &retuns: The DOM element.
@@ -37,16 +56,35 @@
     var panel = Gui.div("panel");
 
     for(var i = 0; i < ctrl.inst.length; i++) {
-      var mod = Gui.div("mod");
+      (function() {
+        var idx = i, mod = Gui.div("mod"), init = false;
 
-      mod.appendChild(Gui.div("name", Gui.text(ctrl.inst[i].id)))
-      mod.appendChild(Gui.Slider({vert:true,cls:"slider"}, function(e) {
-      }));
+        mod.appendChild(Gui.div("name", Gui.text(ctrl.inst[i].id)))
+        mod.appendChild(Gui.Slider({cls:"slider",vert:true,input:100}, function(el, val) {
+          if(!init) { return; }
+          Web.put(ctrl.idx, { type: "action", data: { idx: idx, val: Math.round(255 * val) } });
+        }));
+        mod.appendChild(Gui.Button("Config", {cls:"conf"}, function(e) {
+          document.body.appendChild(Ctrl.conf(ctrl, idx));
+        }));
 
-      panel.appendChild(mod);
+        init = true;
+        panel.appendChild(mod);
+      })();
     }
 
     return panel;
+  };
+
+  /**
+   * Create the configuration popup.
+   *   @ctrl: The controller.
+   *   @idx: The index.
+   */
+  window.Ctrl.conf = function(ctrl, idx) {
+    var popup, elem = Gui.div("ctrl-conf");
+
+    return popup = Gui.Popup(elem, function(e) { });
   };
 
   /**
@@ -128,6 +166,20 @@
 
       var line = Pack.vert(box, 1);
       Draw.fill(line, ctx, "#000");
+
+      ctx.save();
+      Draw.clip(row, ctx);
+
+      for(var j = 0; j < ctrl.events.length; j++) {
+        if(ctrl.events[j].idx != i) { continue; }
+
+        var x = Grid.getx(ctrl.events[j].loc, ctrl.layout.width, 0, ctrl.conf.nbeats, ctrl.conf.ndivs);
+        Draw.vert(row, x, ctx, 2, "#000");
+        var c = 255-Math.round(255*ctrl.events[j].val/65535);
+        Draw.vert(row, x + 2, ctx, box.width - x, "rgb(255,"+c+","+c+")");
+      }
+
+      ctx.restore();
     }
   };
 
@@ -159,5 +211,20 @@
       Draw.vert(box, x, ctx, 2, "#000");
       x += 2;
     }
+  };
+
+  /**
+   * Retrieve the x-coordinate.
+   *   @loc: The location.
+   *   @width: The width.
+   *   @x: The starting x-coordinate.
+   *   @nbeats: The number of beats.
+   *   @ndivs: The number of divisions.
+   */
+  window.Grid.getx = function(loc, width, x, nbeats, ndivs) {
+    var barlen = (width + 1) * ndivs * nbeats + 1;
+    var beatlen = (width + 1) * ndivs;
+
+    return barlen * loc.bar + beatlen * loc.beat;
   };
 })();

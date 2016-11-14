@@ -37,7 +37,7 @@ static void audio_task(sys_fd_t fd, void *arg)
 	
 	len = audio->rate / 20;
 
-	while(sys_poll1(fd, sys_poll_in_e, 50) == 0) {
+	while(sys_poll1(fd, sys_poll_in_e, 1000 / 20) == 0) {
 		double data[2][len], *buf[2];
 
 		buf[0] = data[0];

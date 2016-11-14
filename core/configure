@@ -27,10 +27,9 @@ setconf()
   c_src "src/ctrl.c"
   c_src "src/eval.c"
   c_src "src/key.c"
-  c_src "src/io.c"
   c_src "src/math.c"
   c_src "src/param.c"
-  c_src "src/perf.c"
+  c_src "src/task.c"
 
   c_src "src/clk/basic.c"
 

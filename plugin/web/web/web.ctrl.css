@@ -1,8 +1,22 @@
 .ctrl {
 }
 
+  .ctrl > .head {
+    font-size: 24px;
+    display: flex;
+    margin-bottom: 12px;
+  }
+
+    .ctrl > .head > *:not(:first-child) {
+      margin-left: 16px;
+    }
+
+    .ctrl > .head > .title {
+    }
+
   .ctrl > canvas {
     width: 100%;
+    margin-bottom: 12px;
   }
 
   .ctrl > .panel {
@@ -15,10 +29,10 @@
 
     .ctrl > .panel > .mod {
       width: 100px;
-      height: 200px;
       border: 2px solid black;
       flex-shrink: 0;
       padding: 3px 5px;
+      text-align: center;
     }
 
       .ctrl > .panel > .mod > .name {
@@ -27,4 +41,9 @@
 
       .ctrl > .panel > .mod > .slider {
         margin: 0 auto;
+      }
+
+      .ctrl > .panel > .mod > .conf {
+        font-size: 16px;
+        padding: 3px 8px;
       }

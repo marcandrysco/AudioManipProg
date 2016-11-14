@@ -172,6 +172,9 @@ void io_format_clib(char ch, struct io_file_t file, struct io_print_mod_t *mod, 
 	if(mod->neg)
 		format[len++] = '-';
 
+	if(mod->zero)
+		format[len++] = '0';
+
 	if(mod->flags & io_print_width_v)
 		format[len++] = '*';
 	else if(mod->width > 0)

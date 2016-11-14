@@ -5,6 +5,7 @@
  * Machine structure.
  *   @id: The indetifier.
  *   @last: The last beat.
+ *   @sel: The selected preset.
  *   @ndivs, nbeats, nbats: The number of divisions, beats and bars.
  *   @event: The event arrays.
  *   @inst: The instance list.
@@ -13,6 +14,7 @@ struct web_mach_t {
 	const char *id;
 
 	double last;
+	unsigned int sel;
 	unsigned int ndivs, nbeats, nbars;
 	struct web_mach_event_t **event[10];
 
@@ -51,8 +53,6 @@ struct web_mach_event_t {
 /*
  * local declarations
  */
-static void mach_proc(struct io_file_t file, void *arg);
-
 static struct web_mach_inst_t *inst_new(char *id, uint16_t dev, uint16_t key);
 static void inst_delete(struct web_mach_inst_t *inst);
 static unsigned int inst_idx(struct web_mach_t *mach, struct web_mach_inst_t *inst);
@@ -70,6 +70,7 @@ struct web_mach_t *web_mach_new(const char *id)
 
 	len = 4 * 4 * 2;
 	mach = malloc(sizeof(struct web_mach_t));
+	mach->sel = 0;
 	mach->last = 0.0;
 	mach->id = id;
 	mach->ndivs = 4;
@@ -130,7 +131,7 @@ void web_mach_delete(struct web_mach_t *mach)
 				mach->event[n][i] = event->next;
 				
 				free(event);
-			};
+			}
 		}
 
 		free(mach->event[n]);
@@ -183,6 +184,7 @@ bool web_mach_proc(struct web_mach_t *mach, struct amp_time_t *time, unsigned in
 
 		struct web_mach_inst_t *inst;
 		struct web_mach_event_t *event;
+		uint16_t key;
 		unsigned int bar, beat, div, off;
 
 		bar = (unsigned int)time[i].bar % mach->nbars;
@@ -190,14 +192,14 @@ bool web_mach_proc(struct web_mach_t *mach, struct amp_time_t *time, unsigned in
 		div = (time[i].beat - beat) * mach->ndivs;
 		off = div + (beat + bar * mach->nbeats) * mach->ndivs;
 
-		for(event = mach->event[0/*TODO*/][off]; event != NULL; event = event->next) {
+		for(event = mach->event[mach->sel][off]; event != NULL; event = event->next) {
 			inst = event->inst;
 			if(!inst->on)
 				continue;
 
-			printf("event: %d\n", event->vel);
+			key = inst->multi ? event->key : inst->key;
+			amp_queue_add(queue, (struct amp_action_t){ i, { inst->dev, key, event->vel }, queue });
 		}
-			//amp_queue_add(queue, (struct amp_action_t){ i, { 0, inst->key+1, inst->vel }, queue });
 	}
 
 	mach->last = right;
@@ -287,21 +289,6 @@ void web_mach_print(struct web_mach_t *mach, struct io_file_t file)
 }
 
 /**
- * Create a chunk for the machine.
- *   @mach: The machine.
- *   &returns: The chunk.
- */
-struct io_chunk_t web_mach_chunk(struct web_mach_t *mach)
-{
-	return (struct io_chunk_t){ mach_proc, mach };
-}
-static void mach_proc(struct io_file_t file, void *arg)
-{
-	web_mach_print(arg, file);
-}
-
-
-/**
  * Handle a machine requeust.
  *   @mach: The machine.
  *   @args: The arguments.
@@ -326,6 +313,25 @@ bool web_mach_req(struct web_mach_t *mach, struct http_args_t *args, struct json
 		chk((inst = inst_get(mach, sel)) != NULL);
 
 		web_mach_set(mach, sel, inst, off, key, vel);
+	}
+	else if(strcmp(type, "conf") == 0) {
+		unsigned int idx;
+		const char *id;
+		bool on, multi, rel;
+		uint16_t dev, key;
+		struct web_mach_inst_t *inst;
+
+		chk(chkwarn(json_getf(json, "{idx:u,conf:{id:s,on:b,multi:b,rel:b,dev:u16,key:u16$}$}", &idx, &id, &on, &multi, &rel, &dev, &key)));
+
+		inst = inst_get(mach, idx);
+		chk(inst != NULL);
+
+		strset(&inst->id, strdup(id));
+		inst->on = on;
+		inst->multi = multi;
+		inst->rel = rel;
+		inst->dev = dev;
+		inst->key = key;
 	}
 	else
 		return false;
@@ -464,7 +470,7 @@ static void inst_delete(struct web_mach_inst_t *inst)
 
 /**
  * Retrieve the index of the instance.
- *   @head: The head instance.
+ *   @mach: The machine.
  *   @inst: The instance.
  *   &returns: The index.
  */

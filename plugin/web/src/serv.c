@@ -6,12 +6,14 @@
  *   @audit: Audit.
  *   @ctrl: Controller.
  *   @mach: Machine.
+ *   @mulrec: Multitrack recorder
  *   @player: Player.
  */
 union web_inst_u {
 	struct web_audit_t *audit;
 	struct web_ctrl_t *ctrl;
 	struct web_mach_t *mach;
+	struct web_mulrec_t *mulrec;
 	struct web_player_t *player;
 };
 
@@ -55,33 +57,37 @@ const struct amp_seq_i web_iface_seq = {
 /*
  * local declarations
  */
+static void inst_print(struct io_file_t file, void *arg);
+
 static bool req_handler(const char *path, struct http_args_t *args, void *arg);
 static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct json_t *json);
 static bool req_time(struct web_serv_t *serv, struct http_args_t *args, struct json_obj_t *obj);
 
 static struct http_asset_t serv_assets[] = {
-	{  "/",               "index.xhtml",    "application/xhtml+xml"   },
-	{  "/extend.js",      "extend.js",      "application/javascript"  },
-	{  "/draw.js",        "draw.js",        "application/javascript"  },
-	{  "/gui.js",         "gui.js",         "application/javascript"  },
-	{  "/gui.css",        "gui.css",        "text/css"                },
-	{  "/web.js",         "web.js",         "application/javascript"  },
-	{  "/web.css",        "web.css",        "text/css"                },
-	{  "/web.base.js",    "web.base.js",    "application/javascript"  },
-	{  "/web.audit.js",   "web.audit.js",   "application/javascript"  },
-	{  "/web.audit.css",  "web.audit.css",  "text/css"                },
-	{  "/web.ctrl.js",    "web.ctrl.js",    "application/javascript"  },
-	{  "/web.ctrl.css",   "web.ctrl.css",   "text/css"                },
-	{  "/web.key.css",    "web.key.css",    "text/css"                },
-	{  "/web.mach.js",    "web.mach.js",    "application/javascript"  },
-	{  "/web.mach.css",   "web.mach.css",   "text/css"                },
-	{  "/web.player.js",  "web.player.js",  "application/javascript"  },
-	{  "/web.player.css", "web.player.css", "text/css"                },
-	{  "/web.status.js",  "web.status.js",  "application/javascript"  },
-	{  "/web.status.css", "web.status.css", "text/css"                },
-	{  "/web.time.js",    "web.time.js",    "application/javascript"  },
-	{  "/web.time.css",   "web.time.css",   "text/css"                },
-	{  NULL,              NULL,             NULL                      }
+	{  "/",               "index.xhtml",    "application/xhtml+xml;charset=utf-8"   },
+	{  "/extend.js",      "extend.js",      "application/javascript"                },
+	{  "/draw.js",        "draw.js",        "application/javascript"                },
+	{  "/gui.js",         "gui.js",         "application/javascript"                },
+	{  "/gui.css",        "gui.css",        "text/css"                              },
+	{  "/web.js",         "web.js",         "application/javascript"                },
+	{  "/web.css",        "web.css",        "text/css"                              },
+	{  "/web.base.js",    "web.base.js",    "application/javascript"                },
+	{  "/web.audit.js",   "web.audit.js",   "application/javascript"                },
+	{  "/web.audit.css",  "web.audit.css",  "text/css"                              },
+	{  "/web.ctrl.js",    "web.ctrl.js",    "application/javascript"                },
+	{  "/web.ctrl.css",   "web.ctrl.css",   "text/css"                              },
+	{  "/web.key.css",    "web.key.css",    "text/css"                              },
+	{  "/web.mach.js",    "web.mach.js",    "application/javascript"                },
+	{  "/web.mach.css",   "web.mach.css",   "text/css"                              },
+	{  "/web.mulrec.js",  "web.mulrec.js",  "application/javascript"                },
+	{  "/web.mulrec.css", "web.mulrec.css", "text/css"                              },
+	{  "/web.player.js",  "web.player.js",  "application/javascript"                },
+	{  "/web.player.css", "web.player.css", "text/css"                              },
+	{  "/web.status.js",  "web.status.js",  "application/javascript"                },
+	{  "/web.status.css", "web.status.css", "text/css"                              },
+	{  "/web.time.js",    "web.time.js",    "application/javascript"                },
+	{  "/web.time.css",   "web.time.css",   "text/css"                              },
+	{  NULL,              NULL,             NULL                                    }
 };
 
 
@@ -257,7 +263,7 @@ struct web_inst_t *web_serv_ctrl(struct web_serv_t *serv, const char *id)
 	if(inst == NULL) {
 		char *name = strdup(id);
 
-		inst = inst_new(serv, name, web_ctrl_v, (union web_inst_u){ .ctrl = web_ctrl_new(serv, name) });
+		inst = inst_new(serv, name, web_ctrl_v, (union web_inst_u){ .ctrl = web_ctrl_new(serv->rt, name) });
 		avltree_root_insert(&serv->inst, &inst->node);
 	}
 	else
@@ -418,44 +424,34 @@ const char *web_inst_type(enum web_inst_e type)
 }
 
 /**
+ * Print an instance.
+ *   @inst: The instance.
+ *   @file: The file.
+ */
+void web_inst_print(struct web_inst_t *inst, struct io_file_t file)
+{
+	switch(inst->type) {
+	case web_audit_v: return web_audit_print(inst->data.audit, file);
+	case web_ctrl_v: return web_ctrl_print(inst->data.ctrl, file);
+	case web_mach_v: return web_mach_print(inst->data.mach, file);
+	case web_player_v: return web_player_print(inst->data.player, file);
+	}
+
+	fatal("Invalid instance type.");
+}
+
+/**
  * Retrieve a chunk for the instance.
  *   @inst: The instance.
  *   &returns: The chunk.
  */
 struct io_chunk_t web_inst_chunk(struct web_inst_t *inst)
 {
-	switch(inst->type) {
-	case web_audit_v: return web_audit_chunk(inst->data.audit);
-	case web_ctrl_v: return web_ctrl_chunk(inst->data.ctrl);
-	case web_mach_v: return web_mach_chunk(inst->data.mach);
-	case web_player_v: return web_player_chunk(inst->data.player);
-	}
-
-	fatal("Invalid instance type.");
+	return (struct io_chunk_t){ inst_print, inst };
 }
-
-
-char *fs_getfile_send(const char *path, struct io_file_t file)
+static void inst_print(struct io_file_t file, void *arg)
 {
-	FILE *fp;
-	size_t rd;
-	uint8_t buf[4096];
-
-	fp = fopen(path, "r");
-	if(fp == NULL)
-		return mprintf("Failed to open file '%s'. %s.", path, strerror(errno));
-
-	while(true) {
-		rd = fread(buf, 1, 4096, fp);
-		if(rd == 0)
-			break;
-
-		io_file_write(file, buf, rd);
-	}
-
-	fclose(fp);
-
-	return NULL;
+	web_inst_print(arg, file);
 }
 
 
@@ -571,7 +567,7 @@ static bool req_proc(struct web_serv_t *serv, struct http_args_t *args, struct j
 	case web_mach_v: return web_mach_req(inst->data.mach, args, json);
 	case web_player_v: return web_player_req(inst->data.player, args, json);
 	case web_audit_v: return false;
-	case web_ctrl_v: return false;
+	case web_ctrl_v: return web_ctrl_req(inst->data.ctrl, args, json);;
 	}
 
 	return false;

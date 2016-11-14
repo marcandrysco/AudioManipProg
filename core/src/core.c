@@ -132,7 +132,7 @@ struct amp_core_t *amp_core_new(unsigned int rate)
 
 	core = malloc(sizeof(struct amp_core_t));
 	core->env = ml_env_new();
-	core->io = amp_io_new();
+	//core->io = amp_io_new();
 	core->cache = amp_cache_new();
 	core->plugin = NULL;
 
@@ -219,7 +219,7 @@ void amp_core_delete(struct amp_core_t *core)
 
 	ml_env_delete(core->env);
 	amp_cache_delete(core->cache);
-	amp_io_delete(core->io);
+	//amp_io_delete(core->io);
 	free(core);
 }
 

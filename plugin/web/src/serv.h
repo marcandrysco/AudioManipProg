@@ -61,5 +61,6 @@ bool web_inst_seq(struct web_inst_t *inst, struct amp_time_t *time, unsigned int
 
 const char *web_inst_type(enum web_inst_e type);
 struct io_chunk_t web_inst_chunk(struct web_inst_t *inst);
+void web_inst_print(struct web_inst_t *inst, struct io_file_t file);
 
 #endif

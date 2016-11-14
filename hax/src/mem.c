@@ -100,9 +100,9 @@ char *hax_strndup(const char *str, size_t n)
 	if(n < len)
 		len = n;
 
-	dup = malloc(len);
-	memcpy(dup, str, n);
-	dup[n] = '\0';
+	dup = hax_malloc(len + 1);
+	memcpy(dup, str, len);
+	dup[len] = '\0';
 
 	return dup;
 }

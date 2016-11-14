@@ -256,6 +256,7 @@ bool http_client_proc(struct http_client_t *client, http_handler_f func, void *a
  *   @func: The handler function.
  *   @arg: The argument.
  */
+
 static void client_resp(struct http_client_t *client, http_handler_f func, void *arg)
 {
 	bool suc;
@@ -267,6 +268,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 
 	file = io_file_fd(tcp_client_fd(client->tcp));
 
+	args.code = 200;
 	args.body = strbuf_finish(&client->buf);
 	args.req = client->head;
 	args.resp = http_head_init();
@@ -277,7 +279,7 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 	if(suc) {
 		char len[32];
 
-		hprintf(file, "HTTP/1.1 200 OK\n");
+		hprintf(file, "HTTP/1.1 %u %s\n", args.code, args.code == 200 ? "OK" : "Redirect");
 
 		if(http_head_lookup(&args.resp, "Content-Type") == NULL)
 			http_head_add(&args.resp, "Content-Type", "application/xhtml+xml");
@@ -298,6 +300,40 @@ static void client_resp(struct http_client_t *client, http_handler_f func, void 
 	free(buf);
 	io_file_close(file);
 	http_head_destroy(&args.resp);
+}
+
+struct http_resp_t {
+	void *buf;
+	size_t nbytes;
+	struct io_file_t file;
+	struct http_args_t args;
+};
+
+void client_send(struct http_resp_t *resp)
+{
+	struct http_pair_t *pair;
+	char len[32];
+
+	io_file_close(resp->args.file);
+	hprintf(resp->file, "HTTP/1.1 %u %s\n", resp->args.code, resp->args.code == 200 ? "OK" : "Redirect");
+
+	if(http_head_lookup(&resp->args.resp, "Content-Type") == NULL)
+		http_head_add(&resp->args.resp, "Content-Type", "application/xhtml+xml");
+
+	snprintf(len, sizeof(len), "%u", (unsigned int)resp->nbytes);
+	http_head_add(&resp->args.resp, "Content-Length", len);
+	http_head_add(&resp->args.resp, "Connection", "keep-alive");
+
+	for(pair = resp->args.resp.pair; pair != NULL; pair = pair->next)
+		hprintf(resp->file, "%s: %s\n", pair->key, pair->value);
+
+	hprintf(resp->file, "\n");
+	io_file_write(resp->file, resp->buf, resp->nbytes);
+
+	free(resp->buf);
+	io_file_close(resp->file);
+	http_head_destroy(&resp->args.resp);
+	free(resp);
 }
 
 
@@ -376,6 +412,7 @@ unsigned int http_server_poll(struct http_server_t *server, struct sys_poll_t *p
 
 		for(i = 1, client = server->client; client != NULL; i++, client = client->next)
 			poll[i] = tcp_client_poll(client->tcp);
+
 	}
 
 	return 1 + server->cnt;
@@ -626,6 +663,29 @@ unsigned int http_pair_len(struct http_pair_t *pair)
 	return n;
 }
 
+/**
+ * Retrieve the tail pair.
+ *   @pair: The pair reference.
+ *   &returns: The tail reference.
+ */
+struct http_pair_t **http_pair_tail(struct http_pair_t **pair)
+{
+	while(*pair != NULL)
+		pair = &(*pair)->next;
+
+	return pair;
+}
+
+/**
+ * Append a key-value pair onto the pair list.
+ *   @pair: The pair list reference.
+ *   @key: Consumed. The key.
+ *   @value: Consumed. The value.
+ */
+void http_pair_append(struct http_pair_t **pair, char *key, char *value)
+{
+	*http_pair_tail(pair) = http_pair_new(key, value);
+}
 
 /**
  * Find a pair reference by key.
@@ -651,11 +711,13 @@ struct http_pair_t **http_pair_find(struct http_pair_t **pair, const char *key)
  *   @key: The key.
  *   &returns: The value or null.
  */
-const char *http_pair_get(struct http_pair_t **pair, const char *key)
+const char *http_pair_get(struct http_pair_t *pair, const char *key)
 {
-	pair = http_pair_find(pair, key);
+	struct http_pair_t **find;
 
-	return pair ? (*pair)->value : NULL;
+	find = http_pair_find(&pair, key);
+
+	return find ? (*find)->value : NULL;
 }
 
 
@@ -701,7 +763,7 @@ char *http_pair_getf(struct http_pair_t *pair, const char *restrict fmt, ...)
 			memcpy(id, fmt, len);
 			id[len] = '\0';
 
-			value = http_pair_get(&pair, id);
+			value = http_pair_get(pair, id);
 			if(value == NULL)
 				return mprintf("Cannot find key '%s'.", id);
 

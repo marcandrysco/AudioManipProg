@@ -18,8 +18,6 @@ unsigned int web_mach_len(struct web_mach_t *mach);
 void web_mach_set(struct web_mach_t *mach, unsigned int sel, struct web_mach_inst_t *inst, unsigned int off, uint16_t key, uint16_t vel);
 
 void web_mach_print(struct web_mach_t *mach, struct io_file_t file);
-struct io_chunk_t web_mach_chunk(struct web_mach_t *mach);
-
 bool web_mach_req(struct web_mach_t *mach, struct http_args_t *args, struct json_t *json);
 
 char *web_mach_save(struct web_mach_t *mach);

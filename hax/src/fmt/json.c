@@ -1045,6 +1045,22 @@ char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, str
 		}
 		break;
 
+	case 'b':
+		{
+			bool flag;
+
+			if(json->type == json_true_v)
+				flag = true;
+			else if(json->type == json_false_v)
+				flag = false;
+			else
+				return mprintf("Expected boolean.");
+
+			(*fmt)++;
+			*va_arg(arglist->args, bool *) = flag;
+		}
+		break;
+
 	case 's':
 		if(json->type != json_str_v)
 			return mprintf("Expected string.");

@@ -217,6 +217,9 @@ void amp_tuner_proc(struct amp_tuner_t *tuner, double v)
 		tone->t = dsp_osc_inc(tone->t, dsp_osc_step(tone->f, tuner->rate));
 
 		v -= w;
+
+		if((tone->f < 20) || (tone->f > 10000))
+			tone->g = 0.0;
 	}
 
 	if((tuner->last <= 0.0) && (v > 0.0)) {
