@@ -1069,6 +1069,34 @@ char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, str
 		*va_arg(arglist->args, const char **) = json->data.str;
 		break;
 
+	case 'd':
+		{
+			double flt;
+			int val;
+
+			if(json->type != json_num_v)
+				return mprintf("Expected integer.");
+
+			val = flt = json->data.num;
+			if(val != flt)
+				return mprintf("Expected integer.");
+
+			(*fmt)++;
+			if(((*fmt)[0] == '1')  && ((*fmt)[1] == '6')) {
+				if(val > INT16_MAX)
+					return mprintf("Integer too large.");
+				else if(val < INT16_MIN)
+					return mprintf("Integer too small.");
+
+				*fmt += 2;
+				*va_arg(arglist->args, int16_t *) = val;
+			}
+			else
+				*va_arg(arglist->args, int *) = val;
+
+			break;
+		}
+
 	case 'u':
 		{
 			double flt;
@@ -1078,7 +1106,9 @@ char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, str
 				return mprintf("Expected integer.");
 
 			val = flt = json->data.num;
-			if(val != flt)
+			if(flt < 0)
+				return mprintf("Expected positive number.");
+			else if(val != flt)
 				return mprintf("Expected integer.");
 
 			(*fmt)++;
@@ -1094,6 +1124,14 @@ char *json_vgetfptr(struct json_t *json, const char *restrict *restrict fmt, str
 
 			break;
 		}
+
+	case 'f':
+		if(json->type != json_num_v)
+			return mprintf("Expected number.");
+
+		(*fmt)++;
+		*va_arg(arglist->args, double *) = json->data.num;
+		break;
 
 	default:
 		fatal("Invalid format character '%c'.", **fmt);

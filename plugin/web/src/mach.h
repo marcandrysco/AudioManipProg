@@ -1,6 +1,18 @@
 #ifndef MACH_H
 #define MACH_H
 
+/**
+ * Machine type enumerator.
+ *   @web_mach_drum_v: Drum.
+ *   @web_mach_note_v: Note.
+ *   @web_mach_ctrl_v: Control..
+ */
+enum web_mach_e {
+	web_mach_drum_v,
+	web_mach_note_v,
+	web_mach_ctrl_v
+};
+
 /*
  * machine declarations
  */
@@ -22,5 +34,8 @@ bool web_mach_req(struct web_mach_t *mach, struct http_args_t *args, struct json
 
 char *web_mach_save(struct web_mach_t *mach);
 char *web_mach_load(struct web_mach_t *mach);
+
+const char *web_mach_type(enum web_mach_e type);
+enum web_mach_e web_mach_enum(const char *str);
 
 #endif

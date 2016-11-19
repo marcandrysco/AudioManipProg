@@ -188,6 +188,25 @@
    *   @right: The right location.
    *   &returns: True if properly ordered.
    */
+  window.Loc.cmp = function(left, right) {
+    if(left.bar < right.bar)
+      return -2;
+    else if(left.bar > right.bar)
+      return 2;
+    else if(left.beat < right.beat)
+      return -1;
+    else if(left.beat > right.beat)
+      return 1;
+    else
+      return 0;
+  };
+
+  /**
+   * Compare two locations for their order.
+   *   @left: The left location.
+   *   @right: The right location.
+   *   &returns: True if properly ordered.
+   */
   window.Loc.order = function(left, right) {
     if(left.bar < right.bar)
       return true;

@@ -322,7 +322,7 @@ void client_send(struct http_resp_t *resp)
 
 	snprintf(len, sizeof(len), "%u", (unsigned int)resp->nbytes);
 	http_head_add(&resp->args.resp, "Content-Length", len);
-	http_head_add(&resp->args.resp, "Connection", "keep-alive");
+	http_head_add(&resp->args.resp, "Connection", "close");
 
 	for(pair = resp->args.resp.pair; pair != NULL; pair = pair->next)
 		hprintf(resp->file, "%s: %s\n", pair->key, pair->value);

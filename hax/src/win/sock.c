@@ -127,11 +127,11 @@ size_t sys_recv(sys_fd_t fd, void *buf, size_t nbytes, int flags)
 {
 	int ret;
 
+	WSAResetEvent(fd.handle);
 	ret = recv(fd.sock, buf, nbytes, flags);
 	if((ret == SOCKET_ERROR) && (WSAGetLastError() != WSAEWOULDBLOCK))
 		fatal("Failed to read data on socket. %C.\n", sys_sockerr());
 
-	WSAResetEvent(fd.handle);
 	return ret;
 }
 
@@ -147,11 +147,11 @@ size_t sys_send(sys_fd_t fd, const void *buf, size_t nbytes, int flags)
 {
 	int ret;
 
+	WSAResetEvent(fd.handle);
 	ret = send(fd.sock, buf, nbytes, flags);
 	if((ret == SOCKET_ERROR) && (WSAGetLastError() != WSAEWOULDBLOCK))
 		fatal("Failed to write data to socket. %C.\n", sys_sockerr());
 
-	WSAResetEvent(fd.handle);
 	return ret;
 }
 
@@ -195,11 +195,11 @@ char *sys_listen(sys_fd_t fd, int backlog)
  */
 char *sys_accept(sys_fd_t fd, sys_fd_t *client, struct sockaddr *addr, int *len)
 {
+	WSAResetEvent(fd.handle);
 	client->sock = accept(fd.sock, addr, len);
 	if(client->sock == INVALID_SOCKET)
 		return mprintf("Failed to accept a connection on socket. %C.", sys_sockerr());
 
-	WSAResetEvent(fd.handle);
 	client->handle = WSACreateEvent();
 	WSAEventSelect(client->sock, client->handle, FD_CLOSE | FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT);
 

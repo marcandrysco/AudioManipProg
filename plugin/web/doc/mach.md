@@ -32,7 +32,7 @@ velocity of `0` implicitly removes the event.
 
 The `toggle` method sets the `on` or enable flag of an instance.
 
-    Mach.reconf = function(mach:Mach, idx:int, multi:bool, rel:bool, dev:int, key:int)
+    Mach.reconf = function(mach:Mach, idx:int, type:string, rel:bool, dev:int, key:int)
 
 The `reconf` method reconfigures an instance with new parameters.
 

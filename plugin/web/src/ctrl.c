@@ -5,9 +5,11 @@
  * Controller structure.
  *   @id: The identifier.
  *   @rt: The RT structure.
+ *   @serv: The server.
  *   @enable, run, rec: Enable, run, and record flags.
- *   @lock: Run lock.
- *   @async: Asynchronous messaging.
+ *   @sync, lock: Synchronization and run locks.
+ *   @read, write: Asynchronous read and write.
+ *   @queue: The queue of elements to add.
  *   @inst: The instance list.
  *   @event, cur: The event list and current event.
  *   @nbars, nbeats, ndivs: THe number of bars, beats, and divisions.
@@ -15,10 +17,14 @@
 struct web_ctrl_t {
 	const char *id;
 	struct amp_rt_t *rt;
+	struct web_serv_t *serv;
 
 	bool enable, run, rec;
-	sys_mutex_t lock;
-	struct amp_async_t *async;
+	sys_mutex_t sync, lock;
+
+	struct sys_task_t *task;
+	struct amp_async_t *read, *write;
+	struct web_ctrl_event_t *queue;
 
 	struct web_ctrl_inst_t *inst;
 	struct web_ctrl_event_t *event, **cur;
@@ -56,14 +62,21 @@ struct web_ctrl_event_t {
 };
 
 /**
- * Controller action structure.
+ * Read event structure.
  *   @idx, val: Index and value.
- *   @event: The allocated event structure.
  */
-struct web_ctrl_action_t {
+struct web_ctrl_read_t {
 	uint16_t idx, val;
+};
 
-	struct web_ctrl_event_t *event;
+/**
+ * Write event structure.
+ *   @loc: The location.
+ *   @idx, val: The index and value.
+ */
+struct web_ctrl_write_t {
+	struct amp_loc_t loc;
+	uint16_t dev, key, val;
 };
 
 
@@ -75,25 +88,40 @@ static void inst_delete(struct web_ctrl_inst_t *inst);
 
 static unsigned int inst_idx(struct web_ctrl_t *ctrl, struct web_ctrl_inst_t *inst);
 static struct web_ctrl_inst_t *inst_get(struct web_ctrl_t *ctrl, unsigned int idx);
+static struct web_ctrl_inst_t *inst_lookup(struct web_ctrl_t *ctrl, uint16_t dev, uint16_t key);
+
+static void write_proc(sys_fd_t fd, void *arg);
 
 
 /**
  * Create a new ctrler.
+ *   @serv: The server.
  *   @id: The indetifier.
  *   &returns: The ctrler.
  */
-struct web_ctrl_t *web_ctrl_new(struct amp_rt_t *rt, const char *id)
+struct web_ctrl_t *web_ctrl_new(struct web_serv_t *serv, const char *id)
 {
 	struct web_ctrl_t *ctrl;
 
 	ctrl = malloc(sizeof(struct web_ctrl_t));
 	ctrl->id = id;
+	ctrl->rt = serv->rt;
+	ctrl->serv = serv;
+
 	ctrl->enable = true;
+	ctrl->run = false;
+	ctrl->rec = false;
+	ctrl->sync = sys_mutex_init(0);
 	ctrl->lock = sys_mutex_init(0);
-	ctrl->async = amp_async_new(64 * sizeof(struct web_ctrl_action_t));
+
+	ctrl->read = amp_async_new(64 * sizeof(struct web_ctrl_read_t));
+	ctrl->write = amp_async_new(256 * sizeof(struct web_ctrl_write_t));
+	ctrl->task = sys_task_new(write_proc, ctrl);
+
 	ctrl->inst = NULL;
 	ctrl->event = NULL;
 	ctrl->cur = &ctrl->event;
+
 	ctrl->nbars = 100.0f;
 	ctrl->nbeats = 4.0f;
 	ctrl->ndivs = 4.0f;
@@ -141,6 +169,7 @@ void web_ctrl_delete(struct web_ctrl_t *ctrl)
 	if(!ctrl->enable)
 		sys_mutex_unlock(&ctrl->lock);
 
+	sys_task_delete(ctrl->task);
 	erase(web_ctrl_save(ctrl));
 
 	while(ctrl->inst != NULL) {
@@ -157,8 +186,10 @@ void web_ctrl_delete(struct web_ctrl_t *ctrl)
 		free(event);
 	}
 
+	sys_mutex_destroy(&ctrl->sync);
 	sys_mutex_destroy(&ctrl->lock);
-	amp_async_delete(ctrl->async);
+	amp_async_delete(ctrl->read);
+	amp_async_delete(ctrl->write);
 	free(ctrl);
 }
 
@@ -195,6 +226,23 @@ void web_ctrl_add(struct web_ctrl_t *ctrl, struct amp_loc_t loc, struct web_ctrl
 	*/
 }
 
+void web_ctrl_remove(struct web_ctrl_t *ctrl, struct amp_loc_t loc, struct web_ctrl_inst_t *inst, uint16_t val)
+{
+	struct web_ctrl_event_t *rem, **event;
+
+	for(event = &ctrl->event; *event != NULL; event = &(*event)->next) {
+		if((amp_loc_cmp((*event)->loc, loc) == 0) && ((*event)->inst == inst) && ((*event)->val == val))
+			break;
+	}
+
+	if(*event == NULL)
+		return;
+
+	rem = *event;
+	*event = rem->next;
+	free(rem);
+}
+
 
 /**
  * Process information on a controller.
@@ -203,6 +251,38 @@ void web_ctrl_add(struct web_ctrl_t *ctrl, struct amp_loc_t loc, struct web_ctrl
  */
 void web_ctrl_info(struct web_ctrl_t *ctrl, struct amp_info_t info)
 {
+	switch(info.type) {
+	case amp_info_start_v:
+		sys_mutex_lock(&ctrl->sync);
+		ctrl->run = true;
+		ctrl->queue = NULL;
+		sys_mutex_unlock(&ctrl->sync);
+
+		break;
+
+	case amp_info_stop_v:
+		sys_mutex_lock(&ctrl->sync);
+		ctrl->run = false;
+
+		{
+			struct web_ctrl_event_t *event;
+
+			while(ctrl->queue != NULL) {
+				event = ctrl->queue;
+				ctrl->queue = event->next;
+
+				web_ctrl_add(ctrl, event->loc, event->inst, event->val);
+				free(event);
+			}
+		}
+
+		sys_mutex_unlock(&ctrl->sync);
+
+		break;
+
+	default:
+		break;
+	}
 }
 
 /**
@@ -215,26 +295,28 @@ void web_ctrl_info(struct web_ctrl_t *ctrl, struct amp_info_t info)
  */
 bool web_ctrl_proc(struct web_ctrl_t *ctrl, struct amp_time_t *time, unsigned int len, struct amp_queue_t *queue)
 {
-	struct web_ctrl_action_t action;
+	unsigned int i, n = 0;
+	struct amp_event_t *event;
+	struct web_ctrl_read_t read;
+	struct web_ctrl_write_t write;
+	struct web_ctrl_inst_t *inst;
 
 	if(!sys_mutex_trylock(&ctrl->lock))
 		return false;
 
-	while(amp_async_read(ctrl->async, &action, sizeof(struct web_ctrl_action_t))) {
-		struct web_ctrl_inst_t *inst;
-		struct web_ctrl_event_t *event;
+	while(amp_async_read(ctrl->read, &read, sizeof(struct web_ctrl_read_t))) {
+		inst = inst_get(ctrl, read.idx);
+		amp_queue_add(queue, amp_action(0, amp_event(inst->dev, inst->key, read.val), queue));
+	}
 
-		inst = inst_get(ctrl, action.idx);
-		amp_queue_add(queue, (struct amp_action_t){ 0, { inst->dev, inst->key, action.val }, queue });
-
-		event = action.event;
-		event->loc = amp_loc(time[0].bar, time[0].beat);
-		event->inst = inst;
-		event->val = action.val;
-		event->next = *ctrl->cur;
-
-		*ctrl->cur = event;
-		ctrl->cur = &event->next;
+	for(i = 0; i < len; i++) {
+		while((event = amp_queue_event(queue, &n, i)) != NULL) {
+			write.loc = amp_loc(time[i].bar, time[i].beat);
+			write.dev = event->dev;
+			write.key = event->key;
+			write.val = event->val;
+			amp_async_write(ctrl->write, &write, sizeof(struct web_ctrl_write_t));
+		}
 	}
 
 	sys_mutex_unlock(&ctrl->lock);
@@ -261,7 +343,7 @@ void web_ctrl_print(struct web_ctrl_t *ctrl, struct io_file_t file)
 	hprintf(file, "],\"events\":[");
 
 	for(event = ctrl->event; event != NULL; event = event->next)
-		hprintf(file, "{\"loc\":{\"bar\":%d,\"beat\":%.8f},\"idx\":\"%u\",\"val\":%u}%s", event->loc.bar, event->loc.beat, inst_idx(ctrl, event->inst), event->val, event->next ? "," : "");
+		hprintf(file, "{\"loc\":{\"bar\":%d,\"beat\":%.17e},\"idx\":%u,\"val\":%u}%s", event->loc.bar, event->loc.beat, inst_idx(ctrl, event->inst), event->val, event->next ? "," : "");
 
 	hprintf(file, "]}");
 }
@@ -282,18 +364,68 @@ bool web_ctrl_req(struct web_ctrl_t *ctrl, struct http_args_t *args, struct json
 	json = json_obj_getval(json->data.obj, "data");
 
 	if(strcmp(type, "action") == 0) {
-		struct web_ctrl_action_t action;
+		struct web_ctrl_read_t read;
 
-		chkabort(json_getf(json, "{idx:u16,val:u16$}", &action.idx, &action.val));
-		action.event = malloc(sizeof(struct web_ctrl_event_t));
+		chk(chkbool(json_getf(json, "{idx:u16,val:u16$}", &read.idx, &read.val)));
 
 		if(ctrl->enable)
-			amp_async_write(ctrl->async, &action, sizeof(struct web_ctrl_action_t));
+			amp_async_write(ctrl->read, &read, sizeof(struct web_ctrl_read_t));
+	}
+	else if(strcmp(type, "enable") == 0) {
+		if(json->type == json_true_v) {
+			if(ctrl->enable)
+				return false;
+
+			ctrl->enable = true;
+			sys_mutex_unlock(&ctrl->lock);
+		}
+		else if(json->type == json_false_v) {
+			if(!ctrl->enable)
+				return false;
+
+			ctrl->enable = false;
+			sys_mutex_lock(&ctrl->lock);
+		}
+		else
+			return false;
+
+		web_serv_put(ctrl->serv, ctrl->id, mprintf("{\"type\":\"enable\",\"data\":%s}", ctrl->enable ? "true" : "false"));
+	}
+	else if(strcmp(type, "rec") == 0) {
+		if(amp_rt_status(ctrl->rt))
+			return false;
+
+		if(json->type == json_true_v)
+			ctrl->rec = true;
+		else if(json->type == json_false_v)
+			ctrl->rec = false;
+		else
+			return false;
+
+		web_serv_put(ctrl->serv, ctrl->id, mprintf("{\"type\":\"rec\",\"data\":%s}", ctrl->rec ? "true" : "false"));
+	}
+	else if(strcmp(type, "rem") == 0) {
+		unsigned int i;
+
+		chk(json->type == json_arr_v);
+
+		for(i = 0; i < json->data.arr->len; i++) {
+			struct amp_loc_t loc;
+			unsigned int idx;
+			uint16_t val;
+			struct web_ctrl_inst_t *inst;
+
+			chk(chkwarn(json_getf(json->data.arr->vec[i], "{loc:{bar:d,beat:f$},idx:u,val:u16$}", &loc.bar, &loc.beat, &idx, &val)));
+
+			inst = inst_get(ctrl, idx);
+			if(inst != NULL)
+				web_ctrl_remove(ctrl, loc, inst, val);
+		}
 	}
 	else
 		return false;
 
-	//web_ctrl_save(ctrl);
+	web_ctrl_save(ctrl);
 
 	return true;
 }
@@ -445,4 +577,62 @@ static struct web_ctrl_inst_t *inst_get(struct web_ctrl_t *ctrl, unsigned int id
 		inst = inst->next;
 
 	return inst;
+}
+
+/**
+ * Lookup an instance by device and key.
+ *   @ctrl: The controller.
+ *   @dev: The device.
+ *   @key: The key.
+ *   &returns: The instance.
+ */
+static struct web_ctrl_inst_t *inst_lookup(struct web_ctrl_t *ctrl, uint16_t dev, uint16_t key)
+{
+	struct web_ctrl_inst_t *inst;
+
+	for(inst = ctrl->inst; inst != NULL; inst = inst->next) {
+		if((inst->dev == dev) && (inst->key == key))
+			return inst;
+	}
+
+	return NULL;
+}
+
+
+
+/**
+ * Process the write task
+ *   @fd: The file descriptor.
+ *   @arg: The argument.
+ */
+static void write_proc(sys_fd_t fd, void *arg)
+{
+	struct web_ctrl_t *ctrl = arg;
+	struct web_ctrl_write_t write;
+
+	while(sys_poll1(fd, sys_poll_in_e, 100) == 0) {
+		while(amp_async_read(ctrl->write, &write, sizeof(struct web_ctrl_write_t))) {
+			sys_mutex_lock(&ctrl->sync);
+
+			if((ctrl->run) && (ctrl->rec)) {
+				struct web_ctrl_inst_t *inst;
+
+				inst = inst_lookup(ctrl, write.dev, write.key);
+				if(inst != NULL) {
+					struct web_ctrl_event_t *event;
+
+					event = malloc(sizeof(struct web_ctrl_event_t));
+					event->loc = write.loc;
+					event->inst = inst;
+					event->val = write.val;
+					event->next = ctrl->queue;
+					ctrl->queue = event;
+
+					web_serv_write(ctrl->serv, ctrl->id, mprintf("{\"type\":\"event\",\"data\":{\"loc\":%C,\"idx\":%u,\"val\":%u}}", web_pack_loc(&event->loc), inst_idx(ctrl, inst), event->val));
+				}
+			}
+
+			sys_mutex_unlock(&ctrl->sync);
+		}
+	}
 }

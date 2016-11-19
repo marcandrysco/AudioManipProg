@@ -53,7 +53,7 @@
 
     var head = Gui.div("head");
     head.appendChild(Gui.div("title", Gui.text("Player")));
-    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], true, function() {
+    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], {def:true}, function() {
     }));
     head.appendChild(player.slider = Gui.Slider({input: 100}, function(slider, v) {
       player.vel = Math.round(v * 65535);

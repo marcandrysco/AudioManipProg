@@ -24,13 +24,15 @@ struct web_mach_t {
 /**
  * Instance structure.
  *   @id: The identifier.
- *   @on, multi, rel: Enable, multikey, and release flags.
+ *   @type: The type.
+ *   @on, rel: Enable, release flags.
  *   @dev, key: The device
  *   @next: The next instance.
  */
 struct web_mach_inst_t {
 	char *id;
-	bool on, multi, rel;
+	enum web_mach_e type;
+	bool on, rel;
 	uint16_t dev, key;
 
 	struct web_mach_inst_t *next;
@@ -197,7 +199,7 @@ bool web_mach_proc(struct web_mach_t *mach, struct amp_time_t *time, unsigned in
 			if(!inst->on)
 				continue;
 
-			key = inst->multi ? event->key : inst->key;
+			key = (inst->type != web_mach_drum_v) ? event->key : inst->key;
 			amp_queue_add(queue, (struct amp_action_t){ i, { inst->dev, key, event->vel }, queue });
 		}
 	}
@@ -265,7 +267,7 @@ void web_mach_print(struct web_mach_t *mach, struct io_file_t file)
 	hprintf(file, "{\"conf\":{\"ndivs\":%u,\"nbeats\":%u,\"nbars\":%u},\"inst\":[", mach->ndivs, mach->nbeats, mach->nbars);
 
 	for(inst = mach->inst; inst != NULL; inst = inst->next)
-		hprintf(file, "{\"id\":\"%s\",\"on\":%s,\"multi\":%s,\"rel\":%s,\"dev\":%u,\"key\":%u}%s", inst->id, inst->on ? "true" : "false", inst->multi ? "true" : "false", inst->rel ? "true" : "false", inst->dev, inst->key, inst->next ? "," : "");
+		hprintf(file, "{\"id\":\"%s\", \"type\":\"%s\", \"on\":%s, \"rel\":%s, \"dev\":%u, \"key\":%u}%s", inst->id, web_mach_type(inst->type), inst->on ? "true" : "false", inst->rel ? "true" : "false", inst->dev, inst->key, inst->next ? "," : "");
 
 	hprintf(file, "],\"events\":[");
 
@@ -316,19 +318,20 @@ bool web_mach_req(struct web_mach_t *mach, struct http_args_t *args, struct json
 	}
 	else if(strcmp(type, "conf") == 0) {
 		unsigned int idx;
-		const char *id;
-		bool on, multi, rel;
+		const char *id, *type;
+		bool on, rel;
 		uint16_t dev, key;
 		struct web_mach_inst_t *inst;
 
-		chk(chkwarn(json_getf(json, "{idx:u,conf:{id:s,on:b,multi:b,rel:b,dev:u16,key:u16$}$}", &idx, &id, &on, &multi, &rel, &dev, &key)));
+		chk(chkwarn(json_getf(json, "{idx:u,conf:{id:s,type:s,on:b,rel:b,dev:u16,key:u16$}$}", &idx, &id, &type, &on, &rel, &dev, &key)));
+		chk(web_mach_enum(type) >= 0);
 
 		inst = inst_get(mach, idx);
 		chk(inst != NULL);
 
 		strset(&inst->id, strdup(id));
 		inst->on = on;
-		inst->multi = multi;
+		inst->type = web_mach_enum(type);
 		inst->rel = rel;
 		inst->dev = dev;
 		inst->key = key;
@@ -363,7 +366,7 @@ char *web_mach_save(struct web_mach_t *mach)
 		fatal("Failed to save to path '%s'.", path);
 
 	for(inst = mach->inst; inst != NULL; inst = inst->next)
-		cfg_writef(file, "Inst", "s b b b u16 u16", inst->id, inst->on, inst->multi, inst->rel, inst->dev, inst->key);
+		cfg_writef(file, "Inst", "s s b b u16 u16", inst->id, web_mach_type(inst->type), inst->on, inst->rel, inst->dev, inst->key);
 
 	len = web_mach_len(mach);
 	for(n = 0; n < 10; n++) {
@@ -404,16 +407,17 @@ char *web_mach_load(struct web_mach_t *mach)
 			break;
 
 		if(strcmp(line->key, "Inst") == 0) {
-			const char *id;
-			bool on, multi, rel;
+			const char *id, *type;
+			bool on, rel;
 			uint16_t dev, key;
 
-			chkfail(cfg_readf(line, "s b b b u16 u16 $", &id, &on, &multi, &rel, &dev, &key));
+			chkfail(cfg_readf(line, "s s b b u16 u16 $", &id, &type, &on, &rel, &dev, &key));
+			chk(web_mach_enum(type) >= 0);
 
 			cnt++;
 			*inst = inst_new(strdup(id), dev, key);
 			(*inst)->on = on;
-			(*inst)->multi = multi;
+			(*inst)->type = web_mach_enum(type);
 			(*inst)->rel = rel;
 			inst = &(*inst)->next;
 		}
@@ -499,4 +503,33 @@ static struct web_mach_inst_t *inst_get(struct web_mach_t *mach, unsigned int id
 		inst = inst->next;
 
 	return inst;
+}
+
+
+const char *web_mach_type(enum web_mach_e type)
+{
+	switch(type) {
+	case web_mach_drum_v: return "drum";
+	case web_mach_note_v: return "note";
+	case web_mach_ctrl_v: return "ctrl";
+	}
+
+	fatal("Invalid machine type.");
+}
+
+/**
+ * Retrieve the enumerator type.
+ *   @str: The string type.
+ *   &returns: The enumerator type.
+ */
+enum web_mach_e web_mach_enum(const char *str)
+{
+	if(strcmp(str, "drum") == 0)
+		return web_mach_drum_v;
+	else if(strcmp(str, "note") == 0)
+		return web_mach_note_v;
+	else if(strcmp(str, "ctrl") == 0)
+		return web_mach_ctrl_v;
+	else
+		return -1;
 }

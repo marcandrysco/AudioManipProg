@@ -59,6 +59,9 @@ void amp_engine_delete(struct amp_engine_t *engine)
 {
 	struct amp_watch_t *watch;
 
+	if(engine->run)
+		amp_engine_stop(engine);
+
 	sys_task_delete(engine->notify);
 
 	while(engine->watch != NULL) {
@@ -127,6 +130,7 @@ void amp_engine_start(struct amp_engine_t *engine)
 
 	engine->run = true;
 	amp_clock_info(engine->clock, amp_info_start(&seek));
+	amp_instr_info(engine->instr, amp_info_start(&seek));
 }
 
 /**
@@ -139,6 +143,7 @@ void amp_engine_stop(struct amp_engine_t *engine)
 
 	engine->run = false;
 	amp_clock_info(engine->clock, amp_info_stop(&seek));
+	amp_instr_info(engine->instr, amp_info_stop(&seek));
 }
 
 /**

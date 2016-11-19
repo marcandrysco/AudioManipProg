@@ -39,7 +39,7 @@
 
     head.appendChild(Gui.div("title", Gui.text("Machine")));
 
-    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], true, function() {
+    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], {def:true}, function() {
     }));
 
     head.appendChild(Gui.Slider({cls: "vel"}, function(slider, pos) {
@@ -71,15 +71,20 @@
         old.parentNode.replaceChild(elem = Mach.elemInst(mach, idx), old);
       }));
     }));
-    action.appendChild(Gui.Toggle(["On", "Off"], inst.on, function(v) {
+    action.appendChild(Gui.Toggle(["On", "Off"], {def:inst.on}, function(v) {
       Mach.toggle(mach, idx, v);
     }));
 
     var label = Gui.div("label");
     label.appendChild(Gui.div("name", Gui.text(inst.id)));
     label.appendChild(action);
-    label.appendChild(Gui.div("dev", Gui.text(inst.dev + ":" + (inst.multi ? "M" : inst.key))));
     elem.appendChild(label);
+
+    switch(inst.type) {
+    case "drum": label.appendChild(Gui.div("dev", Gui.text("Drum " + inst.dev + ":" + inst.key))); break;
+    case "note": label.appendChild(Gui.div("dev", Gui.text("Note " + inst.dev))); break;
+    case "ctrl": label.appendChild(Gui.div("dev", Gui.text("Ctrl " + inst.dev))); break;
+    }
 
     var pads = new Array();
     mach.pads.push(pads);
@@ -184,16 +189,16 @@
    * Toggle an instance.
    *   @mach: The machine.
    *   @idx: The index.
-   *   @multi: The multi-key flag.
+   *   @type: The type.
    *   @rel: The release flag.
    *   @dev: The device number.
    *   @key: The key number.
    */
-  window.Mach.reconf = function(mach, idx, multi, rel, dev, key) {
+  window.Mach.reconf = function(mach, idx, type, rel, dev, key) {
     var rem = { idx: idx, conf: mach.inst[idx].copy() };
     var add = { idx: idx, conf: mach.inst[idx] };
 
-    mach.inst[idx].multi = multi;
+    mach.inst[idx].type = type;
     mach.inst[idx].rel = rel;
     mach.inst[idx].dev = dev;
     mach.inst[idx].key = key;
@@ -218,6 +223,27 @@
     var err = Gui.div("line error");
     elem.appendChild(err);
 
+    var drum, note, ctrl, line = Gui.div("line");
+    line.appendChild(drum = Gui.Button("Drum", {cls:(inst.type == "drum") ? "gui-sel" : ""}, function(e) {
+      drum.classList.add("gui-sel");
+      note.classList.remove("gui-sel");
+      ctrl.classList.remove("gui-sel");
+      key.disabled = false;
+    }));
+    line.appendChild(note = Gui.Button("Note", {cls:(inst.type == "note") ? "gui-sel" : ""}, function(e) {
+      drum.classList.remove("gui-sel");
+      note.classList.add("gui-sel");
+      ctrl.classList.remove("gui-sel");
+      key.disabled = true;
+    }));
+    line.appendChild(ctrl = Gui.Button("Control", {cls:(inst.type == "ctrl") ? "gui-sel" : ""}, function(e) {
+      drum.classList.remove("gui-sel");
+      note.classList.remove("gui-sel");
+      ctrl.classList.add("gui-sel");
+      key.disabled = true;
+    }));
+    elem.appendChild(line);
+
     var line = Gui.div("line");
     line.appendChild(Gui.div("label", Gui.text("Name")));
     line.appendChild(id = Gui.Entry({def: inst.id}, function() {
@@ -232,7 +258,7 @@
 
     var line = Gui.div("line");
     line.appendChild(Gui.div("label", Gui.text("Key")));
-    line.appendChild(key = Gui.Entry({def: inst.key}, function() {
+    line.appendChild(key = Gui.Entry({def: inst.key, enable: inst.type == "drum"}, function() {
     }));
     elem.appendChild(line);
     
@@ -245,7 +271,18 @@
       if(isNaN(conf.dev) || isNaN(conf.key)) {
         Gui.replace(err, Gui.text("Error"));
       } else {
-        Mach.reconf(mach, idx, false, false, conf.dev, conf.key);
+        var type;
+        if(drum.classList.contains("gui-sel")) {
+          type = "drum";
+        } else if(note.classList.contains("gui-sel")) {
+          type = "note";
+        } else if(drum.classList.contains("gui-sel")) {
+          type = "ctrl";
+        } else {
+          throw "Invalid selection.";
+        }
+
+        Mach.reconf(mach, idx, type, false, conf.dev, conf.key);
         popup.guiDismiss();
         func();
       }

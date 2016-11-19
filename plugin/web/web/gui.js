@@ -171,28 +171,57 @@
    *   @def: The default position.
    *   @func: The callback when clicked.
    */
-  window.Gui.Toggle = function(text, def, func) {
-    var toggle = window.Gui.tag("button", ["gui-toggle", def ? "gui-on" : "gui-off"]);
+  window.Gui.Toggle = function(text, opt, func) {
+    if(!opt) { opt = new Object(); }
+    if(!opt.def) { opt.def = true; }
+    if(!opt.fixed) { opt.fixed = false; }
+
+    var toggle = window.Gui.tag("button", ["gui-toggle", opt.def ? "gui-on" : "gui-off"]);
+
     if(Array.isArray(text)) {
-      toggle.appendChild(Gui.div(def ? null : "gui-noshow", Gui.text(text[0])));
-      toggle.appendChild(Gui.div(def ? "gui-noshow" : null, Gui.text(text[1])));
+      toggle.appendChild(Gui.div(opt.def ? null : "gui-noshow", Gui.text(text[0])));
+      toggle.appendChild(Gui.div(opt.def ? "gui-noshow" : null, Gui.text(text[1])));
     } else {
       toggle.appendChild(Gui.text(text));
     }
-    toggle.guiState = def;
-    toggle.guiEnable = function() { };
-    toggle.guiDisable = function() { };
-    toggle.guiFlip = function() { };
-    toggle.addEventListener("click", function(e) {
-      toggle.guiState = !toggle.guiState;
+
+    toggle.guiState = opt.def;
+    toggle.guiEnable = function() { toggle.guiSet(true); };
+    toggle.guiDisable = function() { toggle.guiSet(false); };
+    toggle.guiFlip = function() { toggle.guiSet(!toggle.guiState); };
+
+    toggle.guiSet = function(val) {
+      toggle.guiState = val;
+
       toggle.classList.remove("gui-on", "gui-off");
       toggle.classList.add(toggle.guiState ? "gui-on" : "gui-off");
+
       if(Array.isArray(text)) {
-        toggle.firstChild.classList.toggle("gui-noshow");
-        toggle.lastChild.classList.toggle("gui-noshow");
+        toggle.firstChild.classList[val ? "remove" : "add"]("gui-noshow");
+        toggle.lastChild.classList[val ? "add" : "remove"]("gui-noshow");
       }
-      if(func) { func(toggle.guiState); }
+    };
+
+    toggle.addEventListener("click", function(e) {
+      if(!opt.fixed) {
+        toggle.guiState = !toggle.guiState;
+
+        toggle.classList.remove("gui-on", "gui-off");
+        toggle.classList.add(toggle.guiState ? "gui-on" : "gui-off");
+
+        if(Array.isArray(text)) {
+          toggle.firstChild.classList.toggle("gui-noshow");
+          toggle.lastChild.classList.toggle("gui-noshow");
+        }
+
+        func(toggle.guiState);
+      } else if(func) {
+        func(!toggle.guiState);
+      }
     });
+
+    toggle.guiSet(opt.def);
+
     return toggle;
   };
 
@@ -233,13 +262,17 @@
     return button;
   };
 
+
   /**
    * Create a slider.
+   *   @opt: The options.
+   *   @func: The change callback.
    *   &returns: The slider.
    */
   window.Gui.Slider = function(opt, func) {
     var slider = Gui.div("gui-slider");
 
+    if(!opt) { opt = new Object(); }
     if(opt.vert) { slider.classList.add("gui-vert"); }
     if(opt.cls) { slider.classList.add(opt.cls); }
 
@@ -452,8 +485,12 @@
   window.Gui.Entry = function(opt, func) {
     var entry = Gui.tag("input", "gui-entry");
 
+    if(opt.enable === undefined) { opt.enable = true; }
+
     if(opt.cls) { entry.classList.add(opt.cls); }
     if(opt.def) { entry.value = opt.def; }
+
+    entry.disabled = !opt.enable;
 
     return entry;
   };

@@ -16,8 +16,12 @@
     ctrl.x = 0;
     ctrl.idx = idx;
     ctrl.layout = Ctrl.layout();
+    ctrl.area = null;
     ctrl.conf = { nbars: 200, nbeats: 4, ndivs: 4 };
-    
+    ctrl.sel = new Array();
+    ctrl.undo = new Array();
+    ctrl.redo = new Array();
+
     var div = Gui.div("ctrl");
     div.appendChild(Ctrl.elemHead(ctrl));
     div.appendChild(ctrl.canvas = Gui.tag("canvas", "ctrl"));
@@ -26,6 +30,17 @@
     Ctrl.draw(ctrl);
     window.addEventListener("resize", function() { Ctrl.draw(ctrl); });
     setTimeout(function() { Ctrl.draw(ctrl); }, 10);
+
+    var dbg = div.appendChild(Gui.div("dbg"));
+
+    Gui.replace(dbg, Gui.text(HSL.make(0,1,1)));
+    ctrl.canvas.addEventListener("mousedown", Ctrl.mouse(ctrl));
+    ctrl.canvas.addEventListener("wheel", Ctrl.wheel(ctrl));
+    ctrl.canvas.addEventListener("mousemove", function(e) {
+      Gui.replace(dbg, Gui.text(Ctrl.getRow(ctrl, e.offsetY) + " : " +
+        JSON.stringify(Ctrl.getLoc(ctrl, e.offsetX, true))));
+      //Gui.replace(dbg, Gui.text(Ctrl.getRow(ctrl, e.offsetY)));
+    });
 
     return div;
   };
@@ -39,10 +54,11 @@
 
     head.appendChild(Gui.div("title", Gui.text("Controller")));
 
-    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], true, function() {
+    head.appendChild(Gui.Toggle(["Enabled", "Disabled"], {def:true,fixed:true}, function(val) {
     }));
 
-    head.appendChild(Gui.Toggle(["Play", "Record"], true, function() {
+    head.appendChild(ctrl.rec = Gui.Toggle(["Play", "Record"], {def:true,fixed:true}, function(val) {
+      Web.put(ctrl.idx, { type: "rec", data: !val });
     }));
 
     return head;
@@ -62,7 +78,7 @@
         mod.appendChild(Gui.div("name", Gui.text(ctrl.inst[i].id)))
         mod.appendChild(Gui.Slider({cls:"slider",vert:true,input:100}, function(el, val) {
           if(!init) { return; }
-          Web.put(ctrl.idx, { type: "action", data: { idx: idx, val: Math.round(255 * val) } });
+          Web.put(ctrl.idx, { type: "action", data: { idx: idx, val: Math.round(65535 * val) } });
         }));
         mod.appendChild(Gui.Button("Config", {cls:"conf"}, function(e) {
           document.body.appendChild(Ctrl.conf(ctrl, idx));
@@ -99,6 +115,122 @@
     };
   };
 
+  /**
+   * Update the controller.
+   *   @ctrl: The controller.
+   *   @data: The data.
+   */
+  window.Ctrl.update = function(ctrl, data) {
+    for(var i = 0; i < data.length; i++) {
+      switch(data[i].type) {
+      case "rec":
+        ctrl.rec.guiSet(!data[i].data);
+        break;
+
+      case "event":
+        ctrl.events.push(data[i].data);
+        ctrl.events = ctrl.events.sort(function(a, b) { return Loc.cmp(a.loc, b.loc); });
+        break;
+      }
+    }
+
+    Ctrl.draw(ctrl);
+  };
+
+ 
+  /**
+   * Handle a mouse press on the controller.
+   *   @ctr: The controller.
+   *   &returns: The handler.
+   */
+  window.Ctrl.mouse = function(ctrl) {
+    return function(e) {
+      e.preventDefault();
+
+      if(Status.mode == Mode.view) {
+        Ctrl.mouseView(ctrl, e);
+      }
+    };
+  };
+  /**
+   * Process a mouse press in view mode.
+   *   @ctrl: The controller.
+   *   @e: The event.
+   */
+  window.Ctrl.mouseView = function(ctrl, e) {
+    var x = e.offsetX, y = e.offsetY;
+
+    ctrl.sel = [];
+    ctrl.area = { begin: { x: x, y: y }, end: { x: x, y: y } };
+
+    Gui.dragNow(function(e, type) {
+      switch(type) {
+      case "move":
+      case "up":
+        if(e.target != ctrl.canvas) { return; }
+
+        ctrl.area.end = { x: e.offsetX, y: e.offsetY };
+        ctrl.sel = Ctrl.getSel(ctrl, ctrl.area.begin, ctrl.area.end);
+        Ctrl.draw(ctrl);
+        break;
+
+      case "done":
+        ctrl.area = null;
+        Ctrl.draw(ctrl);
+        break;
+      }
+    });
+  };
+
+  /**
+   * Handle a wheel on the controller.
+   *   @ctrl: The controller.
+   *   &returns: The handler function.
+   */
+  window.Ctrl.wheel = function(ctrl) {
+    return function(e) {
+      ctrl.x += e.deltaY;
+      if(ctrl.x < 0) { ctrl.x = 0; }
+      Ctrl.draw(ctrl);
+    };
+  };
+
+  /**
+   * Handle a keypress.
+   *   @ctrl: The controller.
+   *   @e: The event.
+   */
+  window.Ctrl.keypress = function(ctrl, e) {
+    switch(e.key) {
+    case "d":
+      Ctrl.remove(ctrl);
+      break;
+
+    case "r":
+      Web.put(ctrl.idx, { type: "rec", data: ctrl.rec.guiState });
+      break;
+    }
+  };
+
+
+  /**
+   * Remove all selected events.
+   *   @ctrl: The controller.
+   */
+  window.Ctrl.remove = function(ctrl) {
+    if(ctrl.sel.length == 0) { return; }
+
+    Web.put(ctrl.idx, { type: "rem", data: ctrl.sel });
+
+    Array.prototype.remove.apply(ctrl.events, ctrl.sel);
+    Ctrl.draw(ctrl);
+
+    ctrl.undo.push({type: "add", data: ctrl.sel});
+    ctrl.redo = new Array();
+
+    ctrl.sel = new Array();
+  };
+
 
   /**
    * Retrieve the height of the canvas.
@@ -129,6 +261,7 @@
 
     Ctrl.drawHead(ctrl, ctx, box);
     Ctrl.drawBody(ctrl, ctx, box);
+    Ctrl.drawArea(ctrl, ctx);
   };
   /**
    * Draw the controller header.
@@ -146,7 +279,7 @@
     var vline = Pack.vert(box, 2);
     Draw.fill(vline, ctx, "#000");
 
-    Grid.head(row, ctx, ctrl.layout.width, 0, ctrl.conf.nbeats, ctrl.conf.ndivs);
+    Grid.head(row, ctx, ctrl.layout.width, ctrl.x, ctrl.conf.nbeats, ctrl.conf.ndivs);
   };
   /**
    * Draw the controller body.
@@ -155,6 +288,8 @@
    *   @box: The box.
    */
   window.Ctrl.drawBody = function(ctrl, ctx, box) {
+    var orig = box.copy();
+
     for(var i = 0; i < ctrl.inst.length; i++) {
       var row = Pack.vert(box, ctrl.layout.height);
 
@@ -173,58 +308,107 @@
       for(var j = 0; j < ctrl.events.length; j++) {
         if(ctrl.events[j].idx != i) { continue; }
 
-        var x = Grid.getx(ctrl.events[j].loc, ctrl.layout.width, 0, ctrl.conf.nbeats, ctrl.conf.ndivs);
-        Draw.vert(row, x, ctx, 2, "#000");
-        var c = 255-Math.round(255*ctrl.events[j].val/65535);
-        Draw.vert(row, x + 2, ctx, box.width - x, "rgb(255,"+c+","+c+")");
+        var x = Grid.getx(ctrl.events[j].loc, ctrl.layout.width, ctrl.conf.nbeats, ctrl.conf.ndivs) - ctrl.x;
+        var c = 1.0 - 0.5 * ctrl.events[j].val / 65535;
+
+        if(ctrl.sel.includes(ctrl.events[j])) {
+          Draw.vert(row, x, ctx, 2, HSL.make(1/16, 1, c - 0.1));
+          Draw.vert(row, x + 2, ctx, box.width - x, HSL.make(1/16, 0.5, c));
+        } else {
+          Draw.vert(row, x, ctx, 2, HSL.make(0, 1, c - 0.1));
+          Draw.vert(row, x + 2, ctx, box.width - x, HSL.make(0, 0.5, c));
+        }
       }
 
       ctx.restore();
     }
-  };
 
 
-  /*
-   * Grid namespace
-   */
-  window.Grid = new Object();
-
-  /**
-   * Create the grid header.
-   *   @box: The target box.
-   *   @ctx: The context.
-   *   @width: The width.
-   *   @x: The starting x-coordinate.
-   *   @nbeats: The number of beats.
-   *   @ndivs: The number of divisions.
-   */
-  window.Grid.head = function(box, ctx, width, x, nbeats, ndivs) {
-    var bar = 1, width = (width + 1) * ndivs - 1;
-    while(x < box.width) {
-      Draw.text(box, ctx, bar++, {x: (4 + x), y: 2, color: "#000", font: "16px sans-serif"});
-      for(var i = 1; i < nbeats; i++) {
-        x += width;
-        Draw.vert(box, x++, ctx, 1, "#888");
-        Draw.text(box, ctx, (i+1), {x: (4 + x), y: 2, color: "#000", font: "12px sans-serif"});
-      }
-      x += width;
-      Draw.vert(box, x, ctx, 2, "#000");
-      x += 2;
+    var x = Grid.getx(Time.loc, ctrl.layout.width, ctrl.conf.nbeats, ctrl.conf.ndivs) - ctrl.x;
+    if(x > 0) {
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.beginPath();
+      ctx.rect(orig.x + ctrl.layout.label + 2 + x, orig.y, 2, (ctrl.layout.height + 1) * ctrl.inst.length - 1);
+      ctx.fill();
     }
   };
+  /**
+   * Draw the selection area, if it is set.
+   *   @player: The player.
+   *   @ctx: The context.
+   */
+  window.Ctrl.drawArea = function(ctrl, ctx) {
+    if(ctrl.area == null) { return; }
+
+    var begin = ctrl.area.begin, end = ctrl.area.end;
+    if((begin.x == end.x) && (begin.y == end.y)) { return; };
+
+    ctx.fillStyle = "rgba(0,0,255,0.2)";
+    ctx.strokeStyle = "rgba(0,0,255,0.6)";
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.rect(begin.x, begin.y, end.x - begin.x, end.y - begin.y);
+    ctx.fill();
+    ctx.stroke();
+  };
+
 
   /**
-   * Retrieve the x-coordinate.
-   *   @loc: The location.
-   *   @width: The width.
-   *   @x: The starting x-coordinate.
-   *   @nbeats: The number of beats.
-   *   @ndivs: The number of divisions.
+   * Retrieve the current row.
+   *   @ctrl: The controller.
+   *   @y: The y-coordinate.
+   *   &returns: The row number, or '-1' if not over a row.
    */
-  window.Grid.getx = function(loc, width, x, nbeats, ndivs) {
-    var barlen = (width + 1) * ndivs * nbeats + 1;
-    var beatlen = (width + 1) * ndivs;
+  window.Ctrl.getRow = function(ctrl, y) {
+    return Grid.getRow(ctrl.layout.height, y, ctrl.inst.length);
+  };
 
-    return barlen * loc.bar + beatlen * loc.beat;
+  /**
+   * Retrieve a location.
+   *   @ctrl: The controller.
+   *   @x; The x-coordinate.
+   *   @round: The rounding to div flag.
+   *   &returns: The location or null.
+   */
+  window.Ctrl.getLoc = function(ctrl, x, round) {
+    if(x < (ctrl.layout.label + 2)) { return null; }
+
+    x += ctrl.x - ctrl.layout.label - 2;
+    return Grid.getLoc(ctrl.layout.width, x, ctrl.conf.nbeats, ctrl.conf.ndivs, round);
+  };
+
+  /**
+   * Retrieve the data under an area.
+   *   @player; The player.
+   *   @begin: The begin coordinates.
+   *   @end: The end coordinates.
+   *   &returns: The data array.
+   */
+  window.Ctrl.getSel = function(ctrl, begin, end) {
+    var right = Ctrl.getLoc(ctrl, Math.max(begin.x, end.x));
+    var left = Ctrl.getLoc(ctrl, Math.min(begin.x, end.x));
+
+    var first = Ctrl.getRow(ctrl, Math.min(begin.y, end.y))
+    var last = Ctrl.getRow(ctrl, Math.max(begin.y, end.y))
+
+    if((first < 0) || (last < 0) || (left == null) || (right == null)) { return []; };
+
+    var ret = new Array();
+
+    for(var i = 0; i < ctrl.events.length; i++) {
+      var cur = ctrl.events[i];
+
+      if((cur.idx < first) || (cur.idx > last)) { continue; }
+
+      if(cur.loc.bar > right.bar) { continue; }
+      if((cur.loc.bar == right.bar) && (cur.loc.beat >= right.beat)) { continue; }
+
+      if(cur.loc.bar < left.bar) { continue; }
+      if((cur.loc.bar == left.bar) && (cur.loc.beat <= left.beat)) { continue; }
+
+      ret.push(cur);
+    }
+
+    return ret;
   };
 })();

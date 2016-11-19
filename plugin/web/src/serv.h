@@ -18,16 +18,19 @@ enum web_inst_e {
 /**
  * Server structure.
  *   @rt: The RT core.
- *   @lock: The lock.
+ *   @sync, lock: Synchronization and run locks.
  *   @task: The http task.
  *   @inst: The instance tree.
+ *   @client: The client list.
  */
 struct web_serv_t {
 	struct amp_rt_t *rt;
-	struct sys_mutex_t lock;
+	struct sys_mutex_t sync, lock;
 
 	struct sys_task_t *task;
 	struct avltree_root_t inst;
+
+	struct web_client_t *client;
 };
 
 
@@ -36,6 +39,9 @@ struct web_serv_t {
  */
 struct web_serv_t *web_serv_new(struct amp_rt_t *rt);
 void web_serv_delete(struct web_serv_t *serv);
+
+void web_serv_put(struct web_serv_t *serv, const char *id, char *json);
+void web_serv_write(struct web_serv_t *serv, const char *id, char *json);
 
 struct web_inst_t *web_inst_first(struct web_serv_t *serv);
 struct web_inst_t *web_inst_next(struct web_inst_t *inst);

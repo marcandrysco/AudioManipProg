@@ -74,6 +74,31 @@ elements.
 
 ### Gui.Slider
 
+    Gui.Slider(opt:Option, func:function) : DOMElement
+
+The `Slider` constructor creates a slider component and returns the DOM
+element.
+
+#### Options -- `cls` `vert` `input`
+
+    Option.cls : String | [String]
+    Option.vert : bool
+    Option.def : float
+    Option.input : float | { min:float, max:float }
+
+The `cls` option specifies the class or list of classes that should be applied
+to the root DOM element.
+
+The `vert` option indicates the slider should be vertical instead of
+horizontal.
+
+The `def` option specifies the default value of the slider. Without the
+`input` option, the slider takes on values between zero and one.
+
+The `input` option adds a text input to the slider that either varies from
+zero to `input` or from `input.min` to `input.max`. The text input and slider
+are automatically synchronized.
+
 ### Gui.Select
 
 

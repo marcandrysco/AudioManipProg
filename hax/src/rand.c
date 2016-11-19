@@ -7,6 +7,10 @@
 struct m_rand_t m_rand = { 123456789, 362436069, 521288629, 1049141 };
 
 
+/**
+ * Seed the global random number generator.
+ *   @seed: The seed.
+ */
 void m_rand_seed(uint32_t seed)
 {
 	m_rand = m_rand_init(seed);
@@ -22,12 +26,13 @@ struct m_rand_t m_rand_init(uint32_t seed)
 	return (struct m_rand_t){ 123456789, 362436069, 521288629, seed * 1049141 };
 }
 
+
 /**
- * Retrieve the next number from the generator.
+ * Compute a random 32-bit unsigned integer.
  *   @rand: The number generator.
  *   &returns: The next number.
  */
-uint32_t m_rand_next(struct m_rand_t *rand)
+uint32_t m_rand_u32(struct m_rand_t *rand)
 {
 	  uint32_t t;
 
@@ -44,11 +49,22 @@ uint32_t m_rand_next(struct m_rand_t *rand)
 }
 
 /**
+ * Compute a random 64-bit unsigned integer.
+ *   @rand: The number generator.
+ *   &returns: The next number.
+ */
+uint64_t m_rand_u64(struct m_rand_t *rand)
+{
+	return ((uint64_t)m_rand_u32(rand) << 32) | (uint64_t)m_rand_u32(rand);
+}
+
+
+/**
  * Retrieve a random number between the values zero and one.
  *   @rand: The number generator.
  *   &returns: The next number.
  */
 double m_rand_d(struct m_rand_t *rand)
 {
-	return m_rand_next(rand) / (double)UINT32_MAX;
+	return (m_rand_u32(rand) & 0x3FFFFFFFFFFFFF) / (double)(0x40000000000000);
 }

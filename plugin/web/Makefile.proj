@@ -1,6 +1,7 @@
 ASSETS = web/index.xhtml \
          web/extend.js \
          web/draw.js \
+         web/color.js \
          web/gui.js \
          web/gui.css \
 	 web/web.js \
@@ -10,6 +11,7 @@ ASSETS = web/index.xhtml \
 	 web/web.base.js \
 	 web/web.ctrl.js \
 	 web/web.ctrl.css \
+	 web/web.grid.js \
 	 web/web.key.css \
 	 web/web.mach.js \
 	 web/web.mach.css \

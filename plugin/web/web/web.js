@@ -16,11 +16,13 @@
     Time.init();
     Status.init();
 
-    Req.get("/init", function(v) {
+    Req.get("/init", function(json) {
       var page = Gui.byid("page");
       Gui.clear(page);
 
-      Web.data = JSON.parse(v);
+      json = JSON.parse(json);
+      Web.data = json.data;
+      Web.client = json.client;
 
       var head = Gui.div("head");
       page.appendChild(head);
@@ -100,6 +102,7 @@
 
     switch(Web.data[Web.cur].type) {
     //case "mach": Mach.keypress(work, Web.data[Web.cur].data); break;
+    case "ctrl": Ctrl.keypress(Web.data[Web.cur].data, e); break;
     case "player": Player.keypress(Web.data[Web.cur].data, e); break;
     }
   };
@@ -112,14 +115,14 @@
    * Refresh the data using an http request.
    */
   window.Web.refresh = function() {
-    Req.get("/get", function(resp) {
-      var json = JSON.parse(resp);
-
+    Req.post("/get", Web.client, function(json) {
+      json = JSON.parse(json);
       Time.update(json[0]);
 
       for(var i = 1; i < Web.data.length; i++) {
         switch(Web.data[i].type) {
         case "audit": Audit.update(Web.data[i].data, json[i]); break;
+        case "ctrl": Ctrl.update(Web.data[i].data, json[i]); break;
         case "mach":  break;
         case "player": Player.update(Web.data[i].data); break;
         }
